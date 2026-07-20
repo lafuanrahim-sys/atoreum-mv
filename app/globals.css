@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+/*
+  ATOREUM MV — Design Tokens
+  Palette pulled from the brand reference film: warm ink black,
+  aged gold, deep moss, ivory. Kept deliberately narrow — luxury
+  reads through restraint, not variety.
+*/
+:root {
+  --ink: #0b0b09;
+  --ink-2: #121210;
+  --charcoal: #17170f;
+  --ivory: #f4efe4;
+  --ivory-dim: #cfc9ba;
+  --gold: #c9a15a;
+  --gold-soft: #ddc48c;
+  --moss: #454b3e;
+  --sand: #a9906b;
+  --line: rgba(244, 239, 228, 0.12);
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-charcoal: var(--charcoal);
+  --color-ivory: var(--ivory);
+  --color-ivory-dim: var(--ivory-dim);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-moss: var(--moss);
+  --color-sand: var(--sand);
+  --color-line: var(--line);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: auto;
+}
+
+body {
+  background: var(--ink);
+  color: var(--ivory);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+/* thin, quiet scrollbar — luxury sites never ship the browser default */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--ink);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sand);
+  opacity: 0.4;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* utility: hairline divider used across sections instead of hard borders */
+.hairline {
+  height: 1px;
+  background: var(--line);
+}
+
+/* utility: reveal target — GSAP sets initial state via JS,
+   this class is only a fallback if JS fails to load */
+.reveal {
+  opacity: 1;
+}
