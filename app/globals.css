@@ -2,21 +2,64 @@
 
 /*
   ATOREUM MV — Design Tokens
-  Palette pulled from the brand reference film: warm ink black,
-  aged gold, deep moss, ivory. Kept deliberately narrow — luxury
-  reads through restraint, not variety.
+  Light theme uses a white, minimal palette with soft moss accents
+  drawn from the logo. Dark theme preserves the existing brand
+  palette for the alternate mode.
 */
 :root {
-  --ink: #0b0b09;
-  --ink-2: #121210;
-  --charcoal: #17170f;
-  --ivory: #f4efe4;
-  --ivory-dim: #cfc9ba;
-  --gold: #c9a15a;
+  color-scheme: light dark;
+
+  --ink: #f8f7f5;
+  --ink-2: #ecebe8;
+  --charcoal: #d6d4cf;
+  --ivory: #121915;
+  --ivory-dim: #5f665f;
+  --gold: #8eaba5;
+  --gold-soft: #6c7770;
+  --moss: #b8c0bb;
+  --sand: #c5c9c4;
+  --line: rgba(18, 25, 21, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #121915;
+    --ink-2: #1f2a24;
+    --charcoal: #262f2a;
+    --ivory: #e9baa6;
+    --ivory-dim: #bfa48d;
+    --gold: #8eaba5;
+    --gold-soft: #6c7770;
+    --moss: #545c57;
+    --sand: #6c7770;
+    --line: rgba(233, 186, 166, 0.12);
+  }
+}
+
+.theme-light {
+  --ink: #f8f7f5;
+  --ink-2: #ecebe8;
+  --charcoal: #d6d4cf;
+  --ivory: #121915;
+  --ivory-dim: #5f665f;
+  --gold: #e9baa6;
   --gold-soft: #ddc48c;
-  --moss: #454b3e;
-  --sand: #a9906b;
-  --line: rgba(244, 239, 228, 0.12);
+  --moss: #b8c0bb;
+  --sand: #c5c9c4;
+  --line: rgba(233, 186, 166, 0.12);
+}
+
+.theme-dark {
+  --ink: #121915;
+  --ink-2: #1f2a24;
+  --charcoal: #262f2a;
+  --ivory: #e9baa6;
+  --ivory-dim: #bfa48d;
+  --gold: #8eaba5;
+  --gold-soft: #6c7770;
+  --moss: #545c57;
+  --sand: #6c7770;
+  --line: rgba(233, 186, 166, 0.12);
 }
 
 @theme inline {
@@ -67,6 +110,10 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--sand);
   opacity: 0.4;
+}
+
+.theme-dark {
+  color-scheme: dark;
 }
 
 .font-display {

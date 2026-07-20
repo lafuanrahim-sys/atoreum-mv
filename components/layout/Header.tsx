@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import Logo from "@/components/ui/Logo";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -28,14 +30,16 @@ export default function Header() {
       )}
     >
       <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 md:px-12">
-        <Link
-          href="/"
-          className="font-display text-lg tracking-[0.25em] text-ivory uppercase"
-        >
-          Atoreum <span className="text-gold">MV</span>
+        <Link href="/" className="flex items-center gap-3">
+          <span className="block h-10 w-10">
+            <Logo />
+          </span>
+          <span className="font-display text-lg tracking-[0.25em] text-ivory uppercase">
+            Atoreum <span className="text-gold">MV</span>
+          </span>
         </Link>
 
-        <nav className="hidden items-center gap-10 md:flex">
+        <nav className="hidden items-center gap-6 md:flex">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
@@ -51,6 +55,7 @@ export default function Header() {
           >
             Shop
           </Link>
+          <ThemeToggle />
         </nav>
 
         <button
