@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# runtime order data — contains real customer PII (name/email/phone/address)
+# once the checkout flow has been used; the product catalog seed
+# (data/products.json) stays tracked, this generated state does not.
+/data/orders.json
+/data/notifications.log
+
+# customer-uploaded payment proof screenshots
+/public/uploads/
+
+# Claude Code: personal/local tool config and vendored skill cache — not
+# project source. skills-lock.json (the version-pinning manifest) stays
+# tracked; the vendored skill content it resolves to does not.
+.claude/settings.local.json
+.claude/skills/
+.agents/skills/

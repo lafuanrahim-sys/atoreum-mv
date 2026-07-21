@@ -224,7 +224,7 @@ export default function LetterGrid() {
           data-original={cell.original}
           data-hover={cell.hover}
           data-word={cell.isWord ? "true" : "false"}
-          className={`flex items-center justify-center font-sans text-sm tracking-widest sm:text-base md:text-lg ${
+          className={`flex items-center justify-center font-sans text-[24px] tracking-widest sm:text-[34px] md:text-[28px] ${
             cell.isWord ? "font-semibold text-ivory" : "text-ivory-dim/35"
           }`}
         >

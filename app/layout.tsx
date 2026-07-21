@@ -3,8 +3,9 @@ import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/ui/SmoothScroll";
 import Header from "@/components/layout/Header";
-import BarbaLoader from "@/components/layout/BarbaLoader";
 import Footer from "@/components/layout/Footer";
+import { CartProvider } from "@/lib/cart/CartContext";
+import CartDrawer from "@/components/cart/CartDrawer";
 
 // Display serif for headlines — editorial, luxury-catalogue register.
 const playfair = Playfair_Display({
@@ -35,16 +36,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${playfair.variable} ${inter.variable} antialiased`}>
-        <SmoothScroll>
-          <Header />
-          <BarbaLoader />
-          <div data-barba="wrapper">
-            <main data-barba="container" className="pt-24 md:pt-28">
-              {children}
-            </main>
-          </div>
-          <Footer />
-        </SmoothScroll>
+        <CartProvider>
+          <SmoothScroll>
+            <Header />
+            <main className="pt-24 md:pt-28">{children}</main>
+            <Footer />
+          </SmoothScroll>
+          <CartDrawer />
+        </CartProvider>
       </body>
     </html>
   );

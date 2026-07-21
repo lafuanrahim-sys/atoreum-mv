@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { products } from "@/lib/products";
+import type { Product } from "@/lib/products";
 import ProductCard from "@/components/products/ProductCard";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
-const FEATURED_PRODUCTS = products.slice(0, 3);
-
-export default function FeaturedCollection() {
+export default function FeaturedCollection({ products }: { products: Product[] }) {
   const ref = useScrollReveal<HTMLDivElement>({ start: "top 85%" });
 
   return (
@@ -27,7 +25,7 @@ export default function FeaturedCollection() {
         </div>
 
         <div className="mt-16 grid gap-8 sm:grid-cols-3">
-          {FEATURED_PRODUCTS.map((product) => (
+          {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

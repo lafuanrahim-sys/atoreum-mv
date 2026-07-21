@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/ui/Logo";
 import ThemeToggle from "@/components/layout/ThemeToggle";
+import CartButton from "@/components/cart/CartButton";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -56,26 +57,30 @@ export default function Header() {
             Shop the launch
           </Link>
           <ThemeToggle />
+          <CartButton />
         </nav>
 
-        <button
-          aria-label="Toggle menu"
-          className="flex flex-col gap-1.5 md:hidden"
-          onClick={() => setMenuOpen((v) => !v)}
-        >
-          <span
-            className={cn(
-              "h-px w-6 bg-ivory transition-transform duration-300",
-              menuOpen && "translate-y-[3.5px] rotate-45"
-            )}
-          />
-          <span
-            className={cn(
-              "h-px w-6 bg-ivory transition-transform duration-300",
-              menuOpen && "-translate-y-[3.5px] -rotate-45"
-            )}
-          />
-        </button>
+        <div className="flex items-center gap-4 md:hidden">
+          <CartButton />
+          <button
+            aria-label="Toggle menu"
+            className="flex flex-col gap-1.5"
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <span
+              className={cn(
+                "h-px w-6 bg-ivory transition-transform duration-300",
+                menuOpen && "translate-y-[3.5px] rotate-45"
+              )}
+            />
+            <span
+              className={cn(
+                "h-px w-6 bg-ivory transition-transform duration-300",
+                menuOpen && "-translate-y-[3.5px] -rotate-45"
+              )}
+            />
+          </button>
+        </div>
       </div>
 
       {menuOpen && (

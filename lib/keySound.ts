@@ -20,10 +20,25 @@ function getContext(): AudioContext | null {
   return ctx;
 }
 
+function createNoiseBuffer(audioCtx: AudioContext, duration: number): AudioBuffer {
+  const bufferSize = Math.max(1, Math.floor(audioCtx.sampleRate * duration));
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  }
+  return buffer;
+}
+
 /**
- * A short synthesized "creamy" keyboard thock — soft muffled tap transient
- * plus a deep, round, pitch-dropping body. Cream/lubed-switch profile:
- * low click energy, dominant low-mid resonance, no sharp high-frequency clack.
+ * Tuned against Monkeytype's actual "nk creams" sample (fetched all 6
+ * click4/*.wav variants and analyzed their real envelope + spectrum via
+ * decodeAudioData — a prior guess based on mechanical-keyboard lore about
+ * "deep bass thock" turned out wrong). The real samples are very short —
+ * ~15-20ms of audible content, the rest of the file is silence — and peak
+ * hard in the 1300-3500Hz band, with almost nothing below 600Hz or above
+ * 5000Hz. "Creamy" here means rounded and free of harsh high-frequency
+ * sizzle, not literally bass-heavy.
  */
 export function playKeySound() {
   const now = Date.now();
@@ -39,66 +54,48 @@ export function playKeySound() {
   lastPlayedAt = now;
   const t0 = audioCtx.currentTime;
 
-  // Master lowpass keeps the whole hit rounded/muffled — no bright edge.
+  // Master shape: cut sub-600Hz rumble and anything above ~4.6kHz — the
+  // reference has neither.
   const master = audioCtx.createGain();
   master.gain.value = 1;
-  const masterFilter = audioCtx.createBiquadFilter();
-  masterFilter.type = "lowpass";
-  masterFilter.frequency.value = 2200;
-  master.connect(masterFilter).connect(audioCtx.destination);
+  const masterHighpass = audioCtx.createBiquadFilter();
+  masterHighpass.type = "highpass";
+  masterHighpass.frequency.value = 550;
+  const masterLowpass = audioCtx.createBiquadFilter();
+  masterLowpass.type = "lowpass";
+  masterLowpass.frequency.value = 3600; // tighter still — less top-end sizzle, rounder
+  master.connect(masterHighpass).connect(masterLowpass).connect(audioCtx.destination);
 
-  // Soft tap transient — filtered noise, quiet and brief, no sharp click.
-  const noiseDuration = 0.018;
-  const bufferSize = Math.max(1, Math.floor(audioCtx.sampleRate * noiseDuration));
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-  }
+  // Main click body — bandpass-filtered noise, center biased toward the
+  // lower half of the reference's ~1300-3500Hz range for a rounder, less
+  // clicky presence.
+  const durMain = 0.017;
+  const main = audioCtx.createBufferSource();
+  main.buffer = createNoiseBuffer(audioCtx, durMain);
+  const bandMain = audioCtx.createBiquadFilter();
+  bandMain.type = "bandpass";
+  bandMain.frequency.value = 1050 + Math.random() * 1000;
+  bandMain.Q.value = 1.0;
+  const gainMain = audioCtx.createGain();
+  gainMain.gain.setValueAtTime(0.75, t0);
+  gainMain.gain.exponentialRampToValueAtTime(0.001, t0 + durMain);
+  main.connect(bandMain).connect(gainMain).connect(master);
+  main.start(t0);
+  main.stop(t0 + durMain);
 
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = buffer;
-
-  const noiseFilter = audioCtx.createBiquadFilter();
-  noiseFilter.type = "lowpass";
-  noiseFilter.frequency.value = 1500 + (Math.random() - 0.5) * 250;
-  noiseFilter.Q.value = 0.6;
-
-  const noiseGain = audioCtx.createGain();
-  noiseGain.gain.setValueAtTime(0.13, t0);
-  noiseGain.gain.exponentialRampToValueAtTime(0.0001, t0 + noiseDuration);
-
-  noise.connect(noiseFilter).connect(noiseGain).connect(master);
-  noise.start(t0);
-  noise.stop(t0 + noiseDuration);
-
-  // Deep, round "thock" body — pitch drops slightly for that marbly weight.
-  const thockDuration = 0.11;
-  const startFreq = 145 + (Math.random() - 0.5) * 20;
-  const osc = audioCtx.createOscillator();
-  osc.type = "sine";
-  osc.frequency.setValueAtTime(startFreq, t0);
-  osc.frequency.exponentialRampToValueAtTime(startFreq * 0.62, t0 + thockDuration);
-
-  const oscGain = audioCtx.createGain();
-  oscGain.gain.setValueAtTime(0.32, t0);
-  oscGain.gain.exponentialRampToValueAtTime(0.0001, t0 + thockDuration);
-
-  osc.connect(oscGain).connect(master);
-  osc.start(t0);
-  osc.stop(t0 + thockDuration);
-
-  // Sub-octave layer for roundness/warmth beneath the thock.
-  const subDuration = 0.09;
-  const sub = audioCtx.createOscillator();
-  sub.type = "sine";
-  sub.frequency.setValueAtTime(startFreq * 0.5, t0);
-
-  const subGain = audioCtx.createGain();
-  subGain.gain.setValueAtTime(0.14, t0);
-  subGain.gain.exponentialRampToValueAtTime(0.0001, t0 + subDuration);
-
-  sub.connect(subGain).connect(master);
-  sub.start(t0);
-  sub.stop(t0 + subDuration);
+  // Secondary body layer, an octave or so lower — bumped up a bit more and
+  // held a hair longer so there's more roundness underneath the click.
+  const durBody = 0.022;
+  const body = audioCtx.createBufferSource();
+  body.buffer = createNoiseBuffer(audioCtx, durBody);
+  const bandBody = audioCtx.createBiquadFilter();
+  bandBody.type = "bandpass";
+  bandBody.frequency.value = 650 + Math.random() * 280;
+  bandBody.Q.value = 1.0;
+  const gainBody = audioCtx.createGain();
+  gainBody.gain.setValueAtTime(0.5, t0);
+  gainBody.gain.exponentialRampToValueAtTime(0.001, t0 + durBody);
+  body.connect(bandBody).connect(gainBody).connect(master);
+  body.start(t0);
+  body.stop(t0 + durBody);
 }

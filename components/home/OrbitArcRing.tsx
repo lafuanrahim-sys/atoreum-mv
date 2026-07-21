@@ -34,18 +34,6 @@ const CATEGORIES: CategoryItem[] = [
   { label: "Etc.", href: "/products" },
 ];
 
-// Repeating, non-random size cycle (not random per spec) — a 5-value
-// palindrome repeated exactly 3x across the 15 items (5×3=15), giving clean
-// 3-fold rotational symmetry so scale rhythm reads as balanced/mirrored
-// around the ring. Smallest 1x, largest 1.3x, per spec.
-const SIZE_CYCLE = [1, 1.15, 1.3, 1.15, 1];
-
-// Fixed per-item tilt (degrees) — each tile keeps its own resting angle as it
-// orbits instead of counter-rotating to a perfectly upright 0°, for a
-// scattered-photos feel rather than a mechanical one. Deterministic, not
-// randomized, so it's stable across renders.
-const TILT_CYCLE = [-8, 11, -14, 6, -4, 12, -10, 5, -7, 13, -3, 9, -12, 7, -6];
-
 function CategoryTile({
   label,
   image,
@@ -95,9 +83,9 @@ export default function OrbitArcRing() {
     return () => mq.removeEventListener("change", handle);
   }, []);
 
-  // Single computed-angle-per-frame loop: the ring and every item's inner
-  // counter-rotation read the exact same `angle`, so they can't drift apart
-  // the way two independent CSS keyframe animations eventually would.
+  // Single computed-angle-per-frame loop: the ring and every card's inner
+  // counter-rotation read the exact same `angle`, so they can never drift
+  // apart the way two independent CSS keyframe animations eventually would.
   useEffect(() => {
     if (reduceMotion) return;
     let rafId: number;
@@ -110,11 +98,9 @@ export default function OrbitArcRing() {
       if (ringRef.current) {
         ringRef.current.style.transform = `rotate(${angle}deg)`;
       }
-      innerRefs.current.forEach((el, index) => {
-        if (!el) return;
-        const tilt = TILT_CYCLE[index % TILT_CYCLE.length];
-        el.style.transform = `translate(-50%, -50%) rotate(${-angle + tilt}deg)`;
-      });
+      for (const el of innerRefs.current) {
+        if (el) el.style.transform = `translate(-50%, -50%) rotate(${-angle}deg)`;
+      }
 
       rafId = requestAnimationFrame(tick);
     };
@@ -127,33 +113,26 @@ export default function OrbitArcRing() {
 
   return (
     <div
-      className="orbit-arc absolute inset-0 [--item-size:calc(var(--ring-radius)*0.36)] [--ring-diameter:calc(var(--arc-height)*1.55)] [--ring-radius:calc(var(--ring-diameter)/2)]"
+      className="orbit-arc pointer-events-none absolute left-1/2 top-1/2 h-0 w-0 [--item-size:calc(var(--ring-radius)*0.4)] [--ring-radius:clamp(9rem,20vmin,18rem)]"
     >
-      {/* Loosely modeled on the design reference's ring geometry (a clipped
-          container with the ring's true rotational center sitting low inside
-          it, well below the container's own center). Anchor offset is a
-          touch deeper than the raw measurement to guarantee clearance: with
-          scale variation (up to 1.3x) and each tile's own fixed tilt, the
-          largest tile's bounding box can reach noticeably further than the
-          bare circle radius, so without this margin the topmost tiles get
-          hard-clipped by the container edge instead of gracefully fading.
-          Center-anchor is zero-sized so left-1/2 alone centers it
-          horizontally. */}
-      <div
-        className="absolute left-1/2 h-0 w-0"
-        style={{ top: "calc(var(--arc-height) * 1.02)" }}
-      >
-        <div ref={ringRef} className="absolute left-0 top-0">
-          {CATEGORIES.map((category, index) => {
-          const baseAngle = (360 / total) * index;
-          const scale = SIZE_CYCLE[index % SIZE_CYCLE.length];
+      {/* Every card uses the exact same --ring-radius — only its angle
+          differs — so all 15 sit at an identical distance from the logo's
+          center point. Center-anchor is zero-sized so left-1/2/top-1/2
+          alone center it on both axes. */}
+      <div ref={ringRef} className="absolute left-0 top-0">
+        {CATEGORIES.map((category, index) => {
+          const angle = (index / total) * 360;
 
           return (
             <div
               key={category.label}
               className="ring-item pointer-events-auto absolute left-0 top-0"
               style={{
-                transform: `rotate(${baseAngle}deg) translateX(var(--ring-radius)) rotate(${-baseAngle}deg)`,
+                // Outer wrapper: position only. Places the card at `angle`
+                // around the shared radius, then rotates back by -angle so
+                // this element's own local frame is unrotated — all of the
+                // rotation from placing it lives here and nowhere else.
+                transform: `rotate(${angle}deg) translateX(var(--ring-radius)) rotate(${-angle}deg)`,
               }}
             >
               <div
@@ -161,9 +140,7 @@ export default function OrbitArcRing() {
                   innerRefs.current[index] = el;
                 }}
                 className="ring-item-inner"
-                style={{
-                  transform: `translate(-50%, -50%) rotate(${TILT_CYCLE[index % TILT_CYCLE.length]}deg)`,
-                }}
+                style={{ transform: "translate(-50%, -50%)" }}
               >
                 <div
                   className={`ring-item-card transition-[filter,opacity] duration-300 ease-out ${
@@ -171,11 +148,7 @@ export default function OrbitArcRing() {
                       ? "blur-[6px] opacity-50"
                       : "blur-0 opacity-100"
                   }`}
-                  style={{
-                    width: "var(--item-size)",
-                    height: "var(--item-size)",
-                    transform: `scale(${scale})`,
-                  }}
+                  style={{ width: "var(--item-size)", height: "var(--item-size)" }}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
                 >
@@ -192,11 +165,10 @@ export default function OrbitArcRing() {
             </div>
           );
         })}
-        </div>
       </div>
 
       {/* CSS :has() fallback for the hover-blur, matching the JS-driven
-          state above — belt-and-suspenders per spec. */}
+          state above. */}
       <style>{`
         .orbit-arc:has(.ring-item:hover) .ring-item:not(:hover) .ring-item-card {
           filter: blur(6px);

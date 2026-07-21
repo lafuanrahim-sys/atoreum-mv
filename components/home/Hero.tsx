@@ -1,6 +1,8 @@
 import CrosswordHero from "@/components/home/templates/CrosswordHero";
 import OrbitHero from "@/components/home/templates/OrbitHero";
 import ArcOrbitHero from "@/components/home/templates/ArcOrbitHero";
+import CoverflowHero from "@/components/home/templates/CoverflowHero";
+import CursorImageTrail from "@/components/home/CursorImageTrail";
 
 /**
  * Switchboard for home page hero designs. Each design variant lives as its
@@ -12,9 +14,10 @@ const TEMPLATES = {
   crossword: CrosswordHero,
   orbit: OrbitHero,
   arcOrbit: ArcOrbitHero,
+  coverflow: CoverflowHero,
 };
 
-const ACTIVE_KEYS: (keyof typeof TEMPLATES)[] = ["crossword", "arcOrbit"];
+const ACTIVE_KEYS: (keyof typeof TEMPLATES)[] = ["crossword", "coverflow"];
 
 export default function Hero() {
   return (
@@ -23,6 +26,7 @@ export default function Hero() {
         const Section = TEMPLATES[key];
         return <Section key={key} />;
       })}
+      <CursorImageTrail />
     </>
   );
 }

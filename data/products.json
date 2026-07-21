@@ -1,0 +1,542 @@
+[
+  {
+    "id": "amp-001",
+    "sku": "LBL-AMP-001",
+    "name": "Lebelage Vita Ampoule",
+    "brand": "Lebelage",
+    "category": "Ampoule",
+    "price": 420,
+    "currency": "MVR",
+    "description": "A concentrated brightening ampoule for tired, dull skin.",
+    "details": "Key ingredients: Niacinamide, Vitamin C derivative, Centella Asiatica. Apply 2-3 drops after toner, morning and night. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-ampoule-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": true,
+    "createdAt": "2026-06-01T09:00:00.000Z",
+    "updatedAt": "2026-06-01T09:00:00.000Z"
+  },
+  {
+    "id": "amp-002",
+    "sku": "LBL-AMP-002",
+    "name": "Lebelage Collagen Firming Ampoule",
+    "brand": "Lebelage",
+    "category": "Ampoule",
+    "price": 460,
+    "currency": "MVR",
+    "description": "A firming ampoule that targets fine lines and loss of elasticity.",
+    "details": "Key ingredients: Marine Collagen, Adenosine, Peptide Complex. Apply after cleansing before moisturizer. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-ampoule-2.svg"
+    ],
+    "stockStatus": "low-stock",
+    "featured": false,
+    "createdAt": "2026-06-02T09:00:00.000Z",
+    "updatedAt": "2026-06-02T09:00:00.000Z"
+  },
+  {
+    "id": "crm-001",
+    "sku": "LBL-CRM-001",
+    "name": "Lebelage Aqua Ceramide Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 380,
+    "currency": "MVR",
+    "description": "A lightweight moisture cream that locks in hydration under humidity.",
+    "details": "Key ingredients: Ceramide NP, Hyaluronic Acid, Squalane. Use as the last step of your morning and evening routine. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-cream-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": true,
+    "createdAt": "2026-06-03T09:00:00.000Z",
+    "updatedAt": "2026-06-03T09:00:00.000Z"
+  },
+  {
+    "id": "crm-002",
+    "sku": "LBL-CRM-002",
+    "name": "Lebelage Snail Repair Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 350,
+    "currency": "MVR",
+    "description": "A repairing night cream for stressed, sun-exposed skin.",
+    "details": "Key ingredients: Snail Secretion Filtrate 92%, Panthenol. Best used at night as the final step. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-cream-2.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-04T09:00:00.000Z",
+    "updatedAt": "2026-06-04T09:00:00.000Z"
+  },
+  {
+    "id": "fom-001",
+    "sku": "LBL-FOM-001",
+    "name": "Lebelage Rice Bright Foam Cleanser",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 220,
+    "currency": "MVR",
+    "description": "A gentle brightening foam cleanser for daily use.",
+    "details": "Key ingredients: Rice Extract, Amino Acid Surfactants. Massage onto damp skin, rinse with lukewarm water. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-foam-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-05T09:00:00.000Z",
+    "updatedAt": "2026-06-05T09:00:00.000Z"
+  },
+  {
+    "id": "fom-002",
+    "sku": "LBL-FOM-002",
+    "name": "Lebelage Tea Tree Purifying Foam",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 235,
+    "currency": "MVR",
+    "description": "A purifying cleanser for oily, congestion-prone skin.",
+    "details": "Key ingredients: Tea Tree Leaf Oil, Salicylic Acid (BHA). Use morning and night on damp skin. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-foam-2.svg"
+    ],
+    "stockStatus": "out-of-stock",
+    "featured": false,
+    "createdAt": "2026-06-06T09:00:00.000Z",
+    "updatedAt": "2026-06-06T09:00:00.000Z"
+  },
+  {
+    "id": "sun-001",
+    "sku": "LBL-SUN-001",
+    "name": "Lebelage Sun Shield SPF50+",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 320,
+    "currency": "MVR",
+    "description": "A lightweight, no-white-cast SPF built for island days.",
+    "details": "SPF50+ PA++++. Broad spectrum. Reapply every 2-3 hours in direct sun. Water-resistant. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-suncare-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": true,
+    "createdAt": "2026-06-07T09:00:00.000Z",
+    "updatedAt": "2026-06-07T09:00:00.000Z"
+  },
+  {
+    "id": "sun-002",
+    "sku": "LBL-SUN-002",
+    "name": "Lebelage Aqua Sun Stick SPF50+",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 270,
+    "currency": "MVR",
+    "description": "A portable, mess-free sun stick for on-the-go reapplication.",
+    "details": "SPF50+ PA++++. Twist-up stick format, easy to reapply over makeup. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-suncare-2.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-08T09:00:00.000Z",
+    "updatedAt": "2026-06-08T09:00:00.000Z"
+  },
+  {
+    "id": "ton-001",
+    "sku": "LBL-TON-001",
+    "name": "Lebelage Calming Green Toner",
+    "brand": "Lebelage",
+    "category": "Toner",
+    "price": 260,
+    "currency": "MVR",
+    "description": "A soothing first-step toner for sensitive, heat-flushed skin.",
+    "details": "Key ingredients: Centella Asiatica, Green Tea Extract, Panthenol. Pat onto cleansed skin with hands or cotton pad. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-toner-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-09T09:00:00.000Z",
+    "updatedAt": "2026-06-09T09:00:00.000Z"
+  },
+  {
+    "id": "ton-002",
+    "sku": "LBL-TON-002",
+    "name": "Lebelage Vita Brightening Toner",
+    "brand": "Lebelage",
+    "category": "Toner",
+    "price": 265,
+    "currency": "MVR",
+    "description": "A brightening toner that preps skin for the rest of your routine.",
+    "details": "Key ingredients: Vitamin C derivative, Niacinamide. Apply after cleansing, before serum. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-toner-2.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-10T09:00:00.000Z",
+    "updatedAt": "2026-06-10T09:00:00.000Z"
+  },
+  {
+    "id": "msk-001",
+    "sku": "LBL-MSK-001",
+    "name": "Lebelage Aqua Reset Mask",
+    "brand": "Lebelage",
+    "category": "Mask Pack",
+    "price": 285,
+    "currency": "MVR",
+    "description": "A calming overnight mask that restores moisture after long days by the sea.",
+    "details": "Key ingredients: Hyaluronic Acid, Aloe Vera, Panthenol. Sheet mask, 15-20 minutes, or leave on overnight (wash-off type). Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-mask-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": true,
+    "createdAt": "2026-06-11T09:00:00.000Z",
+    "updatedAt": "2026-06-11T09:00:00.000Z"
+  },
+  {
+    "id": "msk-002",
+    "sku": "LBL-MSK-002",
+    "name": "Lebelage Rice Sheet Mask (5-Pack)",
+    "brand": "Lebelage",
+    "category": "Mask Pack",
+    "price": 240,
+    "currency": "MVR",
+    "description": "A brightening rice sheet mask set for a weekly glow ritual.",
+    "details": "Key ingredients: Rice Extract, Rice Bran Water. 5 individually packed sheet masks. 15-20 minutes per use. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-mask-2.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-12T09:00:00.000Z",
+    "updatedAt": "2026-06-12T09:00:00.000Z"
+  },
+  {
+    "id": "fp2-001",
+    "sku": "LBL-FP2-001",
+    "name": "Lebelage Foam Pack 2in1 Cleanser & Mask",
+    "brand": "Lebelage",
+    "category": "Foam Pack 2in1",
+    "price": 250,
+    "currency": "MVR",
+    "description": "A dual-purpose foam that works as a wash-off mask or everyday cleanser.",
+    "details": "Key ingredients: Kaolin Clay, Charcoal. Leave on 5-10 minutes as a mask, or rinse immediately as a cleanser. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-foampack-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-13T09:00:00.000Z",
+    "updatedAt": "2026-06-13T09:00:00.000Z"
+  },
+  {
+    "id": "fp2-002",
+    "sku": "LBL-FP2-002",
+    "name": "Lebelage Milk Foam Pack 2in1",
+    "brand": "Lebelage",
+    "category": "Foam Pack 2in1",
+    "price": 245,
+    "currency": "MVR",
+    "description": "A gentle milk-based 2-in-1 foam pack for soft, calm skin.",
+    "details": "Key ingredients: Milk Protein, Shea Butter. Use daily as a cleanser or twice weekly as a mask. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-foampack-2.svg"
+    ],
+    "stockStatus": "low-stock",
+    "featured": false,
+    "createdAt": "2026-06-14T09:00:00.000Z",
+    "updatedAt": "2026-06-14T09:00:00.000Z"
+  },
+  {
+    "id": "tpd-001",
+    "sku": "LBL-TPD-001",
+    "name": "Lebelage Centella Toner Pad (70pcs)",
+    "brand": "Lebelage",
+    "category": "Toner Pad",
+    "price": 300,
+    "currency": "MVR",
+    "description": "Pre-soaked calming pads for quick, gentle exfoliation and toning.",
+    "details": "Key ingredients: Centella Asiatica, PHA. 70 pads per jar. Sweep across cleansed skin, avoiding eye area. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-tonerpad-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-15T09:00:00.000Z",
+    "updatedAt": "2026-06-15T09:00:00.000Z"
+  },
+  {
+    "id": "tpd-002",
+    "sku": "LBL-TPD-002",
+    "name": "Lebelage Vita Glow Toner Pad (70pcs)",
+    "brand": "Lebelage",
+    "category": "Toner Pad",
+    "price": 300,
+    "currency": "MVR",
+    "description": "Brightening toner pads for a quick radiance boost.",
+    "details": "Key ingredients: Vitamin C derivative, Adenosine. Use morning and night after cleansing. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-tonerpad-2.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-16T09:00:00.000Z",
+    "updatedAt": "2026-06-16T09:00:00.000Z"
+  },
+  {
+    "id": "lot-001",
+    "sku": "LBL-LOT-001",
+    "name": "Lebelage Aqua Body Lotion",
+    "brand": "Lebelage",
+    "category": "Lotion",
+    "price": 310,
+    "currency": "MVR",
+    "description": "A fast-absorbing body lotion for all-day hydration in humid climates.",
+    "details": "Key ingredients: Hyaluronic Acid, Shea Butter, Aloe Vera. Apply after showering. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-lotion-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-17T09:00:00.000Z",
+    "updatedAt": "2026-06-17T09:00:00.000Z"
+  },
+  {
+    "id": "lot-002",
+    "sku": "LBL-LOT-002",
+    "name": "Lebelage Milk Skin Lotion",
+    "brand": "Lebelage",
+    "category": "Lotion",
+    "price": 270,
+    "currency": "MVR",
+    "description": "A classic lightweight facial lotion for the second step of your routine.",
+    "details": "Key ingredients: Milk Protein, Niacinamide. Apply after toner, before cream. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-lotion-2.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-18T09:00:00.000Z",
+    "updatedAt": "2026-06-18T09:00:00.000Z"
+  },
+  {
+    "id": "mkp-001",
+    "sku": "LBL-MKP-001",
+    "name": "Lebelage Velvet Matte Lip Tint",
+    "brand": "Lebelage",
+    "category": "Make-up",
+    "price": 190,
+    "currency": "MVR",
+    "description": "A weightless matte tint that lasts through island humidity.",
+    "details": "Long-wearing, transfer-resistant formula. Available in a range of coral and rose shades. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-makeup-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": true,
+    "createdAt": "2026-06-19T09:00:00.000Z",
+    "updatedAt": "2026-06-19T09:00:00.000Z"
+  },
+  {
+    "id": "mkp-002",
+    "sku": "LBL-MKP-002",
+    "name": "Lebelage Skin Fit Cushion Foundation",
+    "brand": "Lebelage",
+    "category": "Make-up",
+    "price": 420,
+    "currency": "MVR",
+    "description": "A lightweight cushion foundation with buildable, natural coverage.",
+    "details": "SPF50+ PA+++. Includes refill-compatible compact and puff. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-makeup-2.svg"
+    ],
+    "stockStatus": "low-stock",
+    "featured": false,
+    "createdAt": "2026-06-20T09:00:00.000Z",
+    "updatedAt": "2026-06-20T09:00:00.000Z"
+  },
+  {
+    "id": "eye-001",
+    "sku": "LBL-EYE-001",
+    "name": "Lebelage Peptide Eye Cream",
+    "brand": "Lebelage",
+    "category": "Eye Cream",
+    "price": 340,
+    "currency": "MVR",
+    "description": "A firming eye cream that targets fine lines and puffiness.",
+    "details": "Key ingredients: Peptide Complex, Caffeine, Adenosine. Pat gently around the orbital bone morning and night. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-eyecream-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-21T09:00:00.000Z",
+    "updatedAt": "2026-06-21T09:00:00.000Z"
+  },
+  {
+    "id": "eye-002",
+    "sku": "LBL-EYE-002",
+    "name": "Lebelage Snail Eye Gel Cream",
+    "brand": "Lebelage",
+    "category": "Eye Cream",
+    "price": 320,
+    "currency": "MVR",
+    "description": "A cooling gel-cream hybrid for tired, dehydrated under-eyes.",
+    "details": "Key ingredients: Snail Secretion Filtrate, Hyaluronic Acid. Lightweight gel texture, ideal for humid climates. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-eyecream-2.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-22T09:00:00.000Z",
+    "updatedAt": "2026-06-22T09:00:00.000Z"
+  },
+  {
+    "id": "sgl-001",
+    "sku": "LBL-SGL-001",
+    "name": "Lebelage Centella Soothing Gel",
+    "brand": "Lebelage",
+    "category": "Soothing Gel",
+    "price": 230,
+    "currency": "MVR",
+    "description": "A multi-use soothing gel for sun-stressed skin, hair, and body.",
+    "details": "Key ingredients: Centella Asiatica 80%. Use as a lightweight moisturizer, after-sun gel, or hair treatment. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-soothinggel-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": true,
+    "createdAt": "2026-06-23T09:00:00.000Z",
+    "updatedAt": "2026-06-23T09:00:00.000Z"
+  },
+  {
+    "id": "sgl-002",
+    "sku": "LBL-SGL-002",
+    "name": "Lebelage Aloe Soothing Gel",
+    "brand": "Lebelage",
+    "category": "Soothing Gel",
+    "price": 210,
+    "currency": "MVR",
+    "description": "A classic aloe gel for daily cooling hydration after sun exposure.",
+    "details": "Key ingredients: Aloe Vera Leaf Extract 90%. Apply generously to face and body after sun exposure. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-soothinggel-2.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-24T09:00:00.000Z",
+    "updatedAt": "2026-06-24T09:00:00.000Z"
+  },
+  {
+    "id": "emu-001",
+    "sku": "LBL-EMU-001",
+    "name": "Lebelage Aqua Ceramide Emulsion",
+    "brand": "Lebelage",
+    "category": "Emulsion",
+    "price": 300,
+    "currency": "MVR",
+    "description": "A lightweight lotion-cream hybrid that layers well under Maldives humidity.",
+    "details": "Key ingredients: Ceramide NP, Hyaluronic Acid. Apply after toner, before cream. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-emulsion-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-25T09:00:00.000Z",
+    "updatedAt": "2026-06-25T09:00:00.000Z"
+  },
+  {
+    "id": "emu-002",
+    "sku": "LBL-EMU-002",
+    "name": "Lebelage Snail Repair Emulsion",
+    "brand": "Lebelage",
+    "category": "Emulsion",
+    "price": 295,
+    "currency": "MVR",
+    "description": "A repairing emulsion for dull, tired skin in need of a reset.",
+    "details": "Key ingredients: Snail Secretion Filtrate, Panthenol. Apply after toner or essence. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-emulsion-2.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-26T09:00:00.000Z",
+    "updatedAt": "2026-06-26T09:00:00.000Z"
+  },
+  {
+    "id": "ess-001",
+    "sku": "LBL-ESS-001",
+    "name": "Lebelage Vita Serum",
+    "brand": "Lebelage",
+    "category": "Essence",
+    "price": 450,
+    "currency": "MVR",
+    "description": "A Lebelage debut essence selected for Maldives skin — brightening, hydrating, and weightless under tropical humidity.",
+    "details": "Key ingredients: Vitamin C derivative, Niacinamide, Adenosine. Apply after toner, before moisturizer. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-essence-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": true,
+    "createdAt": "2026-06-27T09:00:00.000Z",
+    "updatedAt": "2026-06-27T09:00:00.000Z"
+  },
+  {
+    "id": "ess-002",
+    "sku": "LBL-ESS-002",
+    "name": "Lebelage Galactomyces Essence",
+    "brand": "Lebelage",
+    "category": "Essence",
+    "price": 400,
+    "currency": "MVR",
+    "description": "A fermented essence that softens and preps skin for the rest of your routine.",
+    "details": "Key ingredients: Galactomyces Ferment Filtrate 90%. Pat onto skin after toner. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-essence-2.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-28T09:00:00.000Z",
+    "updatedAt": "2026-06-28T09:00:00.000Z"
+  },
+  {
+    "id": "etc-001",
+    "sku": "LBL-ETC-001",
+    "name": "Lebelage Lip Sleeping Balm",
+    "brand": "Lebelage",
+    "category": "Etc.",
+    "price": 160,
+    "currency": "MVR",
+    "description": "An overnight lip treatment for soft, hydrated lips by morning.",
+    "details": "Key ingredients: Shea Butter, Vitamin E. Apply generously before bed. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-etc-1.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": false,
+    "createdAt": "2026-06-29T09:00:00.000Z",
+    "updatedAt": "2026-06-29T09:00:00.000Z"
+  },
+  {
+    "id": "etc-002",
+    "sku": "LBL-ETC-002",
+    "name": "Lebelage Travel Pouch Gift Set",
+    "brand": "Lebelage",
+    "category": "Etc.",
+    "price": 550,
+    "currency": "MVR",
+    "description": "A curated travel-size set of Atoreum MV bestsellers in a reusable pouch.",
+    "details": "Includes travel sizes of toner, essence, and cream. Perfect for gifting or island-hopping. Made in South Korea.",
+    "images": [
+      "/images/products/placeholder-etc-2.svg"
+    ],
+    "stockStatus": "in-stock",
+    "featured": true,
+    "createdAt": "2026-06-30T09:00:00.000Z",
+    "updatedAt": "2026-06-30T09:00:00.000Z"
+  }
+]

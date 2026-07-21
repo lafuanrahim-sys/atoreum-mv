@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import ProductGrid from "@/components/products/ProductGrid";
+import { getAllProducts } from "@/lib/data/products.server";
 
 export const metadata: Metadata = {
   title: "Atoreum MV Curated Skincare — Maldives launch",
@@ -9,6 +10,8 @@ export const metadata: Metadata = {
 };
 
 export default function ProductsPage() {
+  const products = getAllProducts();
+
   return (
     <div className="bg-ink pt-32 pb-28 md:pt-40">
       <div className="mx-auto max-w-[1440px] px-6 md:px-12">
@@ -26,8 +29,8 @@ export default function ProductsPage() {
         </div>
 
         <div className="mt-16">
-          <Suspense fallback={<div />}> 
-            <ProductGrid />
+          <Suspense fallback={<div />}>
+            <ProductGrid products={products} />
           </Suspense>
         </div>
       </div>
