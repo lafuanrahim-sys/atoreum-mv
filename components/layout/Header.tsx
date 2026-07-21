@@ -29,12 +29,12 @@ export default function Header() {
         scrolled ? "bg-ink/90 backdrop-blur-md" : "bg-transparent"
       )}
     >
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 md:px-12">
+      <div className="flex w-full items-center justify-between px-6 py-5 md:px-12 lg:px-16 xl:px-20 2xl:px-24">
         <Link href="/" className="flex items-center gap-3">
           <span className="block h-10 w-10">
             <Logo />
           </span>
-          <span className="font-display text-lg tracking-[0.25em] text-ivory uppercase">
+          <span className="font-display text-lg uppercase tracking-[0.25em] text-ivory">
             Atoreum <span className="text-gold">MV</span>
           </span>
         </Link>
@@ -51,9 +51,9 @@ export default function Header() {
           ))}
           <Link
             href="/products"
-            className="border border-line px-5 py-2 text-xs tracking-[0.2em] uppercase text-ivory transition-colors hover:border-gold hover:text-gold"
+            className="rounded-full bg-gold px-5 py-2 text-xs tracking-[0.2em] uppercase text-ink transition-all duration-300 hover:bg-gold/90"
           >
-            Shop
+            Shop the launch
           </Link>
           <ThemeToggle />
         </nav>

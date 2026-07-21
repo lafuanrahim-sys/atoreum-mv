@@ -3,6 +3,7 @@ import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/ui/SmoothScroll";
 import Header from "@/components/layout/Header";
+import BarbaLoader from "@/components/layout/BarbaLoader";
 import Footer from "@/components/layout/Footer";
 
 // Display serif for headlines — editorial, luxury-catalogue register.
@@ -21,9 +22,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Atoreum MV — Korean Beauty, Curated for the Maldives",
+  title: "Atoreum MV — Lebelage launch in the Maldives",
   description:
-    "Atoreum MV brings Korea's most respected skincare, makeup, and fragrance houses to the Maldives — curated for sun, salt, and humidity.",
+    "Atoreum MV introduces Lebelage to the Maldives with premium Korean skincare curated for island life.",
 };
 
 export default function RootLayout({
@@ -36,7 +37,12 @@ export default function RootLayout({
       <body className={`${playfair.variable} ${inter.variable} antialiased`}>
         <SmoothScroll>
           <Header />
-          <main>{children}</main>
+          <BarbaLoader />
+          <div data-barba="wrapper">
+            <main data-barba="container" className="pt-24 md:pt-28">
+              {children}
+            </main>
+          </div>
           <Footer />
         </SmoothScroll>
       </body>

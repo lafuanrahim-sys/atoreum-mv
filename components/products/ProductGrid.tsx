@@ -1,22 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { products, type Product } from "@/lib/products";
+import { products } from "@/lib/products";
 import ProductCard from "./ProductCard";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { cn } from "@/lib/utils";
-
-const CATEGORIES: Array<Product["category"] | "All"> = [
-  "All",
-  "Skincare",
-  "Suncare",
-  "Makeup",
-  "Haircare",
-  "Fragrance",
-];
+import { useSearchParams } from "next/navigation";
 
 export default function ProductGrid() {
-  const [active, setActive] = useState<(typeof CATEGORIES)[number]>("All");
+  const categories = useMemo(
+    () => [
+      "All",
+      ...Array.from(new Set(products.map((product) => product.category))),
+    ],
+    []
+  );
+  const searchParams = useSearchParams();
+  const [active, setActive] = useState(() => searchParams?.get("category") ?? "All");
   const ref = useScrollReveal<HTMLDivElement>({ start: "top 85%" });
 
   const filtered = useMemo(
@@ -30,7 +30,7 @@ export default function ProductGrid() {
   return (
     <div>
       <div className="flex flex-wrap gap-3 border-b border-line pb-8">
-        {CATEGORIES.map((category) => (
+        {categories.map((category) => (
           <button
             key={category}
             onClick={() => setActive(category)}

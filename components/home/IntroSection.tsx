@@ -4,6 +4,7 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export default function IntroSection() {
   const ref = useScrollReveal<HTMLDivElement>();
+  const statsRef = useScrollReveal<HTMLDivElement>({ variant: "depth", start: "top 85%" });
 
   return (
     <section ref={ref} className="bg-ink px-6 py-28 md:px-12 md:py-40">
@@ -19,42 +20,38 @@ export default function IntroSection() {
             data-reveal
             className="font-display text-3xl leading-[1.2] text-ivory md:text-[2.75rem]"
           >
-            Atoreum MV was founded on a simple observation — the Maldives
-            has extraordinary resorts, but no bridge to Korea&rsquo;s
-            beauty houses.
+            Atoreum MV launches Lebelage with a curated island edit.
           </h2>
 
           <p
             data-reveal
             className="mt-8 max-w-2xl text-base leading-relaxed text-ivory-dim md:text-lg"
           >
-            We work directly with Seoul&rsquo;s most respected skincare and
-            cosmetics brands to bring their formulas — many rarely seen
-            outside Korea — to the islands. Every product in our
-            collection is chosen for one reason above all: it has to
-            perform in heat, humidity, and salt air, not just in a
-            climate-controlled counter.
+            Every formula is selected for Atoreum MV&apos;s first launch — active
+            Korean ingredients, elegant textures, and formulas made to perform
+            under Maldives light and humidity.
           </p>
 
           <div
-            data-reveal
+            ref={statsRef}
             className="mt-12 grid grid-cols-2 gap-8 border-t border-line pt-8 sm:grid-cols-3"
+            style={{ perspective: "800px" }}
           >
-            <div>
-              <p className="font-display text-3xl text-gold">40+</p>
-              <p className="mt-2 text-xs tracking-[0.15em] text-ivory-dim uppercase">
-                Korean Houses
+            <div data-reveal>
+              <p className="font-display text-5xl font-bold tracking-tight text-gold md:text-6xl">1</p>
+              <p className="mt-3 text-xs tracking-[0.15em] text-ivory-dim uppercase">
+                Official Lebelage launch
               </p>
             </div>
-            <div>
-              <p className="font-display text-3xl text-gold">Seoul</p>
-              <p className="mt-2 text-xs tracking-[0.15em] text-ivory-dim uppercase">
+            <div data-reveal>
+              <p className="font-display text-5xl font-bold tracking-tight text-gold md:text-6xl">Seoul</p>
+              <p className="mt-3 text-xs tracking-[0.15em] text-ivory-dim uppercase">
                 Sourced Directly
               </p>
             </div>
-            <div>
-              <p className="font-display text-3xl text-gold">Malé</p>
-              <p className="mt-2 text-xs tracking-[0.15em] text-ivory-dim uppercase">
+            <div data-reveal>
+              <p className="font-display text-5xl font-bold tracking-tight text-gold md:text-6xl">Malé</p>
+              <p className="mt-3 text-xs tracking-[0.15em] text-ivory-dim uppercase">
                 Based &amp; Delivered
               </p>
             </div>

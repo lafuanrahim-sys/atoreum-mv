@@ -9,8 +9,7 @@ export default function Footer() {
             Atoreum <span className="text-gold">MV</span>
           </p>
           <p className="mt-4 text-sm leading-relaxed text-ivory-dim">
-            Korean beauty, curated for the Maldives. Sourced in Seoul,
-            delivered across the atolls.
+            Atoreum MV introduces Lebelage to the Maldives — premium Korean skincare curated for island life.
           </p>
         </div>
 
@@ -52,7 +51,7 @@ export default function Footer() {
 
       <div className="mx-auto mt-16 flex max-w-[1440px] flex-col items-start justify-between gap-4 border-t border-line pt-8 text-xs text-ivory-dim/60 md:flex-row md:items-center">
         <span>© {new Date().getFullYear()} Atoreum MV. All rights reserved.</span>
-        <span>Curated in Seoul. Delivered across the Maldives.</span>
+        <span>Official Lebelage launch in the Maldives.</span>
       </div>
     </footer>
   );

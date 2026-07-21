@@ -33,6 +33,7 @@
     --moss: #545c57;
     --sand: #6c7770;
     --line: rgba(233, 186, 166, 0.12);
+    --logo-flower: #6c7770;
   }
 }
 
@@ -47,6 +48,7 @@
   --moss: #b8c0bb;
   --sand: #c5c9c4;
   --line: rgba(233, 186, 166, 0.12);
+  --logo-flower: #e9baa6;
 }
 
 .theme-dark {

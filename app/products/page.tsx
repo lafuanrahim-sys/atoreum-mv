@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import ProductGrid from "@/components/products/ProductGrid";
 
 export const metadata: Metadata = {
-  title: "Collection — Atoreum MV",
+  title: "Atoreum MV Curated Skincare — Maldives launch",
   description:
-    "Browse Atoreum MV's collection of Korean skincare, makeup, haircare, and fragrance — curated for the Maldives.",
+    "Discover Atoreum MV's curated Lebelage launch collection for the Maldives.",
 };
 
 export default function ProductsPage() {
@@ -16,17 +17,18 @@ export default function ProductsPage() {
             The Collection
           </p>
           <h1 className="mt-6 font-display text-4xl leading-[1.15] text-ivory md:text-5xl">
-            Korean beauty, curated for the Maldives.
+            Curated skincare for the Maldives.
           </h1>
           <p className="mt-6 text-base leading-relaxed text-ivory-dim md:text-lg">
-            Every formula here is chosen for the same reason: it has to
-            perform in heat, humidity, and salt air. Checkout and ordering
-            are on the way — for now, browse the collection.
+            Selected for Atoreum MV&apos;s official Lebelage launch — premium Korean
+            formulas made to perform under salt air, sunlight, and island humidity.
           </p>
         </div>
 
         <div className="mt-16">
-          <ProductGrid />
+          <Suspense fallback={<div />}> 
+            <ProductGrid />
+          </Suspense>
         </div>
       </div>
     </div>

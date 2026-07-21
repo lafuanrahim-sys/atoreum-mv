@@ -6,43 +6,46 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 const PILLARS = [
   {
     index: "01",
-    title: "Curated in Seoul",
+    title: "Official Lebelage launch",
     copy:
-      "We select formulas directly from Korea's beauty houses — nothing arrives in our collection by default, only by decision.",
+      "Atoreum MV's curated debut collection makes the Maldives the first market for Lebelage.",
   },
   {
     index: "02",
-    title: "Built for the Maldives",
+    title: "Island-ready science",
     copy:
-      "Every product is chosen for how it holds up against sun, salt water, and humidity — not just how it photographs.",
+      "Active Korean formulas are chosen for heat, humidity, and salt air — elegant textures that stay beautiful on the skin.",
   },
   {
     index: "03",
-    title: "Delivered Across the Atolls",
+    title: "Maldives delivery",
     copy:
-      "From Malé to resort islands, we're building the delivery and concierge layer this collection deserves.",
+      "Delivered across the Maldives with local care and dispatch from Malé.",
   },
 ];
 
 export default function CuratedSection() {
-  const ref = useScrollReveal<HTMLDivElement>();
+  const ref = useScrollReveal<HTMLDivElement>({ variant: "depth", start: "top 82%" });
 
   return (
     <section ref={ref} className="bg-charcoal px-6 py-28 md:px-12 md:py-40">
       <div className="mx-auto max-w-[1440px]">
         <div className="max-w-2xl">
           <p data-reveal className="text-xs tracking-[0.3em] text-gold uppercase">
-            The Collection
+            Curated for the Maldives
           </p>
           <h2
             data-reveal
             className="mt-6 font-display text-3xl leading-[1.2] text-ivory md:text-[2.75rem]"
           >
-            Korean cosmetics, curated for the Maldives.
+            Skincare chosen for island life.
           </h2>
         </div>
 
-        <div className="mt-20 grid gap-px overflow-hidden bg-line sm:grid-cols-3">
+        <div
+          className="mt-20 grid gap-px overflow-hidden bg-line sm:grid-cols-3"
+          style={{ perspective: "1000px" }}
+        >
           {PILLARS.map((pillar) => (
             <div
               key={pillar.index}
@@ -67,7 +70,7 @@ export default function CuratedSection() {
             href="/products"
             className="group inline-flex items-center gap-4 border border-gold px-8 py-4 text-xs tracking-[0.25em] text-gold uppercase transition-colors hover:bg-gold hover:text-ink"
           >
-            Explore the Collection
+            Explore the launch
             <span className="transition-transform group-hover:translate-x-1">
               →
             </span>

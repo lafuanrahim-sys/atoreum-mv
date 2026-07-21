@@ -1,6 +1,6 @@
 # Atoreum MV
 
-Korean beauty, curated for the Maldives. Next.js 16 (App Router) + TypeScript
+Atoreum MV introduces Lebelage in the Maldives. Next.js 16 (App Router) + TypeScript
 + Tailwind CSS v4, motion by GSAP + ScrollTrigger, smooth scroll by Lenis.
 
 ## Getting started locally

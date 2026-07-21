@@ -18,11 +18,11 @@ export default function FeaturedCollection() {
             Featured Edit
           </p>
           <h2 className="mt-6 font-display text-3xl leading-[1.2] text-ivory md:text-[2.75rem]">
-            The island ritual edit
+            Launch edit
           </h2>
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-ivory-dim md:text-lg">
-            Handpicked formulas chosen to move with resort mornings, salt air
-            evenings, and every luminous hour between Seoul and Malé.
+            A taut selection of Lebelage formulas chosen for Maldives humidity,
+            salt air, and radiant island skin.
           </p>
         </div>
 
