@@ -3,6 +3,7 @@ import OrbitHero from "@/components/home/templates/OrbitHero";
 import ArcOrbitHero from "@/components/home/templates/ArcOrbitHero";
 import CoverflowHero from "@/components/home/templates/CoverflowHero";
 import CursorImageTrail from "@/components/home/CursorImageTrail";
+import LogoOriginSequence from "@/components/home/LogoOriginSequence";
 
 /**
  * Switchboard for home page hero designs. Each design variant lives as its
@@ -22,6 +23,7 @@ const ACTIVE_KEYS: (keyof typeof TEMPLATES)[] = ["crossword", "coverflow"];
 export default function Hero() {
   return (
     <>
+      <LogoOriginSequence />
       {ACTIVE_KEYS.map((key) => {
         const Section = TEMPLATES[key];
         return <Section key={key} />;
