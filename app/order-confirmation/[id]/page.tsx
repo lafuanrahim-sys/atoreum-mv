@@ -16,7 +16,7 @@ export default async function OrderConfirmationPage({
   if (!order) notFound();
 
   return (
-    <div className="bg-ink px-6 pt-32 pb-28 md:px-12 md:pt-40">
+    <div className="page-gutter bg-ink pt-10 pb-28 md:pt-14">
       <div className="mx-auto max-w-2xl text-center">
         <p className="text-xs uppercase tracking-[0.3em] text-gold">Order Received</p>
         <h1 className="mt-6 font-display text-3xl text-ivory md:text-4xl">
@@ -41,7 +41,7 @@ export default async function OrderConfirmationPage({
                 <span className="text-ivory">
                   {item.name} <span className="text-ivory-dim">× {item.quantity}</span>
                 </span>
-                <span className="text-ivory-dim">
+                <span className="text-ivory-dim tabular-nums">
                   {formatPrice(item.price * item.quantity, item.currency)}
                 </span>
               </li>
@@ -49,13 +49,13 @@ export default async function OrderConfirmationPage({
           </ul>
           <div className="mt-6 flex justify-between border-t border-line pt-6 text-base">
             <span className="text-ivory">Total</span>
-            <span className="text-ivory">{formatPrice(order.subtotal, order.currency)}</span>
+            <span className="text-ivory tabular-nums">{formatPrice(order.subtotal, order.currency)}</span>
           </div>
         </div>
 
         <Link
           href="/products"
-          className="mt-10 inline-block border border-gold px-8 py-4 text-xs uppercase tracking-[0.2em] text-gold transition-colors hover:bg-gold hover:text-ink"
+          className="mt-10 inline-block border border-gold px-8 py-4 text-xs uppercase tracking-[0.2em] text-gold transition-colors hover:bg-gold-deep hover:text-ink"
         >
           Continue Shopping
         </Link>

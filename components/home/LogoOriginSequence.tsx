@@ -27,7 +27,7 @@ gsap.registerPlugin(ScrollTrigger);
 const DESKTOP_QUERY = "(min-width: 768px)";
 
 const TITLE_LINE_1 = "How Atoreum was made.";
-const TITLE_LINE_2 = "Three origins. One ocean. One flower.";
+const TITLE_LINE_2 = "Three origins, one name. Korea's beauty, carried home to the Maldives.";
 const FLOWER_TEXT = "The Mugunghwa — South Korea's national flower — represents where Atoreum's journey began.";
 const WAVE_TEXT = "A wave connecting two oceans — Korea to the Maldives.";
 
@@ -411,7 +411,11 @@ export default function LogoOriginSequence() {
         gsap.set(cta, { opacity: 0, pointerEvents: "none" });
         gsap.set(art, { opacity: 1 });
 
-        gsap.set(titleContainer, { opacity: 1 });
+        // Overlay title: shown only in this desktop motion mode (the static
+        // fallback carries its own title). Line 1 is a plain, always-visible
+        // paragraph, so the very first painted frame — before any scroll —
+        // already reads "How Atoreum was made." at full size.
+        gsap.set(titleContainer, { display: "flex", opacity: 1 });
         gsap.set(flowerTextContainer, { opacity: 0 });
         gsap.set(waveTextContainer, { opacity: 0 });
 
@@ -437,11 +441,13 @@ export default function LogoOriginSequence() {
             stagger: options.charStagger ?? 0.03,
           }, options.position);
 
-        // Scene 1: title card -- two lines type on in sequence, hold, fade.
-        // Held a beat longer than a snappy explainer would -- the opening
-        // line is the one moment with nothing else competing for attention.
-        typeIn(titleLine1);
-        typeIn(titleLine2, { position: "+=0.4" });
+        // Scene 1: title card. Line 1 is already on screen at progress 0
+        // (pre-revealed above); a short lead-in beat keeps it alone for the
+        // first nudge of scroll, then line 2 pops on — typing in with a
+        // small rise — holds, and the whole card fades into the map.
+        tl.to({}, { duration: 0.35 });
+        typeIn(titleLine2);
+        tl.fromTo(titleLine2, { y: 16 }, { y: 0, duration: 0.5, ease: "power2.out" }, "<");
         tl.to(titleContainer, { opacity: 0, duration: 0.8 }, "+=0.9");
 
         // Scene 2: the map rolls in -- the three story atolls read as more
@@ -635,6 +641,7 @@ export default function LogoOriginSequence() {
         return () => {
           gsap.set(fallback, { display: "flex" });
           gsap.set(motionRoot, { display: "none" });
+          gsap.set(titleContainer, { display: "none" });
         };
       });
     }, section);
@@ -651,14 +658,14 @@ export default function LogoOriginSequence() {
           static readable block above the real shipped logo, no animation. */}
       <div ref={fallbackRef} className="flex h-full w-full flex-col items-center justify-center gap-8 px-6 text-center">
         <div className="max-w-xl space-y-3">
-          <p className="font-display text-xl italic tracking-wide text-ivory md:text-3xl">{TITLE_LINE_1}</p>
+          <p className="font-script text-3xl text-ivory md:text-5xl">{TITLE_LINE_1}</p>
           <div className="mx-auto h-px w-10 bg-gold/60" />
           <p className="font-montserrat text-base font-light tracking-wide text-ivory-dim md:text-lg">{TITLE_LINE_2}</p>
         </div>
         <img src="/atoreum-logo.svg" alt="Atoreum" className="w-[52vw] max-w-[420px]" />
         <Link
           href="/products"
-          className="rounded-full bg-gold px-6 py-2.5 text-xs tracking-[0.2em] uppercase text-ink transition-all duration-300 hover:bg-gold/90"
+          className="rounded-full bg-gold-deep px-6 py-2.5 text-xs tracking-[0.2em] uppercase text-ink transition-all duration-300 hover:bg-gold-deep/90"
         >
           Go to Collections
         </Link>
@@ -780,7 +787,7 @@ export default function LogoOriginSequence() {
                 <line ref={huvLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} />
                 <circle ref={huvDotRef} r={3} fill="var(--ivory)" />
                 <text ref={huvLabelRef} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
-                  HUVADHOO
+                  GAAFU DHAALU ATOLL
                 </text>
               </g>
 
@@ -832,19 +839,13 @@ export default function LogoOriginSequence() {
         <Link
           ref={ctaRef}
           href="/products"
-          className="pointer-events-none rounded-full bg-gold px-6 py-2.5 text-xs tracking-[0.2em] uppercase text-ink opacity-0 transition-colors duration-300 hover:bg-gold/90"
+          className="pointer-events-none rounded-full bg-gold-deep px-6 py-2.5 text-xs tracking-[0.2em] uppercase text-ink opacity-0 transition-colors duration-300 hover:bg-gold-deep/90"
         >
           Go to Collections
         </Link>
         </div>
 
         <div className="relative z-10 flex h-72 w-72 shrink-0 items-center justify-start text-left md:h-80 md:w-80">
-          <div ref={titleContainerRef} className="pointer-events-none absolute inset-0 flex flex-col items-start justify-center gap-4">
-            <TypedLine text={TITLE_LINE_1} lineRef={titleLine1Ref} className="font-display text-2xl italic tracking-wide text-ivory md:text-4xl" />
-            <div className="h-px w-12 bg-gold/60" />
-            <TypedLine text={TITLE_LINE_2} lineRef={titleLine2Ref} className="font-montserrat text-lg font-light tracking-wide text-ivory-dim md:text-2xl" />
-          </div>
-
           <div ref={flowerTextContainerRef} className="pointer-events-none absolute inset-0 flex items-center justify-start">
             <TypedLine text={FLOWER_TEXT} lineRef={flowerTextLineRef} className="max-w-xs font-montserrat text-base font-light leading-relaxed tracking-wide text-ivory md:text-xl" />
           </div>
@@ -853,6 +854,39 @@ export default function LogoOriginSequence() {
             <TypedLine text={WAVE_TEXT} lineRef={waveTextLineRef} className="max-w-xs font-montserrat text-base font-light leading-relaxed tracking-wide text-ivory md:text-xl" />
           </div>
         </div>
+      </div>
+
+      {/* Opening title card: a full-screen overlay on top of the (still
+          empty) stage, so the sequence opens on a statement instead of
+          blank canvas. Line 1 is pre-revealed at progress 0 — it must be
+          readable before any scrolling happens; line 2 types on with the
+          first scroll, then the whole card fades and hands off to the map.
+          Hidden by default; the desktop motion boot switches it on alongside
+          motionRoot (the reduced-motion/mobile fallback has its own static
+          title, so this overlay must never show there). */}
+      {/* pb-24/28 mirrors main's own header offset: at load the pinned
+          section starts that far below the true viewport top, so centering
+          within the section alone reads visibly low — this pulls the title
+          back up to the optical middle of the screen. Line 1 is a plain
+          paragraph (not TypedLine): it's fully pre-revealed anyway, and a
+          connected script rendered as per-character inline-blocks would
+          break its letter joins. */}
+      <div
+        ref={titleContainerRef}
+        className="pointer-events-none absolute inset-0 z-20 hidden flex-col items-center justify-center gap-6 px-6 pb-24 text-center md:pb-28"
+      >
+        <p
+          ref={titleLine1Ref}
+          className="max-w-5xl font-script text-6xl leading-[1.15] text-ivory md:text-8xl"
+        >
+          {TITLE_LINE_1}
+        </p>
+        <div className="h-px w-16 bg-gold/60" />
+        <TypedLine
+          text={TITLE_LINE_2}
+          lineRef={titleLine2Ref}
+          className="font-montserrat text-xl font-light tracking-[0.08em] text-ivory-dim md:text-3xl"
+        />
       </div>
     </section>
   );

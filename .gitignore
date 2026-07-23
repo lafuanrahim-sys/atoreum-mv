@@ -46,6 +46,17 @@ next-env.d.ts
 /data/orders.json
 /data/notifications.log
 
+# user accounts — credential hashes + PII, never commit
+/data/users.json
+
+# runtime store state, auto-seeded on first read (see lib/data/*.server.ts):
+# reviews carry customer names; settings carry real bank details;
+# messages carry contact-form names and phone numbers.
+/data/reviews.json
+/data/settings.json
+/data/brands.json
+/data/messages.json
+
 # customer-uploaded payment proof screenshots
 /public/uploads/
 

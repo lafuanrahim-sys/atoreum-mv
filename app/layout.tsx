@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter, Montserrat } from "next/font/google";
+import { Playfair_Display, Inter, Montserrat, Pinyon_Script } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/ui/SmoothScroll";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { CartProvider } from "@/lib/cart/CartContext";
+import { SessionProvider } from "@/lib/auth/SessionContext";
 import CartDrawer from "@/components/cart/CartDrawer";
 
 // Display serif for headlines — editorial, luxury-catalogue register.
@@ -30,6 +31,15 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
+// Pinyon Script — formal copperplate calligraphy, reserved for the origin
+// story's opening title card only.
+const pinyonScript = Pinyon_Script({
+  variable: "--font-script",
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Atoreum MV — Lebelage launch in the Maldives",
   description:
@@ -43,15 +53,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${playfair.variable} ${inter.variable} ${montserrat.variable} antialiased`}>
-        <CartProvider>
-          <SmoothScroll>
-            <Header />
-            <main className="pt-24 md:pt-28">{children}</main>
-            <Footer />
-          </SmoothScroll>
-          <CartDrawer />
-        </CartProvider>
+      <body className={`${playfair.variable} ${inter.variable} ${montserrat.variable} ${pinyonScript.variable} antialiased`}>
+        <a href="#main" className="skip-link">
+          Skip to content
+        </a>
+        <SessionProvider>
+          <CartProvider>
+            <SmoothScroll>
+              <Header />
+              <main id="main" className="pt-24 md:pt-28">{children}</main>
+              <Footer />
+            </SmoothScroll>
+            <CartDrawer />
+          </CartProvider>
+        </SessionProvider>
       </body>
     </html>
   );

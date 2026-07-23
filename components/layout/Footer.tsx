@@ -2,15 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export default function Footer() {
   const pathname = usePathname();
-  if (pathname === "/") return null;
+  const ref = useScrollReveal<HTMLElement>({ start: "top 92%" });
+  // Hidden on the homepage (by design) and inside the admin dashboard,
+  // which has its own shell.
+  if (pathname === "/" || pathname.startsWith("/dashboard")) return null;
 
   return (
-    <footer className="border-t border-line bg-ink px-6 py-16 md:px-12">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-12 md:flex-row md:justify-between">
-        <div className="max-w-sm">
+    <footer ref={ref} className="page-gutter border-t border-line bg-ink py-16">
+      <div className="flex flex-col gap-12 md:flex-row md:justify-between">
+        <div data-reveal className="max-w-sm">
           <p className="font-display text-lg tracking-[0.25em] text-ivory uppercase">
             Atoreum <span className="text-gold">MV</span>
           </p>
@@ -20,33 +24,35 @@ export default function Footer() {
         </div>
 
         <div className="grid grid-cols-2 gap-12 sm:grid-cols-3">
-          <div>
+          <div data-reveal>
             <p className="text-xs tracking-[0.2em] text-sand uppercase">Shop</p>
             <div className="mt-4 flex flex-col gap-3">
-              <Link href="/products" className="text-sm text-ivory-dim hover:text-gold">
+              <Link href="/products" className="text-sm text-ivory-dim transition-colors hover:text-gold">
                 Full Collection
               </Link>
-              <Link href="/products" className="text-sm text-ivory-dim hover:text-gold">
+              <Link href="/products" className="text-sm text-ivory-dim transition-colors hover:text-gold">
                 Skincare
               </Link>
-              <Link href="/products" className="text-sm text-ivory-dim hover:text-gold">
+              <Link href="/products" className="text-sm text-ivory-dim transition-colors hover:text-gold">
                 Fragrance
               </Link>
             </div>
           </div>
 
-          <div>
+          <div data-reveal>
             <p className="text-xs tracking-[0.2em] text-sand uppercase">Company</p>
             <div className="mt-4 flex flex-col gap-3">
-              <Link href="/" className="text-sm text-ivory-dim hover:text-gold">
+              <Link href="/about" className="text-sm text-ivory-dim transition-colors hover:text-gold">
                 About
               </Link>
-              <span className="text-sm text-ivory-dim/50">Contact</span>
+              <Link href="/contact" className="text-sm text-ivory-dim transition-colors hover:text-gold">
+                Contact
+              </Link>
               <span className="text-sm text-ivory-dim/50">Concierge</span>
             </div>
           </div>
 
-          <div>
+          <div data-reveal>
             <p className="text-xs tracking-[0.2em] text-sand uppercase">Based In</p>
             <div className="mt-4 flex flex-col gap-3">
               <span className="text-sm text-ivory-dim">Malé, Maldives</span>
@@ -55,7 +61,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="mx-auto mt-16 flex max-w-[1440px] flex-col items-start justify-between gap-4 border-t border-line pt-8 text-xs text-ivory-dim/60 md:flex-row md:items-center">
+      <div className="mt-16 flex flex-col items-start justify-between gap-4 border-t border-line pt-8 text-xs text-ivory-dim/60 md:flex-row md:items-center">
         <span>© {new Date().getFullYear()} Atoreum MV. All rights reserved.</span>
         <span>Official Lebelage launch in the Maldives.</span>
       </div>

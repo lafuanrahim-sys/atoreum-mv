@@ -53,7 +53,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
         type="button"
         onClick={handleAdd}
         disabled={outOfStock}
-        className="flex-1 bg-gold px-8 py-4 text-xs uppercase tracking-[0.2em] text-ink transition-colors hover:bg-gold/90 disabled:cursor-not-allowed disabled:bg-charcoal disabled:text-ivory-dim"
+        className="flex-1 bg-gold-deep px-8 py-4 text-xs uppercase tracking-[0.2em] text-ink transition-colors hover:bg-gold-deep/90 disabled:cursor-not-allowed disabled:bg-charcoal disabled:text-ivory-dim"
       >
         {outOfStock ? "Out of Stock" : justAdded ? "Added ✓" : "Add to Cart"}
       </button>

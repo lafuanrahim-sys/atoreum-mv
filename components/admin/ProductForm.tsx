@@ -13,11 +13,18 @@ import { CATEGORIES } from "@/lib/types";
 export default function ProductForm({
   product,
   action,
+  brands,
 }: {
   product?: Product;
   action: (formData: FormData) => void | Promise<void>;
+  /** Brand options from the brands store (Dashboard → Settings to add more). */
+  brands: string[];
 }) {
   const [existingImages, setExistingImages] = useState(product?.images ?? []);
+  // An existing product whose brand was later removed from the list still
+  // shows (and keeps) its own brand rather than silently switching.
+  const brandOptions =
+    product?.brand && !brands.includes(product.brand) ? [product.brand, ...brands] : brands;
 
   return (
     <form action={action} className="flex max-w-2xl flex-col gap-6">
@@ -27,7 +34,23 @@ export default function ProductForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <TextField label="Brand" name="brand" defaultValue={product?.brand ?? "Lebelage"} />
+        <label className="flex flex-col gap-1">
+          <span className="text-xs uppercase tracking-wide text-ivory-dim">Brand</span>
+          <select
+            name="brand"
+            defaultValue={product?.brand ?? brandOptions[0]}
+            className="border border-line bg-transparent px-3 py-2 text-sm text-ivory"
+          >
+            {brandOptions.map((b) => (
+              <option key={b} value={b} className="bg-ink-2">
+                {b}
+              </option>
+            ))}
+          </select>
+          <span className="text-[11px] text-ivory-dim/80">
+            Missing a brand? Add it under Settings → Brands.
+          </span>
+        </label>
         <label className="flex flex-col gap-1">
           <span className="text-xs uppercase tracking-wide text-ivory-dim">Category</span>
           <select
@@ -105,7 +128,7 @@ export default function ProductForm({
           name="images"
           multiple
           accept="image/jpeg,image/png,image/webp,image/svg+xml"
-          className="mt-3 block text-sm text-ivory-dim file:mr-4 file:border-0 file:bg-gold file:px-4 file:py-2 file:text-xs file:uppercase file:text-ink"
+          className="mt-3 block text-sm text-ivory-dim file:mr-4 file:border-0 file:bg-gold-deep file:px-4 file:py-2 file:text-xs file:uppercase file:text-ink"
         />
         <p className="mt-1 text-xs text-ivory-dim">
           {product ? "Add more, or remove above — at least one image must remain." : "At least one image is required."}
@@ -114,7 +137,7 @@ export default function ProductForm({
 
       <button
         type="submit"
-        className="self-start bg-gold px-6 py-3 text-xs uppercase tracking-[0.15em] text-ink hover:bg-gold/90"
+        className="self-start bg-gold-deep px-6 py-3 text-xs uppercase tracking-[0.15em] text-ink hover:bg-gold-deep/90"
       >
         {product ? "Save Changes" : "Create Product"}
       </button>

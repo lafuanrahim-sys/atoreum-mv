@@ -6,6 +6,10 @@ import ProductGallery from "@/components/products/ProductGallery";
 import AddToCartButton from "@/components/products/AddToCartButton";
 import StockBadge from "@/components/products/StockBadge";
 import ProductCard from "@/components/products/ProductCard";
+import FavoriteButton from "@/components/products/FavoriteButton";
+import ProductReviews from "@/components/products/ProductReviews";
+import { listApprovedReviews } from "@/lib/data/reviews.server";
+import { getCurrentUser } from "@/lib/auth/currentUser.server";
 
 function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
@@ -27,26 +31,35 @@ export async function generateMetadata({
 
 export default async function ProductDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ review?: string }>;
 }) {
   const { id } = await params;
+  const { review: reviewFlag } = await searchParams;
   const product = getProductById(id);
   if (!product) notFound();
 
   const related = getRelatedProducts(product.category, product.id, 3);
+  const reviews = listApprovedReviews(product.id);
+  const user = await getCurrentUser();
 
   return (
-    <div className="bg-ink pt-32 pb-28 md:pt-40">
-      <div className="mx-auto max-w-[1440px] px-6 md:px-12">
-        <nav className="text-xs uppercase tracking-[0.15em] text-ivory-dim">
-          <Link href="/products" className="hover:text-gold">
+    <div className="bg-ink pt-10 pb-28 md:pt-14">
+      <div className="page-gutter">
+        <nav aria-label="Breadcrumb" className="text-xs uppercase tracking-[0.15em] text-ivory-dim">
+          <Link href="/products" className="transition-colors hover:text-gold">
             Collection
           </Link>
-          <span className="mx-2">/</span>
-          <Link href={`/products?category=${encodeURIComponent(product.category)}`} className="hover:text-gold">
+          <span className="mx-2" aria-hidden="true">/</span>
+          <Link href={`/products?category=${encodeURIComponent(product.category)}`} className="transition-colors hover:text-gold">
             {product.category}
           </Link>
+          <span className="mx-2" aria-hidden="true">/</span>
+          <span aria-current="page" className="text-ivory">
+            {product.name}
+          </span>
         </nav>
 
         <div className="mt-8 grid gap-12 lg:grid-cols-2 lg:gap-16">
@@ -59,8 +72,9 @@ export default async function ProductDetailPage({
             </h1>
 
             <div className="mt-4 flex items-center gap-4">
-              <span className="text-lg text-ivory">{formatPrice(product.price, product.currency)}</span>
+              <span className="text-lg text-ivory tabular-nums">{formatPrice(product.price, product.currency)}</span>
               <StockBadge status={product.stockStatus} />
+              <FavoriteButton productId={product.id} />
             </div>
 
             <p className="mt-6 text-base leading-relaxed text-ivory-dim">
@@ -88,6 +102,13 @@ export default async function ProductDetailPage({
             </dl>
           </div>
         </div>
+
+        <ProductReviews
+          productId={product.id}
+          reviews={reviews}
+          isLoggedIn={!!user}
+          flag={reviewFlag}
+        />
 
         {related.length > 0 && (
           <div className="mt-28 border-t border-line pt-16">

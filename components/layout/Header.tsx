@@ -6,12 +6,14 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/ui/Logo";
 import ThemeToggle from "@/components/layout/ThemeToggle";
+import ProfileButton from "@/components/layout/ProfileButton";
 import CartButton from "@/components/cart/CartButton";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/products", label: "Collection" },
   { href: "/about", label: "About Us" },
+  { href: "/contact", label: "Contact" },
 ];
 
 const SCROLL_THRESHOLD = 60;
@@ -27,6 +29,11 @@ export default function Header() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // The admin dashboard brings its own shell (sidebar + identity), so the
+  // storefront chrome stays out of it entirely. After the hooks — early
+  // returns must never sit between hook calls.
+  if (pathname.startsWith("/dashboard")) return null;
 
   // The Collection page's hero sits on a fixed, real photo (not a themed
   // bg-ink section) that never flips with light/dark mode, so at the top of
@@ -46,16 +53,34 @@ export default function Header() {
     >
       <div className="flex w-full items-center justify-between px-6 py-5 md:px-12 lg:px-16 xl:px-20 2xl:px-24">
         <nav className="hidden items-center gap-6 md:flex">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn("text-xs tracking-[0.2em] uppercase transition-colors hover:text-gold", textClass)}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) => {
+            // Sub-routes keep their section lit (/products/abc → Collection).
+            const isActive =
+              pathname === link.href ||
+              (link.href !== "/" && pathname.startsWith(link.href + "/"));
+            // On the Collection photo hero the header text is pinned dark
+            // for contrast against the photo — a gold active label would
+            // fall below readable there, so the underline alone (bg-current,
+            // matching whatever the label color is) carries the state.
+            const onPhotoHero = pathname === "/products" && !isScrolled;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "relative text-xs tracking-[0.2em] uppercase transition-colors hover:text-gold",
+                  "after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-current after:transition-transform after:duration-300",
+                  isActive && "after:scale-x-100",
+                  isActive && !onPhotoHero ? "text-gold" : textClass
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           <ThemeToggle />
+          <ProfileButton />
           <CartButton />
         </nav>
 
@@ -69,6 +94,7 @@ export default function Header() {
         </Link>
 
         <div className="flex items-center gap-4 md:hidden">
+          <ProfileButton />
           <CartButton />
           <button
             aria-label="Toggle menu"
@@ -93,16 +119,25 @@ export default function Header() {
 
       {menuOpen && (
         <nav className="flex flex-col gap-6 border-t border-line bg-ink px-6 py-8 md:hidden">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMenuOpen(false)}
-              className="text-sm tracking-[0.2em] uppercase text-ivory-dim hover:text-gold"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const isActive =
+              pathname === link.href ||
+              (link.href !== "/" && pathname.startsWith(link.href + "/"));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "text-sm tracking-[0.2em] uppercase transition-colors hover:text-gold",
+                  isActive ? "text-gold" : "text-ivory-dim"
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
       )}
     </header>

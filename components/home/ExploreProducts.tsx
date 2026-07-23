@@ -7,8 +7,8 @@ export default function ExploreProducts() {
   const ref = useScrollReveal<HTMLDivElement>({ start: "top 85%" });
 
   return (
-    <section ref={ref} className="bg-ink px-6 py-28 md:px-12 md:py-40">
-      <div className="mx-auto max-w-[1440px]">
+    <section ref={ref} className="page-gutter bg-ink py-28 md:py-40">
+      <div>
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs tracking-[0.3em] text-gold uppercase">
             Explore Products
@@ -25,7 +25,7 @@ export default function ExploreProducts() {
         <div className="mt-16 flex justify-center">
           <Link
             href="/products"
-            className="group inline-flex items-center gap-4 rounded-none border border-gold px-8 py-4 text-xs tracking-[0.25em] text-gold uppercase transition-colors hover:bg-gold hover:text-ink"
+            className="group inline-flex items-center gap-4 rounded-none border border-gold px-8 py-4 text-xs tracking-[0.25em] text-gold uppercase transition-colors hover:bg-gold-deep hover:text-ink"
           >
             Explore the collection
             <span className="transition-transform group-hover:translate-x-1">

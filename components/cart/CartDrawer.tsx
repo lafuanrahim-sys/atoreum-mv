@@ -28,6 +28,10 @@ export default function CartDrawer() {
         role="dialog"
         aria-label="Shopping cart"
         aria-hidden={!isOpen}
+        // inert removes the closed drawer's buttons/links from tab order and
+        // the accessibility tree — aria-hidden alone left them keyboard-
+        // reachable behind the viewport edge.
+        inert={!isOpen}
       >
         <div className="flex items-center justify-between border-b border-line px-6 py-5">
           <h2 className="font-display text-lg text-ivory">Your Cart</h2>
@@ -55,7 +59,7 @@ export default function CartDrawer() {
                   </div>
                   <div className="flex flex-1 flex-col">
                     <p className="font-display text-sm text-ivory">{line.name}</p>
-                    <p className="mt-1 text-xs text-ivory-dim">
+                    <p className="mt-1 text-xs text-ivory-dim tabular-nums">
                       {formatPrice(line.price, line.currency)}
                     </p>
                     <div className="mt-auto flex items-center justify-between pt-2">
@@ -99,12 +103,12 @@ export default function CartDrawer() {
           <div className="border-t border-line px-6 py-6">
             <div className="flex items-center justify-between text-sm">
               <span className="text-ivory-dim uppercase tracking-[0.15em] text-xs">Subtotal</span>
-              <span className="text-ivory">{formatPrice(subtotal, currency ?? "MVR")}</span>
+              <span className="text-ivory tabular-nums">{formatPrice(subtotal, currency ?? "MVR")}</span>
             </div>
             <Link
               href="/checkout"
               onClick={closeCart}
-              className="mt-6 flex w-full items-center justify-center bg-gold px-6 py-4 text-xs uppercase tracking-[0.2em] text-ink transition-colors hover:bg-gold/90"
+              className="mt-6 flex w-full items-center justify-center bg-gold-deep px-6 py-4 text-xs uppercase tracking-[0.2em] text-ink transition-colors hover:bg-gold-deep/90"
             >
               Checkout
             </Link>

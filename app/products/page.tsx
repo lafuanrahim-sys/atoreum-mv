@@ -20,7 +20,7 @@ export default function ProductsPage() {
       <CoverflowArc />
 
       <div className="pt-20 pb-28 md:pt-24">
-        <div className="mx-auto max-w-[1440px] px-6 md:px-12">
+        <div className="page-gutter">
           <Suspense fallback={<div />}>
             <ProductGrid products={products} />
           </Suspense>

@@ -15,6 +15,7 @@
   --ivory: #121915;
   --ivory-dim: #5f665f;
   --gold: #8eaba5;
+  --gold-deep: #6f8d86;
   --gold-soft: #6c7770;
   --moss: #b8c0bb;
   --sand: #c5c9c4;
@@ -29,6 +30,7 @@
     --ivory: #e9baa6;
     --ivory-dim: #bfa48d;
     --gold: #8eaba5;
+    --gold-deep: #6f8d86;
     --gold-soft: #6c7770;
     --moss: #545c57;
     --sand: #6c7770;
@@ -44,6 +46,7 @@
   --ivory: #121915;
   --ivory-dim: #5f665f;
   --gold: #e9baa6;
+  --gold-deep: #d18f6f;
   --gold-soft: #ddc48c;
   --moss: #b8c0bb;
   --sand: #c5c9c4;
@@ -58,10 +61,31 @@
   --ivory: #e9baa6;
   --ivory-dim: #bfa48d;
   --gold: #8eaba5;
+  --gold-deep: #6f8d86;
   --gold-soft: #6c7770;
   --moss: #545c57;
   --sand: #6c7770;
   --line: rgba(233, 186, 166, 0.12);
+}
+
+/* Admin dashboard palette — pinned to the reference art direction: warm
+   cream canvas, white cards, deep forest-green accents. Scoped to the
+   dashboard shell by overriding the same tokens its markup already
+   consumes, so the storefront palette and the light/dark toggle never
+   leak in (and vice versa). */
+.dashboard-theme {
+  color-scheme: light;
+  --ink: #ffffff;
+  --ink-2: #f4f1ea;
+  --charcoal: #e8e4da;
+  --ivory: #2e3728;
+  --ivory-dim: #85897d;
+  --gold: #3d4732;
+  --gold-deep: #333d29;
+  --gold-soft: #a9b29e;
+  --moss: #dfe4d6;
+  --sand: #949b8a;
+  --line: rgba(46, 55, 40, 0.12);
 }
 
 @theme inline {
@@ -71,6 +95,7 @@
   --color-ivory: var(--ivory);
   --color-ivory-dim: var(--ivory-dim);
   --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
   --color-gold-soft: var(--gold-soft);
   --color-moss: var(--moss);
   --color-sand: var(--sand);
@@ -103,6 +128,40 @@ body {
   color: var(--ink);
 }
 
+/* Branded keyboard-focus ring. :focus-visible only, so mouse clicks stay
+   clean; inputs that opt into focus:outline-none + border-gold keep their
+   own treatment (their utility outranks this bare pseudo-class). */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* Tailwind v4 preflight leaves buttons at cursor: default — restore the
+   affordance every clickable control is expected to have. */
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+
+/* Focus-only skip link: invisible until keyboard-focused, then drops in
+   under the top-left corner above the fixed header. */
+.skip-link {
+  position: fixed;
+  top: -100%;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--ink-2);
+  color: var(--ivory);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border: 1px solid var(--gold);
+}
+.skip-link:focus-visible {
+  top: 1rem;
+}
+
 /* thin, quiet scrollbar — luxury sites never ship the browser default */
 ::-webkit-scrollbar {
   width: 6px;
@@ -123,10 +182,37 @@ body {
   font-family: var(--font-display);
 }
 
+.font-script {
+  font-family: var(--font-script), cursive;
+}
+
 /* utility: hairline divider used across sections instead of hard borders */
 .hairline {
   height: 1px;
   background: var(--line);
+}
+
+/* Shared horizontal gutter — exactly the fixed header's padding scale
+   (px-6 md:px-12 lg:px-16 xl:px-20 2xl:px-24), so page bodies and the
+   footer line up with the nav's left edge and the logo's right edge at
+   every breakpoint. Full-width by design: the header has no max-width,
+   so aligned containers can't have one either. */
+.page-gutter {
+  width: 100%;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+@media (min-width: 768px) {
+  .page-gutter { padding-left: 3rem; padding-right: 3rem; }
+}
+@media (min-width: 1024px) {
+  .page-gutter { padding-left: 4rem; padding-right: 4rem; }
+}
+@media (min-width: 1280px) {
+  .page-gutter { padding-left: 5rem; padding-right: 5rem; }
+}
+@media (min-width: 1536px) {
+  .page-gutter { padding-left: 6rem; padding-right: 6rem; }
 }
 
 /* utility: reveal target — GSAP sets initial state via JS,

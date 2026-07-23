@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { Product } from "@/lib/products";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/CartContext";
 import StockBadge from "@/components/products/StockBadge";
+import FavoriteButton from "@/components/products/FavoriteButton";
 
 function formatPrice(price: number, currency: Product["currency"]) {
   return `${currency} ${price.toLocaleString("en-US")}`;
@@ -12,8 +14,16 @@ function formatPrice(price: number, currency: Product["currency"]) {
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const [justAdded, setJustAdded] = useState(false);
+  const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const outOfStock = product.stockStatus === "out-of-stock";
   const thumbnail = product.images[0] ?? null;
+
+  useEffect(() => {
+    return () => {
+      if (addedTimer.current) clearTimeout(addedTimer.current);
+    };
+  }, []);
 
   return (
     <article data-reveal className="group flex flex-col">
@@ -42,6 +52,8 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent transition-opacity duration-500 group-hover:opacity-60" />
+
+          <FavoriteButton productId={product.id} className="absolute bottom-3 right-3" />
         </div>
       </Link>
 
@@ -59,25 +71,32 @@ export default function ProductCard({ product }: { product: Product }) {
         </p>
 
         <div className="mt-auto flex items-center justify-between pt-6">
-          <span className="text-sm text-ivory">
+          <span className="text-sm text-ivory tabular-nums">
             {formatPrice(product.price, product.currency)}
           </span>
           <button
             type="button"
             disabled={outOfStock}
-            onClick={() =>
+            onClick={() => {
               addItem({
                 productId: product.id,
                 name: product.name,
                 price: product.price,
                 currency: product.currency,
                 image: thumbnail,
-              })
-            }
+              });
+              setJustAdded(true);
+              if (addedTimer.current) clearTimeout(addedTimer.current);
+              addedTimer.current = setTimeout(() => setJustAdded(false), 2000);
+            }}
             title={outOfStock ? "Out of stock" : "Add to cart"}
-            className="border border-line px-4 py-2 text-[10px] tracking-[0.2em] text-ivory-dim uppercase transition-colors motion-safe:group-hover:border-gold motion-safe:group-hover:text-gold disabled:cursor-not-allowed disabled:opacity-50 disabled:group-hover:border-line disabled:group-hover:text-ivory-dim"
+            className={`border px-4 py-2 text-[10px] tracking-[0.2em] uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:group-hover:border-line disabled:group-hover:text-ivory-dim ${
+              justAdded
+                ? "border-gold text-gold"
+                : "border-line text-ivory-dim motion-safe:group-hover:border-gold motion-safe:group-hover:text-gold"
+            }`}
           >
-            {outOfStock ? "Out of Stock" : "Add to Cart"}
+            {outOfStock ? "Out of Stock" : justAdded ? "Added ✓" : "Add to Cart"}
           </button>
         </div>
       </div>

@@ -1,27 +1,58 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ADMIN_SESSION_COOKIE, verifySessionToken } from "@/lib/auth/adminSession";
+import { USER_SESSION_COOKIE, verifyUserSessionToken } from "@/lib/auth/userSession";
 
 /**
- * Protects /admin/* (except /admin/login) behind the signed session cookie.
- * See lib/auth/adminSession.ts for the caveats on this auth approach.
+ * Route protection for the unified account system:
+ * - /account/*   any signed-in user (customer or admin)
+ * - /dashboard/* admins only
+ * - /admin/*     retired — permanently redirected to the new locations, so
+ *   old bookmarks keep working but no separate admin URL exists anymore.
+ * See lib/auth/userSession.ts for the caveats on this auth approach.
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname === "/admin/login") {
-    return NextResponse.next();
+  if (pathname === "/admin/login" || pathname === "/admin") {
+    return NextResponse.redirect(
+      new URL(pathname === "/admin" ? "/dashboard" : "/login", request.url)
+    );
+  }
+  if (pathname.startsWith("/admin/")) {
+    return NextResponse.redirect(
+      new URL(pathname.replace(/^\/admin/, "/dashboard"), request.url)
+    );
   }
 
-  const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-  if (!(await verifySessionToken(token))) {
-    const loginUrl = new URL("/admin/login", request.url);
-    loginUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(loginUrl);
+  const session = await verifyUserSessionToken(
+    request.cookies.get(USER_SESSION_COOKIE)?.value
+  );
+
+  if (pathname.startsWith("/dashboard")) {
+    if (!session || session.role !== "admin") {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  if (pathname.startsWith("/account")) {
+    if (!session) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/admin",
+    "/dashboard/:path*",
+    "/dashboard",
+    "/account/:path*",
+    "/account",
+  ],
 };

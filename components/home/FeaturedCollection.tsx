@@ -33,7 +33,7 @@ export default function FeaturedCollection({ products }: { products: Product[] }
         <div className="mt-16 flex justify-center">
           <Link
             href="/products"
-            className="group inline-flex items-center gap-4 border border-gold px-8 py-4 text-xs tracking-[0.25em] text-gold uppercase transition-colors hover:bg-gold hover:text-ink"
+            className="group inline-flex items-center gap-4 border border-gold px-8 py-4 text-xs tracking-[0.25em] text-gold uppercase transition-colors hover:bg-gold-deep hover:text-ink"
           >
             View the full edit
             <span className="transition-transform group-hover:translate-x-1">

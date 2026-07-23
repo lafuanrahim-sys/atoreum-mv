@@ -7,8 +7,8 @@ export default function IntroSection() {
   const statsRef = useScrollReveal<HTMLDivElement>({ variant: "depth", start: "top 85%" });
 
   return (
-    <section ref={ref} className="bg-ink px-6 py-28 md:px-12 md:py-40">
-      <div className="mx-auto grid max-w-[1440px] gap-12 md:grid-cols-12">
+    <section ref={ref} className="page-gutter bg-ink py-28 md:py-40">
+      <div className="grid gap-12 md:grid-cols-12">
         <div data-reveal className="md:col-span-4">
           <p className="text-xs tracking-[0.3em] text-gold uppercase">
             Our Story

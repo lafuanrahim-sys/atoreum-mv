@@ -10,8 +10,15 @@ import {
   updateProduct,
   deleteProduct,
 } from "@/lib/data/products.server";
+import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import type { Category, ProductInput, StockStatus } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
+
+/** Server actions are public endpoints — role-check inside, not just at the page. */
+async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "admin") redirect("/login");
+}
 
 const IMAGE_DIR = path.join(process.cwd(), "public", "images", "products");
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -63,6 +70,7 @@ function readProductFields(formData: FormData): Omit<ProductInput, "images"> {
 }
 
 export async function createProductAction(formData: FormData) {
+  await requireAdmin();
   const fields = readProductFields(formData);
   if (!fields.name || !fields.sku) {
     throw new Error("Name and SKU are required.");
@@ -74,12 +82,13 @@ export async function createProductAction(formData: FormData) {
   }
 
   createProduct({ ...fields, images: uploaded });
-  revalidatePath("/admin/products");
+  revalidatePath("/dashboard/products");
   revalidatePath("/products");
-  redirect("/admin/products");
+  redirect("/dashboard/products");
 }
 
 export async function updateProductAction(id: string, formData: FormData) {
+  await requireAdmin();
   const fields = readProductFields(formData);
   const uploaded = await saveUploadedImages(formData);
 
@@ -94,15 +103,16 @@ export async function updateProductAction(id: string, formData: FormData) {
   }
 
   updateProduct(id, { ...fields, images });
-  revalidatePath("/admin/products");
-  revalidatePath(`/admin/products/${id}/edit`);
+  revalidatePath("/dashboard/products");
+  revalidatePath(`/dashboard/products/${id}/edit`);
   revalidatePath("/products");
   revalidatePath(`/products/${id}`);
-  redirect("/admin/products");
+  redirect("/dashboard/products");
 }
 
 export async function deleteProductAction(id: string) {
+  await requireAdmin();
   deleteProduct(id);
-  revalidatePath("/admin/products");
+  revalidatePath("/dashboard/products");
   revalidatePath("/products");
 }

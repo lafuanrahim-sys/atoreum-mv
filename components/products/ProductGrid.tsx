@@ -97,9 +97,21 @@ export default function ProductGrid({ products }: { products: Product[] }) {
       </div>
 
       {filtered.length === 0 && (
-        <p className="mt-12 text-sm text-ivory-dim">
-          No products match your search.
-        </p>
+        <div className="mt-12 flex flex-col items-start gap-4">
+          <p className="text-sm text-ivory-dim">
+            No products match your search.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setActive("All");
+              setQuery("");
+            }}
+            className="border border-line px-5 py-2.5 text-[10px] tracking-[0.2em] text-ivory-dim uppercase transition-colors hover:border-gold hover:text-gold"
+          >
+            Clear filters
+          </button>
+        </div>
       )}
     </div>
   );
