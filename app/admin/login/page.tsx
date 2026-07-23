@@ -26,12 +26,14 @@ export default async function AdminLoginPage({
             name="password"
             required
             autoFocus
+            suppressHydrationWarning
             className="border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none"
           />
         </label>
 
         <button
           type="submit"
+          suppressHydrationWarning
           className="mt-6 w-full bg-gold px-6 py-3 text-xs uppercase tracking-[0.2em] text-ink transition-colors hover:bg-gold/90"
         >
           Sign In

@@ -70,19 +70,22 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label="Toggle color mode"
-      className="inline-flex items-center justify-center gap-2 rounded-none border border-line px-4 py-2 text-[10px] tracking-[0.25em] uppercase text-ivory transition-colors hover:border-gold hover:text-gold"
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      className="flex h-9 w-9 items-center justify-center text-ivory-dim transition-colors hover:text-gold"
     >
       {theme === "dark" ? (
-        <>
-          <span aria-hidden="true">☀️</span>
-          Light
-        </>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5">
+          <circle cx="12" cy="12" r="4.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M12 2.75v2M12 19.25v2M4.75 12h-2M21.25 12h-2M6.4 6.4 5 5M19 19l-1.4-1.4M6.4 17.6 5 19M19 5l-1.4 1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       ) : (
-        <>
-          <span aria-hidden="true">🌙</span>
-          Dark
-        </>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5">
+          <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       )}
     </button>
   );

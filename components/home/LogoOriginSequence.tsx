@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motionDefaults, prefersReducedMotion } from "@/lib/motion";
@@ -43,8 +44,22 @@ function centerOf(bbox: Bbox) {
   return { x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2 };
 }
 
-/** One `<span>` per character, all starting invisible, for the shared
- * hand-rolled typewriter reveal (no `SplitText` plugin installed). */
+/** One `<span class="char">` per character, all starting invisible, for the
+ * shared hand-rolled typewriter reveal (no `SplitText` plugin installed).
+ * Characters are grouped word-by-word, each word wrapped in its own atomic
+ * `inline-block` -- giving each character its own box for the stagger
+ * reveal, while keeping the browser's line-wrapping decision at the *word*
+ * level, never mid-word. The space between words is rendered as a plain
+ * text node *outside* any inline-block, a sibling in the flow between word
+ * spans, not as its own `.char` span: a space that is the sole content of
+ * an inline-block collapses to zero width (it's trimmed as leading/trailing
+ * whitespace of that box), which is what previously rendered as words
+ * running together with no gap at all, even though the *wrap* still
+ * (correctly) happened at that point. An earlier draft also once used a
+ * non-breaking space here by mistake, which independently breaks wrapping
+ * (a line can never break at a non-breaking space) -- both failure modes
+ * are avoided by using a real, breakable space that isn't wrapped in
+ * anything. */
 function TypedLine({
   text,
   className,
@@ -54,13 +69,26 @@ function TypedLine({
   className?: string;
   lineRef: React.RefObject<HTMLParagraphElement | null>;
 }) {
+  const words = text.split(" ");
+  let charIndex = 0;
+  const nodes = words.flatMap((word, wi) => {
+    const wordSpan = (
+      <span key={`w${wi}`} className="inline-block">
+        {word.split("").map((ch) => {
+          const key = charIndex++;
+          return (
+            <span key={key} className="char inline-block opacity-0">
+              {ch}
+            </span>
+          );
+        })}
+      </span>
+    );
+    return wi < words.length - 1 ? [wordSpan, " "] : [wordSpan];
+  });
   return (
-    <p ref={lineRef} className={className}>
-      {text.split("").map((ch, i) => (
-        <span key={i} className="inline-block opacity-0">
-          {ch === " " ? " " : ch}
-        </span>
-      ))}
+    <p ref={lineRef} className={className} lang="en">
+      {nodes}
     </p>
   );
 }
@@ -113,6 +141,7 @@ export default function LogoOriginSequence() {
   const waveClipRectRef = useRef<SVGRectElement | null>(null);
   const typesetRef = useRef<SVGGElement | null>(null);
   const resolvedRef = useRef<HTMLImageElement | null>(null);
+  const ctaRef = useRef<HTMLAnchorElement | null>(null);
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
@@ -157,6 +186,7 @@ export default function LogoOriginSequence() {
         const waveClipRect = waveClipRectRef.current;
         const typeset = typesetRef.current;
         const resolved = resolvedRef.current;
+        const cta = ctaRef.current;
 
         const titleContainer = titleContainerRef.current;
         const titleLine1 = titleLine1Ref.current;
@@ -173,7 +203,7 @@ export default function LogoOriginSequence() {
           !lhavDot || !kaafuDot || !huvDot ||
           !lhavLabel || !kaafuLabel || !huvLabel ||
           !blobLhav || !blobKaafu1 || !blobKaafu2 || !blobHuvadhoo || !seal || !sealGlow || !waveGroup ||
-          !waveClipRect || !typeset || !resolved || petals.length !== 5 ||
+          !waveClipRect || !typeset || !resolved || !cta || petals.length !== 5 ||
           !titleContainer || !titleLine1 || !titleLine2 ||
           !flowerTextContainer || !flowerTextLine ||
           !waveTextContainer || !waveTextLine
@@ -190,21 +220,47 @@ export default function LogoOriginSequence() {
         const FULL_VB = `0 0 ${CANVAS} ${CANVAS}`;
         const sealVB = frameSquare(seal.getBBox(), 40);
 
-        // Also pins transformOrigin to that same bbox center, explicitly, in
-        // SVG user-space units. The rotate/scale constants baked into Scene
-        // 4 below were computed offline against a pivot of "each shape's own
-        // getBBox() center" -- without setting transformOrigin to match,
-        // GSAP's default SVG origin handling doesn't reliably land on that
-        // same point, so the fitted rotation/scale would pivot around a
-        // different spot than the one they were fitted for, throwing the
-        // whole registration off by an amount that grows with distance from
-        // the true center (worse for larger scale/rotation, exactly the
-        // symptom seen here).
+        // Returns each shape's own bbox center (the pivot the rotate/scale
+        // constants below were fitted against) plus the plain translation
+        // needed to land on the target blob's center, and the shape's own
+        // half-width/half-height (see flyWithPivot for why).
+        //
+        // Neither transformOrigin nor svgOrigin actually pivots these SVG
+        // paths around the point handed to them -- verified with an isolated
+        // GSAP+SVG test page outside this component: gsap.set(el, {x:0, y:0,
+        // rotate:90, scale:2}) on a plain path, with NO origin set at all,
+        // produced a nonzero translate in the resulting matrix that exactly
+        // matches pivoting around the shape's bbox **top-left corner**
+        // (bbox.x, bbox.y) -- not (0,0), not the bbox center, and not
+        // whatever transformOrigin/svgOrigin was asked for. That default
+        // silently overrides any origin this component tries to set. For a
+        // shape whose true center sits ~13 units from its own top-left but
+        // whose position in the 763-unit canvas is ~400 units from literal
+        // (0,0), rotating ~175 degrees around the WRONG one of those swings
+        // the rendered shape by a large, canvas-scale amount instead of a
+        // small, shape-scale amount -- exactly the "flies out of view" bug.
+        // flyWithPivot() below works around it by computing, by hand, the
+        // translate that reproduces true-center pivoting given that GSAP's
+        // real baseline is the bbox corner.
+        // The atoll doesn't stop precisely on its blob's outline -- it flies
+        // to a point a small fixed distance *above* it (STOP_OFFSET_PX,
+        // converted from real screen pixels to this SVG's own user-space
+        // units via the stage's actual rendered size) and comes to rest
+        // there; reaching that point is what triggers the blob to start
+        // fading in ("mapExit" below), so the arrival itself reads as
+        // cueing the logo to life rather than the atoll settling exactly
+        // into the logo's own geometry.
+        const STOP_OFFSET_PX = 10;
+        const unitsPerPx = CANVAS / svg.getBoundingClientRect().width;
+        const stopOffsetUnits = STOP_OFFSET_PX * unitsPerPx;
         const flyTo = (fromEl: SVGGraphicsElement, toEl: SVGGraphicsElement) => {
-          const a = centerOf(fromEl.getBBox());
+          const bbox = fromEl.getBBox();
+          const a = centerOf(bbox);
           const b = centerOf(toEl.getBBox());
-          gsap.set(fromEl, { transformOrigin: `${a.x} ${a.y}` });
-          return { x: b.x - a.x, y: b.y - a.y };
+          return {
+            delta: { x: b.x - a.x, y: b.y - stopOffsetUnits - a.y },
+            halfExtent: { x: bbox.width / 2, y: bbox.height / 2 },
+          };
         };
         // Translation is read live from each element's own getBBox(), so it's
         // always exact -- never a guessed offset. Kaafu flies as two
@@ -216,6 +272,59 @@ export default function LogoOriginSequence() {
         const kaafu1Fly = flyTo(kaafu1Map, blobKaafu1);
         const kaafu2Fly = flyTo(kaafu2Map, blobKaafu2);
         const huvFly = flyTo(huvMap, blobHuvadhoo);
+
+        // Animates x/y/rotate/scale via a proxy tween instead of a plain
+        // .to(). GSAP's real (undocumented, unoverridable here) pivot is the
+        // shape's own bbox top-left corner D, so rendering a point Q is
+        // D + linearPart*(Q-D) + (x,y) -- NOT the usual "rotate around the
+        // point you ask for" behavior. To make the shape's true center C
+        // land exactly on the target (C + delta), solve that equation for
+        // (x,y) with Q=C: (x,y) = halfExtent - linearPart*halfExtent + delta,
+        // where halfExtent = C-D (half the bbox width/height) and
+        // linearPart = rotate+scale's 2x2 matrix. An earlier version of this
+        // had that middle term's sign flipped (linearPart*halfExtent -
+        // halfExtent instead of halfExtent - linearPart*halfExtent), which
+        // fixed the mid-flight excursion but left every shape landing
+        // consistently off-target by roughly twice the (small) correction
+        // term -- confirmed against an isolated GSAP+SVG test page outside
+        // this component, and against a `getCTM()`-based check of where this
+        // component's own atoll shapes actually rendered relative to their
+        // target blobs.
+        //
+        // ease matches a plain .to()'s default (power1.out) -- the shape is
+        // meant to visibly come to rest at the stop point 10px above its
+        // blob, so a decelerating arrival is the right read here. It's not
+        // the "stops, then just fades" stall from earlier in this scene's
+        // history because the fade (below) is timed to already be
+        // essentially transparent by the time this deceleration becomes
+        // noticeable, not lingering fully opaque on a now-still shape.
+        const flyWithPivot = (
+          el: SVGGraphicsElement,
+          fly: { delta: { x: number; y: number }; halfExtent: { x: number; y: number } },
+          targetScale: number,
+          targetRotateDeg: number,
+          duration: number,
+          position: string
+        ) => {
+          const { delta, halfExtent } = fly;
+          const targetRad = (targetRotateDeg * Math.PI) / 180;
+          const proxy = { t: 0 };
+          tl.to(proxy, {
+            t: 1,
+            duration,
+            ease: "power1.out",
+            onUpdate: () => {
+              const t = proxy.t;
+              const theta = targetRad * t;
+              const s = 1 + (targetScale - 1) * t;
+              const cos = Math.cos(theta) * s;
+              const sin = Math.sin(theta) * s;
+              const x = halfExtent.x - (cos * halfExtent.x - sin * halfExtent.y) + delta.x * t;
+              const y = halfExtent.y - (sin * halfExtent.x + cos * halfExtent.y) + delta.y * t;
+              gsap.set(el, { x, y, rotate: theta * (180 / Math.PI), scale: s });
+            },
+          }, position);
+        };
 
         // Leader lines run rightward out of the map's narrow central column
         // into open canvas -- the map only occupies the horizontal center
@@ -247,7 +356,14 @@ export default function LogoOriginSequence() {
           attr: { x: waveBBox.x - 4, y: waveBBox.y - 4, width: 0, height: waveBBox.height + 8 },
         });
 
-        const flowerCenters = petals.map((p) => centerOf(p.getBBox()));
+        const petalBBoxes = petals.map((p) => p.getBBox());
+        const flowerCenters = petalBBoxes.map((b) => centerOf(b));
+        // Each petal's own half-width/half-height -- see flyWithPivot's
+        // comment above for why the swirl-in tween needs this (same
+        // GSAP-doesn't-honor-transformOrigin-for-SVG-paths issue, here
+        // affecting a spiral with an even larger rotation range than the
+        // atoll fly).
+        const petalHalfExtents = petalBBoxes.map((b) => ({ x: b.width / 2, y: b.height / 2 }));
         const flowerCenter = {
           x: flowerCenters.reduce((s, c) => s + c.x, 0) / flowerCenters.length,
           y: flowerCenters.reduce((s, c) => s + c.y, 0) / flowerCenters.length,
@@ -257,13 +373,26 @@ export default function LogoOriginSequence() {
         // for the Scene 5 swirl-in tween, which spirals each petal in along
         // this same spoke rather than a straight line.
         const petalAngles = flowerCenters.map((c) => Math.atan2(c.y - flowerCenter.y, c.x - flowerCenter.x));
+        // Placed at scale 0 (so pivot/position is moot at rest -- a
+        // zero-area shape is invisible anywhere), but at the same angle the
+        // swirl-in below starts from (baseAngle + a full SWIRL_TURNS extra
+        // winds), not the plain resting angle -- otherwise the very first
+        // swirl frames jump from this rest angle to the swirl's own start
+        // angle while scale is already just barely nonzero, popping briefly
+        // into view off to one side before snapping onto the spiral.
+        const SWIRL_TURNS = 1.15;
+        // By Scene 5 the camera has already zoomed to the tight seal crop
+        // (sealVB, ~512 units wide, half-width ~256) rather than the full
+        // 763-unit canvas -- a swirl-in starting radius has to fit inside
+        // that tighter frame, not the full canvas, or the outermost part of
+        // the spiral (still near its max radius in the first few frames)
+        // pokes past the crop's edge.
+        const SWIRL_RADIUS = 125;
         petals.forEach((p, i) => {
-          const c = flowerCenters[i];
-          const angle = petalAngles[i];
+          const angle = petalAngles[i] + SWIRL_TURNS * Math.PI * 2;
           gsap.set(p, {
-            transformOrigin: `${c.x} ${c.y}`,
-            x: Math.cos(angle) * 240,
-            y: Math.sin(angle) * 240,
+            x: Math.cos(angle) * SWIRL_RADIUS,
+            y: Math.sin(angle) * SWIRL_RADIUS,
             rotate: -110,
             scale: 0,
           });
@@ -279,6 +408,7 @@ export default function LogoOriginSequence() {
         gsap.set(waveGroup, { opacity: 0 });
         gsap.set(typeset, { opacity: 0 });
         gsap.set(resolved, { opacity: 0 });
+        gsap.set(cta, { opacity: 0, pointerEvents: "none" });
         gsap.set(art, { opacity: 1 });
 
         gsap.set(titleContainer, { opacity: 1 });
@@ -290,7 +420,7 @@ export default function LogoOriginSequence() {
           scrollTrigger: {
             trigger: section,
             start: "top top",
-            end: () => `+=${Math.max(window.innerHeight * 9, 6200)}`,
+            end: () => `+=${Math.max(window.innerHeight * 4.5, 3600)}`,
             scrub: 1,
             pin: true,
             invalidateOnRefresh: true,
@@ -301,7 +431,7 @@ export default function LogoOriginSequence() {
           line: HTMLParagraphElement,
           options: { position?: string | number; charStagger?: number } = {}
         ) =>
-          tl.to(line.querySelectorAll("span"), {
+          tl.to(line.querySelectorAll("span.char"), {
             opacity: 1,
             duration: 0.02,
             stagger: options.charStagger ?? 0.03,
@@ -328,7 +458,7 @@ export default function LogoOriginSequence() {
           dot: SVGCircleElement,
           label: SVGTextElement
         ) => {
-          tl.to(mapEl, { opacity: 1, strokeWidth: 3, duration: 0.7 })
+          tl.to(mapEl, { opacity: 1, strokeWidth: 3, fillOpacity: 0.5, duration: 0.7 })
             .to(leader, { strokeDashoffset: 0, duration: 0.6 }, "<0.1")
             .to(dot, { opacity: 1, duration: 0.35 }, "<0.35")
             .to(label, { opacity: 1, x: 0, duration: 0.6 }, "<");
@@ -339,48 +469,96 @@ export default function LogoOriginSequence() {
         tl.to({}, { duration: 0.9 }); // hold, all three labeled
         tl.to([lhavCallout, kaafuCallout, huvCallout], { opacity: 0, duration: 0.6 });
 
-        // Scene 4: the three labeled atolls detach from the map and settle
-        // into their real seal-blob geometry; the rest of the chain fades
-        // away entirely; the seal draws itself in around them.
+        // Scene 4: the three labeled atolls detach from the map and fly to a
+        // point just above their real seal-blob geometry (see STOP_OFFSET_PX
+        // above), coming to rest there rather than landing exactly on the
+        // blob's own outline; the rest of the chain fades away entirely; the
+        // seal draws itself in around the blobs once the atolls have
+        // arrived and faded.
         //
-        // Each atoll's end transform is computed, not eyeballed: translation
-        // is read live from getBBox() (exact, always), scale is the ratio
-        // that matches the source and target shapes' areas exactly
-        // (sqrt(targetArea/sourceArea)), and rotation is each shape's PCA
+        // Each atoll's direction/rotation/scale is computed, not eyeballed,
+        // from its real target blob: direction is read live from getBBox()
+        // (exact, always, offset by the fixed stop distance), scale is the
+        // ratio that matches the source and target shapes' areas exactly
+        // (sqrt(targetArea / sourceArea)), and rotation is each shape's PCA
         // principal-axis angle relative to its target's, with the 180°
-        // ambiguity resolved by picking whichever orientation actually
-        // nests inside the target silhouette. Kaafu flies as two
-        // independent pieces -- kaafu1Map/kaafu2Map, each targeting its own
-        // blob -- so the gap between them lands on the logo's real
-        // measured gap by construction, not a scaled copy of the map's own
-        // (different) internal spacing. See logoOrigin/paths.ts for the
-        // measured reference gap.
+        // ambiguity resolved by picking whichever orientation actually nests
+        // inside the target silhouette. Kaafu flies as two independent
+        // pieces -- kaafu1Map/kaafu2Map, each aimed at its own blob -- so the
+        // gap between them lands on the logo's real measured gap by
+        // construction, not a scaled copy of the map's own (different)
+        // internal spacing. See logoOrigin/paths.ts for the measured
+        // reference geometry.
         //
-        // A real map contour and a hand-stylized logo blob are never
-        // literally the same curve, so the fit above is a best-fit, not a
-        // pixel-identical one -- there's always a thin residual gap
-        // somewhere along the outline. Thickening the map stroke to match
-        // the blob's own 8px as it flies (rather than leaving it at the
-        // Scene-3 highlight width) absorbs that residual into the line
-        // weight instead of showing it as a hairline ghost during the
-        // opacity crossfade.
+        // Thickening the map stroke to the blob's own 8px as it flies
+        // (rather than leaving it at the Scene-3 highlight width), and
+        // fading fillOpacity to 0 (not just bumping strokeWidth) so the
+        // once-subtle 0.16 map fill doesn't blow up into an obviously
+        // mismatched dark silhouette as it scales up mid-flight, keeps the
+        // shape reading as a clean outline (matching the blob's own
+        // fill:none) all the way to its stop point.
         //
-        // Also fading fillOpacity to 0 here, not just bumping strokeWidth:
-        // the map shapes carry a 0.16 fill for legibility at their small
-        // on-map size, but that fill's *area* scales with scale² -- at the
-        // ~1.6-1.7x this fly-in applies, the once-subtle tint becomes an
-        // obviously mismatched dark silhouette poking out from behind the
-        // thin blob outline. Dropping to fill:none (matching the blob's own
-        // fill:none) makes the crossfade outline-to-outline instead of
-        // filled-shape-to-outline.
-        tl.to(svg, { attr: { viewBox: sealVB }, duration: 1.7 })
-          .to(contextGroup, { opacity: 0, duration: 1.1 }, "<")
-          .to(lhavMap, { x: lhavFly.x, y: lhavFly.y, scale: 1.707, rotate: 174.9, strokeWidth: 8, fillOpacity: 0, duration: 1.4 }, "<0.2")
-          .to(kaafu1Map, { x: kaafu1Fly.x, y: kaafu1Fly.y, scale: 1.633, rotate: -76.5, strokeWidth: 8, fillOpacity: 0, duration: 1.4 }, "<0.1")
-          .to(kaafu2Map, { x: kaafu2Fly.x, y: kaafu2Fly.y, scale: 1.634, rotate: -88.6, strokeWidth: 8, fillOpacity: 0, duration: 1.4 }, "<0")
-          .to(huvMap, { x: huvFly.x, y: huvFly.y, scale: 1.654, rotate: -84.6, strokeWidth: 8, fillOpacity: 0, duration: 1.4 }, "<0.1")
-          .to([blobLhav, blobKaafu1, blobKaafu2, blobHuvadhoo], { opacity: 1, duration: 0.9 }, "<0.5")
-          .to([lhavMap, kaafuMap, huvMap], { opacity: 0, duration: 0.7 }, "<");
+        // The flight happens while the camera is still on the *full* canvas
+        // (FULL_VB), not the tight seal crop -- the full canvas is
+        // guaranteed to contain every atoll's entire start-to-stop path, so
+        // nothing clips past the frame edge mid-flight. The camera only
+        // zooms into the tight seal crop afterward, once every atoll has
+        // arrived and faded -- zooming in *during* the flight was tried
+        // earlier and caused a different failure mode (the tightening
+        // crop's bounds could clip a still-rotating shape's far edges before
+        // it had faded, a visible blank-frame flash); zooming in only once
+        // everything is safely settled avoids that entirely.
+        // Each atoll gets two parallel tweens started at the same instant:
+        // a plain .to() for the transform-independent style props
+        // (strokeWidth/fillOpacity), and flyWithPivot's proxy tween for the
+        // pivot-compensated x/y/rotate/scale. The "<0" position on each
+        // pivot tween just means "start together with the style tween
+        // that precedes it" -- the real stagger between atolls still comes
+        // from the same 0.2/0.1/0/0.1 offsets as before, just applied once
+        // per atoll instead of once per tween.
+        tl.to(contextGroup, { opacity: 0, duration: 1.1 });
+        tl.to(lhavMap, { strokeWidth: 8, fillOpacity: 0, duration: 1.4 }, "<0.2");
+        flyWithPivot(lhavMap, lhavFly, 1.707, 174.9, 1.4, "<0");
+        tl.to(kaafu1Map, { strokeWidth: 8, fillOpacity: 0, duration: 1.4 }, "<0.1");
+        flyWithPivot(kaafu1Map, kaafu1Fly, 1.633, -76.5, 1.4, "<0");
+        tl.to(kaafu2Map, { strokeWidth: 8, fillOpacity: 0, duration: 1.4 }, "<0");
+        flyWithPivot(kaafu2Map, kaafu2Fly, 1.634, -88.6, 1.4, "<0");
+        tl.to(huvMap, { strokeWidth: 8, fillOpacity: 0, duration: 1.4 }, "<0.1");
+        flyWithPivot(huvMap, huvFly, 1.654, -84.6, 1.4, "<0");
+        // The blob doesn't start appearing until the map has completely
+        // faded away (opacity all the way to 0) -- so there's never a
+        // moment where the map trace and the real logo geometry are both
+        // partially visible together.
+        //
+        // The map's OWN fade-out is a single continuous tween that starts
+        // very early in the flight (1.3s before huvMap's fly -- the last and
+        // latest-finishing of the four -- ends, out of that fly's own 1.4s
+        // duration, so it's essentially fading for the entire flight, not
+        // just its tail) and runs uninterrupted from full strength down to 0
+        // -- and its duration is deliberately set to end at that *exact same
+        // instant* the fly reaches its stop point ("atollStop"), not any
+        // later, so there's never a window where the shape is holding still
+        // while only its opacity keeps changing: it arrives and finishes
+        // fading in the same beat, which is what reads as "the atoll comes
+        // to rest, having faded away" and cues the blob to start.
+        //
+        // "atollStop" marks the true end of the fly (the furthest point
+        // reached by any of the four tweens above, i.e. huvMap's) as a fixed
+        // reference, independent of the fade's own overlap -- so the blob
+        // always waits for the map's fade to fully finish no matter how
+        // early that fade itself starts. The blob tween has no extra
+        // position offset -- it starts the instant the atoll's fade-out
+        // tween ends, so reaching the stop point (10px above the blob) reads
+        // as directly cueing the logo to life, not as a separate beat after
+        // a pause.
+        tl.addLabel("atollStop");
+        tl.to([lhavMap, kaafuMap, huvMap], { opacity: 0, duration: 1.3, ease: "power1.out" }, "atollStop-=1.3");
+        tl.to([blobLhav, blobKaafu1, blobKaafu2, blobHuvadhoo], { opacity: 1, duration: 0.35 });
+
+        // Only now, with the atolls safely arrived and faded, does the
+        // camera pull in tight around the seal -- nothing is still moving
+        // that could clip past the tightening crop.
+        tl.to(svg, { attr: { viewBox: sealVB }, duration: 1.3 }, "<0.3");
 
         tl.to(seal, { strokeDashoffset: 0, duration: 1.4, ease: "power2.inOut" });
 
@@ -395,24 +573,32 @@ export default function LogoOriginSequence() {
         // draft that used back.out(1.25) here.
         typeIn(flowerTextLine, { charStagger: 0.022 });
         tl.to(flowerTextContainer, { opacity: 1, duration: 0.01 }, "<");
-        const SWIRL_TURNS = 1.15;
         petals.forEach((p, i) => {
           const baseAngle = petalAngles[i];
           const rotateStart = -110 - 360 * SWIRL_TURNS;
+          const halfExtent = petalHalfExtents[i];
           const swirl = { t: 0 };
           tl.to(swirl, {
             t: 1,
             duration: 1.5,
             ease: "power3.inOut",
             onUpdate: () => {
-              const radius = 240 * (1 - swirl.t);
+              const radius = SWIRL_RADIUS * (1 - swirl.t);
               const angle = baseAngle + SWIRL_TURNS * Math.PI * 2 * (1 - swirl.t);
-              gsap.set(p, {
-                x: Math.cos(angle) * radius,
-                y: Math.sin(angle) * radius,
-                rotate: rotateStart * (1 - swirl.t),
-                scale: swirl.t,
-              });
+              const rotateDeg = rotateStart * (1 - swirl.t);
+              const s = swirl.t;
+              // Same bbox-corner-vs-center pivot correction as flyWithPivot:
+              // without it, this spiral (up to ~524 degrees of rotation, more
+              // than the atoll fly) swings each petal through the same kind
+              // of wide, off-canvas arc.
+              const theta = (rotateDeg * Math.PI) / 180;
+              const cos = Math.cos(theta) * s;
+              const sin = Math.sin(theta) * s;
+              const pivotX = Math.cos(angle) * radius;
+              const pivotY = Math.sin(angle) * radius;
+              const x = halfExtent.x - (cos * halfExtent.x - sin * halfExtent.y) + pivotX;
+              const y = halfExtent.y - (sin * halfExtent.x + cos * halfExtent.y) + pivotY;
+              gsap.set(p, { x, y, rotate: rotateDeg, scale: s });
             },
           }, i === 0 ? "<0.3" : "<0.16");
         });
@@ -439,7 +625,12 @@ export default function LogoOriginSequence() {
         tl.to(art, { opacity: 0, duration: 1.4, ease: "power1.inOut" }, "+=0.3")
           .to(resolved, { opacity: 1, duration: 1.4, ease: "power1.inOut" }, "<")
           .to(sealGlow, { opacity: 0.5, duration: 1.8, ease: "power2.out" }, "<0.2")
-          .to({}, { duration: 1.6 });
+          .to({}, { duration: 0.5 })
+          // The CTA only appears once the real logo has fully arrived -- not
+          // during the story, so it never competes with the scroll-scrubbed
+          // scenes for attention.
+          .set(cta, { pointerEvents: "auto" })
+          .to(cta, { opacity: 1, duration: 0.8, ease: "power1.out" }, "<");
 
         return () => {
           gsap.set(fallback, { display: "flex" });
@@ -465,6 +656,12 @@ export default function LogoOriginSequence() {
           <p className="font-montserrat text-base font-light tracking-wide text-ivory-dim md:text-lg">{TITLE_LINE_2}</p>
         </div>
         <img src="/atoreum-logo.svg" alt="Atoreum" className="w-[52vw] max-w-[420px]" />
+        <Link
+          href="/products"
+          className="rounded-full bg-gold px-6 py-2.5 text-xs tracking-[0.2em] uppercase text-ink transition-all duration-300 hover:bg-gold/90"
+        >
+          Go to Collections
+        </Link>
         <div className="max-w-md space-y-3 font-montserrat text-sm font-light leading-relaxed text-ivory-dim">
           <p>{FLOWER_TEXT}</p>
           <p>{WAVE_TEXT}</p>
@@ -487,6 +684,7 @@ export default function LogoOriginSequence() {
       >
         <div aria-hidden className="h-72 w-72 shrink-0 md:h-80 md:w-80" />
 
+        <div className="flex shrink-0 flex-col items-center gap-6">
         <div ref={stageRef} className="logo-origin-stage relative aspect-square w-[min(40vw,62vh)] shrink-0">
           <svg
             ref={svgRef}
@@ -530,7 +728,7 @@ export default function LogoOriginSequence() {
 
             <g ref={artGroupRef}>
               {/* Faint full-chain context, for atmosphere only -- never focused on. */}
-              <g ref={contextGroupRef} fill="none" stroke="var(--gold-soft)" strokeWidth={1.1}>
+              <g ref={contextGroupRef} fill="none" stroke="#6c7770" strokeWidth={1.1}>
                 {MAP_CONTEXT.map((d, i) => (
                   <path key={i} d={d} />
                 ))}
@@ -551,35 +749,37 @@ export default function LogoOriginSequence() {
                   filling the smaller atoll pieces solid. This attribute
                   keeps the stroke a true, constant width regardless of the
                   scale transform applied to the element. */}
-              <path ref={lhavMapRef} d={MAP_LHAVIYANI} fill="var(--gold-soft)" fillOpacity={0.16} stroke="var(--gold)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
-              <g ref={kaafuMapRef} fill="var(--gold-soft)" fillOpacity={0.16} stroke="var(--gold)" strokeWidth={2}>
+              <path ref={lhavMapRef} d={MAP_LHAVIYANI} fill="#6c7770" fillOpacity={0.16} stroke="#8eaba5" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+              <g ref={kaafuMapRef} fill="#6c7770" fillOpacity={0.16} stroke="#8eaba5" strokeWidth={2}>
                 <path ref={kaafu1MapRef} d={MAP_KAAFU_1} vectorEffect="non-scaling-stroke" />
                 <path ref={kaafu2MapRef} d={MAP_KAAFU_2} vectorEffect="non-scaling-stroke" />
               </g>
-              <path ref={huvMapRef} d={MAP_HUVADHOO} fill="var(--gold-soft)" fillOpacity={0.16} stroke="var(--gold)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+              <path ref={huvMapRef} d={MAP_HUVADHOO} fill="#6c7770" fillOpacity={0.16} stroke="#8eaba5" strokeWidth={2} vectorEffect="non-scaling-stroke" />
 
-              {/* Leader-line callouts: hairline stroke with a small hollow
-                  ring terminal (cartographic annotation, not an infographic
+              {/* Leader-line callouts: hairline stroke with a small solid-dot
+                  terminal (cartographic annotation, not an infographic
                   arrowhead) -- draw on, name the atoll, retract once all
-                  three have been read. */}
+                  three have been read. Solid fill (not a hollow ring) so the
+                  dot reads as "this is the filled/highlighted atoll", matching
+                  the labelBeat's own mapEl opacity bump to 1 at the same beat. */}
               <g ref={lhavCalloutRef}>
-                <line ref={lhavLeaderRef} stroke="var(--gold)" strokeWidth={0.75} />
-                <circle ref={lhavDotRef} r={3.5} fill="none" stroke="var(--gold)" strokeWidth={1} />
-                <text ref={lhavLabelRef} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--gold)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
+                <line ref={lhavLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} />
+                <circle ref={lhavDotRef} r={3} fill="var(--ivory)" />
+                <text ref={lhavLabelRef} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
                   LHAVIYANI ATOLL
                 </text>
               </g>
               <g ref={kaafuCalloutRef}>
-                <line ref={kaafuLeaderRef} stroke="var(--gold)" strokeWidth={0.75} />
-                <circle ref={kaafuDotRef} r={3.5} fill="none" stroke="var(--gold)" strokeWidth={1} />
-                <text ref={kaafuLabelRef} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--gold)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
+                <line ref={kaafuLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} />
+                <circle ref={kaafuDotRef} r={3} fill="var(--ivory)" />
+                <text ref={kaafuLabelRef} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
                   KAAFU ATOLL
                 </text>
               </g>
               <g ref={huvCalloutRef}>
-                <line ref={huvLeaderRef} stroke="var(--gold)" strokeWidth={0.75} />
-                <circle ref={huvDotRef} r={3.5} fill="none" stroke="var(--gold)" strokeWidth={1} />
-                <text ref={huvLabelRef} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--gold)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
+                <line ref={huvLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} />
+                <circle ref={huvDotRef} r={3} fill="var(--ivory)" />
+                <text ref={huvLabelRef} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
                   HUVADHOO
                 </text>
               </g>
@@ -627,6 +827,15 @@ export default function LogoOriginSequence() {
             aria-hidden
             className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
           />
+        </div>
+
+        <Link
+          ref={ctaRef}
+          href="/products"
+          className="pointer-events-none rounded-full bg-gold px-6 py-2.5 text-xs tracking-[0.2em] uppercase text-ink opacity-0 transition-colors duration-300 hover:bg-gold/90"
+        >
+          Go to Collections
+        </Link>
         </div>
 
         <div className="relative z-10 flex h-72 w-72 shrink-0 items-center justify-start text-left md:h-80 md:w-80">

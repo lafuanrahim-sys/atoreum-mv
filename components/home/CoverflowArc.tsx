@@ -2,9 +2,6 @@
 
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
 
 type CoverflowCard = {
   label: string;
@@ -23,7 +20,7 @@ const CARDS: CoverflowCard[] = [
 
 // Coverflow-style depth stack: every card's rotateY/translateZ/translateX/
 // scale/opacity/blur/shadow is recomputed from its own distance (in cards)
-// to the current scroll-driven "focus" position on every scroll tick —
+// to the current drag-driven "focus" position on every pointer move —
 // not placed once and left static — so the focused card visibly grows and
 // turns to face the viewer while its neighbors shrink, fade, blur, and
 // pick up a soft shadow as they recede.
@@ -32,7 +29,7 @@ const MAX_ANGLE = 72; // clamp so far cards approach edge-on but never flip
 const SPACING_RATIO = 0.86; // translateX per step, relative to card size — breathing room between cards
 const DEPTH_RATIO = 0.95; // translateZ pushed back per step, relative to card size
 // With 5 cards the raw distance-from-focus reaches ±4 at the very start/end
-// of the scroll sweep — letting x/z grow unbounded at that range flings the
+// of the drag sweep — letting x/z grow unbounded at that range flings the
 // outermost cards far off-screen. Position is clamped to this many steps;
 // scale/opacity/rotate/shadow/blur keep using the real, unclamped distance,
 // so cards beyond the clamp keep shrinking/fading/blurring into an (already
@@ -58,14 +55,6 @@ export default function CoverflowArc() {
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const cardSizeRef = useRef(520);
 
-  // useLayoutEffect + gsap.context (not useEffect + manual kill calls): the
-  // ScrollTrigger pin inserts a "pin-spacer" div that physically moves
-  // `section` to a different DOM parent than the one React rendered it
-  // into. React 18 Strict Mode double-invokes effects on mount in dev,
-  // and without a context to synchronously revert that DOM surgery before
-  // the remount, React's reconciler ends up calling removeChild on a
-  // parent that no longer holds the node — ctx.revert() is what GSAP's
-  // own React guide prescribes to avoid exactly that race.
   useLayoutEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -89,6 +78,7 @@ export default function CoverflowArc() {
           stage.style.perspective = `${cardSizeRef.current * PERSPECTIVE_RATIO}px`;
         };
         measure();
+        window.addEventListener("resize", measure);
 
         const applyState = (progress: number) => {
           const centerProgress = progress * (total - 1);
@@ -122,35 +112,87 @@ export default function CoverflowArc() {
           });
         };
 
-        applyState(0);
+        // Cards are static until dragged — no scroll-driven progression.
+        // Grabbing the stage and moving the pointer left/right is the only
+        // way progress changes now. Starts centered on the middle card.
+        let progress = 0.5;
+        applyState(progress);
 
-        // Scrubbed proxy tween drives applyState on every scroll tick — the
-        // pin holds the section in place so only this progress (and thus
-        // every card's depth/scale/shadow) advances until the last card
-        // has had its turn, then the section releases and scroll resumes.
-        const proxy = { progress: 0 };
-        const tween = gsap.fromTo(
-          proxy,
-          { progress: 0 },
-          {
-            progress: 1,
-            ease: "none",
-            scrollTrigger: {
-              trigger: section,
-              start: "top top",
-              end: () => `+=${Math.max(window.innerHeight * 2.2, 1400)}`,
-              scrub: true,
-              pin: true,
-              invalidateOnRefresh: true,
-              onRefresh: measure,
-            },
-            onUpdate: () => applyState(proxy.progress),
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartProgress = 0;
+
+        // Velocity is tracked in progress-units/ms from the last two
+        // pointermove samples (not the whole drag average) so a throw
+        // reflects how fast the pointer was moving right at release, not
+        // the speed of the drag as a whole.
+        let velocity = 0;
+        let lastMoveTime = 0;
+        let lastMoveProgress = 0;
+        let momentumTween: gsap.core.Tween | null = null;
+
+        const THROW_PROJECTION_MS = 220; // how far ahead the release velocity projects
+        const MAX_THROW_VELOCITY = 0.006; // progress/ms clamp so a jittery flick can't fling across all 5 cards
+
+        const onPointerDown = (event: PointerEvent) => {
+          momentumTween?.kill();
+          isDragging = true;
+          dragStartX = event.clientX;
+          dragStartProgress = progress;
+          velocity = 0;
+          lastMoveTime = performance.now();
+          lastMoveProgress = progress;
+          stage.setPointerCapture(event.pointerId);
+        };
+
+        const onPointerMove = (event: PointerEvent) => {
+          if (!isDragging) return;
+          const deltaX = event.clientX - dragStartX;
+          const stepPx = cardSizeRef.current * SPACING_RATIO;
+          const deltaProgress = -(deltaX / stepPx) / (total - 1);
+          progress = gsap.utils.clamp(0, 1, dragStartProgress + deltaProgress);
+          applyState(progress);
+
+          const now = performance.now();
+          const dt = now - lastMoveTime;
+          if (dt > 0) {
+            velocity = (progress - lastMoveProgress) / dt;
+            lastMoveTime = now;
+            lastMoveProgress = progress;
           }
-        );
+        };
+
+        const endDrag = (event: PointerEvent) => {
+          if (!isDragging) return;
+          isDragging = false;
+          stage.releasePointerCapture(event.pointerId);
+
+          const throwVelocity = gsap.utils.clamp(-MAX_THROW_VELOCITY, MAX_THROW_VELOCITY, velocity);
+          const target = gsap.utils.clamp(0, 1, progress + throwVelocity * THROW_PROJECTION_MS);
+          const state = { progress };
+          momentumTween = gsap.to(state, {
+            progress: target,
+            duration: 0.8,
+            ease: "power3.out",
+            onUpdate: () => {
+              progress = state.progress;
+              applyState(progress);
+            },
+          });
+        };
+
+        stage.addEventListener("pointerdown", onPointerDown);
+        stage.addEventListener("pointermove", onPointerMove);
+        stage.addEventListener("pointerup", endDrag);
+        stage.addEventListener("pointercancel", endDrag);
 
         return () => {
-          tween.scrollTrigger?.kill();
-          tween.kill();
+          window.removeEventListener("resize", measure);
+          momentumTween?.kill();
+          stage.removeEventListener("pointerdown", onPointerDown);
+          stage.removeEventListener("pointermove", onPointerMove);
+          stage.removeEventListener("pointerup", endDrag);
+          stage.removeEventListener("pointercancel", endDrag);
         };
       });
     }, section);
@@ -161,7 +203,7 @@ export default function CoverflowArc() {
   return (
     <section
       ref={sectionRef as React.RefObject<HTMLElement>}
-      className="coverflow-section relative flex h-[100svh] w-full flex-col items-center justify-center overflow-hidden bg-ink px-6 py-16"
+      className="coverflow-section relative flex h-[100svh] w-full flex-col items-center justify-center overflow-hidden bg-ink px-6 pt-24 pb-16 md:pt-28"
     >
       <div className="relative z-10 mb-14 text-center md:mb-20">
         <p className="text-xs tracking-[0.3em] text-gold uppercase">The Edit</p>
@@ -170,10 +212,10 @@ export default function CoverflowArc() {
         </h2>
       </div>
 
-      {/* Desktop/tablet: coverflow depth stack, driven by scroll (no pin). */}
+      {/* Desktop/tablet: coverflow depth stack, driven by drag only. */}
       <div
         ref={stageRef}
-        className="relative hidden w-full items-center justify-center md:flex"
+        className="relative hidden w-full touch-none select-none items-center justify-center md:flex"
       >
         <div
           ref={stackRef}
@@ -195,6 +237,7 @@ export default function CoverflowArc() {
               <img
                 src={card.image}
                 alt={card.label}
+                draggable={false}
                 className="absolute inset-0 h-full w-full object-cover"
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />

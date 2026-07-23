@@ -2,7 +2,6 @@ import CrosswordHero from "@/components/home/templates/CrosswordHero";
 import OrbitHero from "@/components/home/templates/OrbitHero";
 import ArcOrbitHero from "@/components/home/templates/ArcOrbitHero";
 import CoverflowHero from "@/components/home/templates/CoverflowHero";
-import CursorImageTrail from "@/components/home/CursorImageTrail";
 import LogoOriginSequence from "@/components/home/LogoOriginSequence";
 
 /**
@@ -18,7 +17,7 @@ const TEMPLATES = {
   coverflow: CoverflowHero,
 };
 
-const ACTIVE_KEYS: (keyof typeof TEMPLATES)[] = ["crossword", "coverflow"];
+const ACTIVE_KEYS: (keyof typeof TEMPLATES)[] = [];
 
 export default function Hero() {
   return (
@@ -28,7 +27,6 @@ export default function Hero() {
         const Section = TEMPLATES[key];
         return <Section key={key} />;
       })}
-      <CursorImageTrail />
     </>
   );
 }

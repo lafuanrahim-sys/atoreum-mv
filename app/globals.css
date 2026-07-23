@@ -108,7 +108,7 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--ink);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--sand);
