@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import { playCardFlick } from "@/lib/keySound";
 
 // Same product photos already wired into the coverflow section — reused
 // here rather than picking new assets.
@@ -71,7 +72,7 @@ function TrailImage({ item, onDone }: { item: TrailItem; onDone: (id: number) =>
  */
 export default function CursorImageTrail() {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const lastPointRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const poolIndexRef = useRef(0);
   const idRef = useRef(0);
   const [items, setItems] = useState<TrailItem[]>([]);
@@ -93,14 +94,24 @@ export default function CursorImageTrail() {
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
+      const now = performance.now();
       const last = lastPointRef.current;
-      if (last && Math.hypot(x - last.x, y - last.y) < MIN_DISTANCE) return;
-      lastPointRef.current = { x, y };
+      const dist = last ? Math.hypot(x - last.x, y - last.y) : Infinity;
+      if (last && dist < MIN_DISTANCE) return;
+
+      // Cursor velocity in px/ms, normalized to 0..1 — a lazy drift sits
+      // around ~0.2 px/ms, a hard sweep 2.5+.
+      const speed = last ? Math.min(1, dist / Math.max(1, now - last.t) / 2.5) : 0.5;
+      lastPointRef.current = { x, y, t: now };
 
       const src = TRAIL_IMAGES[poolIndexRef.current % TRAIL_IMAGES.length];
       poolIndexRef.current += 1;
       const id = idRef.current++;
       const rotate = (Math.random() - 0.5) * 24;
+
+      // Each spawned photo is a card dealt off the deck — panned to where
+      // the cursor is, dealt at the pace the hand is moving.
+      playCardFlick((x / rect.width) * 2 - 1, speed);
 
       setItems((prev) => {
         const next = [...prev, { id, x, y, src, rotate }];

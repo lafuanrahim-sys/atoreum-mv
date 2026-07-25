@@ -10,7 +10,11 @@ import { useSession } from "@/lib/auth/SessionContext";
 export default function ProfileButton() {
   const { loggedIn, role, name } = useSession();
 
-  const href = loggedIn ? (role === "admin" ? "/dashboard" : "/account") : "/login";
+  const href = loggedIn
+    ? role === "admin" || role === "superadmin"
+      ? "/dashboard"
+      : "/account"
+    : "/login";
   const label = loggedIn ? `Account — ${name}` : "Sign in";
 
   return (

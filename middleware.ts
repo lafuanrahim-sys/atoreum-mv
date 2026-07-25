@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { USER_SESSION_COOKIE, verifyUserSessionToken } from "@/lib/auth/userSession";
+import { USER_SESSION_COOKIE, isAdminRole, verifyUserSessionToken } from "@/lib/auth/userSession";
 
 /**
  * Route protection for the unified account system:
@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
   );
 
   if (pathname.startsWith("/dashboard")) {
-    if (!session || session.role !== "admin") {
+    if (!session || !isAdminRole(session.role)) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("from", pathname);
       return NextResponse.redirect(loginUrl);

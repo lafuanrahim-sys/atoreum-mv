@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
+import { isAdminRole } from "@/lib/auth/userSession";
 import {
   createMessage,
   deleteMessage,
@@ -31,7 +32,7 @@ export async function submitMessageAction(formData: FormData): Promise<void> {
 
 async function requireAdmin() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "admin") redirect("/login");
+  if (!user || !isAdminRole(user.role)) redirect("/login");
 }
 
 export async function setMessageStatusAction(id: string, status: MessageStatus): Promise<void> {

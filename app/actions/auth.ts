@@ -7,10 +7,13 @@ import {
   USER_SESSION_COOKIE,
   USER_SESSION_MAX_AGE_SECONDS,
   createUserSessionToken,
+  isAdminRole,
+  type UserRole,
 } from "@/lib/auth/userSession";
 import {
   changeUserPassword,
   createUser,
+  deleteUser,
   setUserRole,
   toggleUserFavorite,
   updateUserName,
@@ -18,7 +21,7 @@ import {
 } from "@/lib/data/users.server";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 
-async function setSessionCookie(userId: string, role: "customer" | "admin") {
+async function setSessionCookie(userId: string, role: UserRole) {
   const cookieStore = await cookies();
   cookieStore.set(USER_SESSION_COOKIE, await createUserSessionToken(userId, role), {
     httpOnly: true,
@@ -35,8 +38,8 @@ function loginRedirect(params: Record<string, string>): never {
 }
 
 /** Where each role lands after signing in (unless a safe `from` is given). */
-function homeFor(role: "customer" | "admin"): string {
-  return role === "admin" ? "/dashboard" : "/account";
+function homeFor(role: UserRole): string {
+  return isAdminRole(role) ? "/dashboard" : "/account";
 }
 
 export async function loginAction(formData: FormData): Promise<void> {
@@ -55,7 +58,7 @@ export async function loginAction(formData: FormData): Promise<void> {
   // admin-only dashboard (middleware would bounce them back to /login,
   // reading as a broken login).
   const safeFrom =
-    from.startsWith("/") && !from.startsWith("//") && !(from.startsWith("/dashboard") && user.role !== "admin")
+    from.startsWith("/") && !from.startsWith("//") && !(from.startsWith("/dashboard") && !isAdminRole(user.role))
       ? from
       : null;
   redirect(safeFrom ?? homeFor(user.role));
@@ -132,13 +135,27 @@ export async function toggleFavoriteAction(productId: string): Promise<string[] 
   return favorites ?? { error: "not-found" };
 }
 
-/** Admin-only: change another user's role. */
+/**
+ * Super-admin only: grant or revoke the admin role. Regular admins can see
+ * the customer list but may not touch roles; the store itself additionally
+ * refuses to ever change the super admin's own role.
+ */
 export async function assignRoleAction(userId: string, role: "customer" | "admin"): Promise<void> {
   const actor = await getCurrentUser();
-  if (!actor || actor.role !== "admin") redirect("/login");
-  // Self-demotion is blocked so the store can never end up with no admin.
-  if (actor.id === userId && role !== "admin") return;
+  if (!actor || actor.role !== "superadmin") redirect("/login");
+  if (actor.id === userId) return;
 
   setUserRole(userId, role);
   revalidatePath("/dashboard/customers");
+}
+
+/** Super-admin only: permanently delete a user account (never the super admin's own). */
+export async function deleteUserAction(userId: string): Promise<void> {
+  const actor = await getCurrentUser();
+  if (!actor || actor.role !== "superadmin") redirect("/login");
+  if (actor.id === userId) return;
+
+  deleteUser(userId);
+  revalidatePath("/dashboard/customers");
+  revalidatePath("/dashboard");
 }

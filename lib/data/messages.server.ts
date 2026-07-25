@@ -14,7 +14,7 @@ import crypto from "crypto";
 
 const DATA_PATH = path.join(process.cwd(), "data", "messages.json");
 
-export type MessageStatus = "unread" | "read";
+export type MessageStatus = "unread" | "read" | "archived";
 
 export type ContactMessage = {
   id: string;

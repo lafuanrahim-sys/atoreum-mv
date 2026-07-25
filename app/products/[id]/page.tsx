@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProductById, getRelatedProducts } from "@/lib/data/products.server";
 import ProductGallery from "@/components/products/ProductGallery";
+import ProductHeadlines from "@/components/products/ProductHeadlines";
 import AddToCartButton from "@/components/products/AddToCartButton";
 import StockBadge from "@/components/products/StockBadge";
 import ProductCard from "@/components/products/ProductCard";
 import FavoriteButton from "@/components/products/FavoriteButton";
 import ProductReviews from "@/components/products/ProductReviews";
 import { listApprovedReviews } from "@/lib/data/reviews.server";
+import { hasCompletedPurchase } from "@/lib/data/orders.server";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 
 function formatPrice(price: number, currency: string) {
@@ -44,6 +46,7 @@ export default async function ProductDetailPage({
   const related = getRelatedProducts(product.category, product.id, 3);
   const reviews = listApprovedReviews(product.id);
   const user = await getCurrentUser();
+  const canReview = !!user && hasCompletedPurchase(user.email, product.id);
 
   return (
     <div className="bg-ink pt-10 pb-28 md:pt-14">
@@ -67,9 +70,15 @@ export default async function ProductDetailPage({
 
           <div className="flex flex-col">
             <p className="text-[11px] tracking-[0.2em] text-sand uppercase">{product.brand}</p>
-            <h1 className="mt-3 font-display text-3xl leading-[1.15] text-ivory md:text-4xl">
+            <h1 className="mt-3 font-sans text-2xl font-semibold leading-[1.2] tracking-tight text-ivory md:text-3xl">
               {product.name}
+              {product.size && (
+                <span className="ml-2 align-middle text-sm font-normal lowercase tracking-normal text-ivory-dim">
+                  {product.size}
+                </span>
+              )}
             </h1>
+            <ProductHeadlines headlines={product.headlines} />
 
             <div className="mt-4 flex items-center gap-4">
               <span className="text-lg text-ivory tabular-nums">{formatPrice(product.price, product.currency)}</span>
@@ -86,8 +95,13 @@ export default async function ProductDetailPage({
             </div>
 
             <div className="mt-10 border-t border-line pt-8">
-              <h2 className="text-xs uppercase tracking-[0.2em] text-ivory">Details</h2>
-              <p className="mt-4 text-sm leading-relaxed text-ivory-dim">{product.details}</p>
+              <h2 className="text-xs uppercase tracking-[0.2em] text-ivory">How to Use</h2>
+              <p className="mt-4 text-sm leading-relaxed text-ivory-dim">{product.howToUse}</p>
+            </div>
+
+            <div className="mt-8 border-t border-line pt-8">
+              <h2 className="text-xs uppercase tracking-[0.2em] text-ivory">Ingredients</h2>
+              <p className="mt-4 text-sm leading-relaxed text-ivory-dim">{product.ingredients}</p>
             </div>
 
             <dl className="mt-8 grid grid-cols-2 gap-4 border-t border-line pt-8 text-xs">
@@ -107,6 +121,7 @@ export default async function ProductDetailPage({
           productId={product.id}
           reviews={reviews}
           isLoggedIn={!!user}
+          canReview={canReview}
           flag={reviewFlag}
         />
 

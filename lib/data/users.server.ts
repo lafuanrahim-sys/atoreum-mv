@@ -48,10 +48,14 @@ function sanitize(user: User): PublicUser {
   return publicUser;
 }
 
+/** The one account that owns the store — always the super admin. */
+export const SUPER_ADMIN_EMAIL = "admin@atoreum.mv";
+
 /**
- * First run bootstraps the store with one admin account so the dashboard is
- * never locked out: admin@atoreum.mv, password = ADMIN_PASSWORD env var
- * (falling back to "atoreum-admin" in dev). Change it after first login.
+ * First run bootstraps the store with one super-admin account so the
+ * dashboard is never locked out: admin@atoreum.mv, password = ADMIN_PASSWORD
+ * env var (falling back to "atoreum-admin" in dev). Change it after first
+ * login.
  */
 function readAll(): User[] {
   if (!fs.existsSync(DATA_PATH)) {
@@ -59,9 +63,9 @@ function readAll(): User[] {
     const seedAdmin: User = {
       id: `usr-${Date.now().toString(36)}`,
       name: "Atoreum Admin",
-      email: "admin@atoreum.mv",
+      email: SUPER_ADMIN_EMAIL,
       passwordHash: hashPassword(process.env.ADMIN_PASSWORD ?? "atoreum-admin"),
-      role: "admin",
+      role: "superadmin",
       favorites: [],
       createdAt: now,
       updatedAt: now,
@@ -69,7 +73,11 @@ function readAll(): User[] {
     writeAll([seedAdmin]);
   }
   const raw = fs.readFileSync(DATA_PATH, "utf-8");
-  return JSON.parse(raw) as User[];
+  const users = JSON.parse(raw) as User[];
+  // Stores created before the superadmin role: pin the owner account to it.
+  return users.map((u) =>
+    u.email === SUPER_ADMIN_EMAIL && u.role !== "superadmin" ? { ...u, role: "superadmin" } : u
+  );
 }
 
 function writeAll(users: User[]) {
@@ -159,9 +167,21 @@ export function setUserRole(id: string, role: UserRole): PublicUser | null {
   const all = readAll();
   const index = all.findIndex((u) => u.id === id);
   if (index === -1) return null;
+  // The owner account's role is pinned — nothing may promote another user to
+  // superadmin or demote the existing one.
+  if (all[index].role === "superadmin" || role === "superadmin") return null;
   all[index] = { ...all[index], role, updatedAt: new Date().toISOString() };
   writeAll(all);
   return sanitize(all[index]);
+}
+
+export function deleteUser(id: string): boolean {
+  const all = readAll();
+  const target = all.find((u) => u.id === id);
+  // The super admin account can never be deleted.
+  if (!target || target.role === "superadmin") return false;
+  writeAll(all.filter((u) => u.id !== id));
+  return true;
 }
 
 export function toggleUserFavorite(id: string, productId: string): string[] | null {

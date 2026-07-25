@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import type { Order, OrderCustomer, OrderItem, OrderStatus } from "@/lib/types";
+import type { Order, OrderCustomer, OrderItem, OrderStatus, PaymentMethod } from "@/lib/types";
 
 /**
  * File-based order store — same approach and same limitation as
@@ -41,6 +41,7 @@ export function createOrder(params: {
   subtotal: number;
   currency: Order["currency"];
   customer: OrderCustomer;
+  paymentMethod: PaymentMethod;
   paymentProofPath: string | null;
 }): Order {
   const all = readAll();
@@ -52,14 +53,31 @@ export function createOrder(params: {
     subtotal: params.subtotal,
     currency: params.currency,
     customer: params.customer,
+    paymentMethod: params.paymentMethod,
     paymentProofPath: params.paymentProofPath,
-    status: "Pending Verification",
+    // Cash orders have no transfer to verify — they're confirmed on the spot
+    // and settle on delivery. Transfers wait for the proof to be checked.
+    status: params.paymentMethod === "cash" ? "Confirmed" : "Pending Verification",
     createdAt: now,
     updatedAt: now,
   };
   all.push(order);
   writeAll(all);
   return order;
+}
+
+/**
+ * True when this email has a COMPLETED order containing the product —
+ * the bar a customer must clear before they may review it.
+ */
+export function hasCompletedPurchase(email: string, productId: string): boolean {
+  const normalized = email.trim().toLowerCase();
+  return readAll().some(
+    (o) =>
+      o.status === "Completed" &&
+      o.customer.email.toLowerCase() === normalized &&
+      o.items.some((i) => i.productId === productId)
+  );
 }
 
 export function updateOrderStatus(id: string, status: OrderStatus): Order | null {

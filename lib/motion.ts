@@ -105,6 +105,93 @@ export function depthReveal(els: Element[] | NodeListOf<Element>, options: {
   });
 }
 
+/**
+ * Scrub-tied background parallax for full-bleed hero media. Applied to the
+ * decorative image layer only (never text/controls), with a deliberately
+ * small travel so foreground and background never desync distractingly.
+ * The layer must bleed past its section (e.g. top/bottom -8%) so the drift
+ * never exposes an edge.
+ */
+export function parallax(el: Element, options: {
+  trigger: Element;
+  yPercent?: number;
+} ) {
+  const { trigger, yPercent = 8 } = options;
+  if (prefersReducedMotion()) return;
+
+  gsap.to(el, {
+    yPercent,
+    ease: "none",
+    scrollTrigger: {
+      trigger,
+      start: "top top",
+      end: "bottom top",
+      scrub: true,
+    },
+  });
+}
+
+/**
+ * Masked word-by-word headline reveal: animates the [data-word] spans that
+ * <WordMask> (components/ui/WordMask.tsx) renders — each word rises from
+ * behind its own overflow-hidden mask with a slight settle, staggered
+ * across the line. Deliberately does NOT split text at runtime: rewriting a
+ * React-rendered heading's innerHTML leaves React reconciling against
+ * removed nodes (removeChild crashes). Reserved for short display
+ * headlines — never body copy.
+ */
+export function splitWordReveal(el: Element, options: {
+  trigger?: Element;
+  start?: string;
+  stagger?: number;
+} = {}) {
+  const { trigger = el, start = "top 82%", stagger = 0.07 } = options;
+  const words = el.querySelectorAll<HTMLElement>("[data-word]");
+  if (words.length === 0 || prefersReducedMotion()) return;
+
+  gsap.set(words, { yPercent: 110, rotate: 3, transformOrigin: "0% 100%" });
+
+  // A ScrollTrigger created when its start line is already behind the
+  // scroll position (above-the-fold titles, client-side navigations) may
+  // not fire until the next scroll tick — headlines above the fold play
+  // straight away instead.
+  const inViewAlready = el.getBoundingClientRect().top < window.innerHeight * 0.9;
+
+  gsap.to(words, {
+    yPercent: 0,
+    rotate: 0,
+    duration: 0.9,
+    stagger,
+    ease: "expo.out",
+    delay: inViewAlready ? 0.15 : 0,
+    ...(inViewAlready ? {} : { scrollTrigger: { trigger, start, once: true } }),
+  });
+}
+
 export function clamp(min: number, max: number, v: number) {
   return Math.max(min, Math.min(max, v));
+}
+
+/**
+ * Scrolls to an element (or absolute y position). The site drives scroll
+ * through Lenis (see components/ui/SmoothScroll.tsx), which re-applies its
+ * own tracked position every RAF tick — a plain element.scrollIntoView()
+ * gets overwritten within a frame and silently does nothing. Goes through
+ * Lenis when it's mounted; falls back to native scrolling otherwise (e.g.
+ * during the brief window before SmoothScroll's effect has run).
+ */
+export function scrollToElement(target: Element | number, options: { offset?: number } = {}) {
+  const { offset = 0 } = options;
+  const lenis = typeof window !== "undefined" ? window.__lenis : undefined;
+
+  if (lenis) {
+    lenis.scrollTo(target, { offset, immediate: prefersReducedMotion() });
+    return;
+  }
+
+  if (typeof target === "number") {
+    window.scrollTo({ top: target + offset, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  } else {
+    target.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  }
 }

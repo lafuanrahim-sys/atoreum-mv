@@ -20,6 +20,19 @@
   --moss: #b8c0bb;
   --sand: #c5c9c4;
   --line: rgba(18, 25, 21, 0.08);
+
+  /* Fixed light "photo well" behind product imagery — supplier photos are
+     shot on white/cream studio backdrops, so this stays constant across
+     themes instead of flipping dark, which was turning ordinary white-cutout
+     product photos into a jarring halo against a dark card. */
+  --photo-well: #f4f1ea;
+  /* Badges overlaid directly on the photo well (category / stock chips)
+     need their own fixed light-mode-style ink, for the same reason —
+     the theme-flipping --ink/--ivory tokens read fine on a theme-flipping
+     card but turn muddy on a well that's always light. */
+  --photo-well-fg: #121915;
+  --photo-well-fg-dim: #5f665f;
+  --photo-well-line: rgba(18, 25, 21, 0.14);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -88,6 +101,24 @@
   --line: rgba(46, 55, 40, 0.12);
 }
 
+/* Dark variant of the admin palette — same forest-green art direction on a
+   deep canvas. Toggled per-admin from the sidebar (cookie-backed, applied
+   server-side in the dashboard layout so there's no flash). */
+.dashboard-theme.dashboard-dark {
+  color-scheme: dark;
+  --ink: #1e241b;
+  --ink-2: #14180f;
+  --charcoal: #2a3125;
+  --ivory: #e8ebe2;
+  --ivory-dim: #98a08e;
+  --gold: #a9b29e;
+  --gold-deep: #8d9a7c;
+  --gold-soft: #6c7563;
+  --moss: #333c2c;
+  --sand: #7f8873;
+  --line: rgba(232, 235, 226, 0.12);
+}
+
 @theme inline {
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
@@ -100,6 +131,10 @@
   --color-moss: var(--moss);
   --color-sand: var(--sand);
   --color-line: var(--line);
+  --color-photo-well: var(--photo-well);
+  --color-photo-well-fg: var(--photo-well-fg);
+  --color-photo-well-fg-dim: var(--photo-well-fg-dim);
+  --color-photo-well-line: var(--photo-well-line);
 
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
@@ -219,4 +254,15 @@ button:not(:disabled),
    this class is only a fallback if JS fails to load */
 .reveal {
   opacity: 1;
+}
+
+/* Product detail page: rotating headline crossfade (ProductHeadlines.tsx) */
+@keyframes product-headline-fadein {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .product-headline {
+    animation: product-headline-fadein 0.6s ease-out;
+  }
 }

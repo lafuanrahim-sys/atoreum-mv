@@ -11,13 +11,14 @@ import {
   deleteProduct,
 } from "@/lib/data/products.server";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
+import { isAdminRole } from "@/lib/auth/userSession";
 import type { Category, ProductInput, StockStatus } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
 
 /** Server actions are public endpoints — role-check inside, not just at the page. */
 async function requireAdmin() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "admin") redirect("/login");
+  if (!user || !isAdminRole(user.role)) redirect("/login");
 }
 
 const IMAGE_DIR = path.join(process.cwd(), "public", "images", "products");
@@ -54,17 +55,26 @@ function readProductFields(formData: FormData): Omit<ProductInput, "images"> {
     throw new Error("Invalid category.");
   }
   const stockStatus = String(formData.get("stockStatus")) as StockStatus;
+  const headlines: [string, string, string] = [
+    String(formData.get("headline1") ?? "").trim(),
+    String(formData.get("headline2") ?? "").trim(),
+    String(formData.get("headline3") ?? "").trim(),
+  ];
 
   return {
     sku: String(formData.get("sku") ?? "").trim(),
     name: String(formData.get("name") ?? "").trim(),
+    size: String(formData.get("size") ?? "").trim(),
     brand: String(formData.get("brand") ?? "Lebelage").trim(),
     category,
     price: Number(formData.get("price") ?? 0),
     currency: (String(formData.get("currency") ?? "MVR") as ProductInput["currency"]),
     description: String(formData.get("description") ?? "").trim(),
-    details: String(formData.get("details") ?? "").trim(),
+    headlines,
+    ingredients: String(formData.get("ingredients") ?? "").trim(),
+    howToUse: String(formData.get("howToUse") ?? "").trim(),
     stockStatus,
+    stockOnHand: Math.max(0, Math.floor(Number(formData.get("stockOnHand") ?? 0)) || 0),
     featured: formData.get("featured") === "on",
   };
 }

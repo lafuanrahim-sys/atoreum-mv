@@ -5,7 +5,7 @@ import path from "path";
 import crypto from "crypto";
 import { createOrder } from "@/lib/data/orders.server";
 import { notifyNewOrder } from "@/lib/notify";
-import type { OrderItem } from "@/lib/types";
+import type { OrderItem, PaymentMethod } from "@/lib/types";
 
 export type CheckoutResult =
   | { ok: true; orderId: string }
@@ -40,13 +40,20 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const currency = items[0].currency;
 
-  // Payment proof is optional at submission time — customers often need to
-  // actually go complete the bank transfer after filling out this form, not
-  // during it, so we don't block order creation on having the file yet.
-  // Judgment call: flagged for review, see chat summary.
+  const methodRaw = String(formData.get("paymentMethod") ?? "");
+  if (methodRaw !== "cash" && methodRaw !== "transfer") {
+    return { ok: false, error: "Please choose a payment method." };
+  }
+  const paymentMethod: PaymentMethod = methodRaw;
+
+  // Cash on delivery needs no receipt; bank transfers must include one so the
+  // store can verify the payment before confirming the order.
   let paymentProofPath: string | null = null;
-  const proofFile = formData.get("paymentProof");
-  if (proofFile instanceof File && proofFile.size > 0) {
+  if (paymentMethod === "transfer") {
+    const proofFile = formData.get("paymentProof");
+    if (!(proofFile instanceof File) || proofFile.size === 0) {
+      return { ok: false, error: "Please upload your transfer receipt to place the order." };
+    }
     if (proofFile.size > MAX_FILE_BYTES) {
       return { ok: false, error: "Payment proof file is too large (max 8MB)." };
     }
@@ -67,6 +74,7 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
     subtotal,
     currency,
     customer: { name, email, phone, address },
+    paymentMethod,
     paymentProofPath,
   });
 

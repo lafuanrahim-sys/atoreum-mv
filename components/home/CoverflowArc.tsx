@@ -2,6 +2,10 @@
 
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { prefersReducedMotion, reveal } from "@/lib/motion";
+
+gsap.registerPlugin(ScrollTrigger);
 
 type CoverflowCard = {
   label: string;
@@ -40,7 +44,7 @@ const SCALE_MIN = 0.46;
 const SCALE_FALLOFF = 0.32; // scale lost per step away from focus
 const OPACITY_MIN = 0.22;
 const OPACITY_FALLOFF = 0.4;
-const SHADOW_MAX_ALPHA = 0.22; // out-of-focus cards' resting shadow strength
+const SHADOW_MAX_ALPHA = 0.09; // out-of-focus cards' resting shadow strength
 const SHADOW_RATE = 0.24; // shadow reaches max alpha by this many steps away from focus
 const BLUR_START = 0.75; // steps away before blur starts kicking in
 const BLUR_MAX_PX = 4;
@@ -64,6 +68,20 @@ export default function CoverflowArc() {
       const stack = stackRef.current;
       if (!stage || !stack) return;
 
+      // Quiet entrance for the copy and the mobile row; the desktop stage gets
+      // the fan-out below instead. reveal() handles reduced-motion itself.
+      const entranceTargets = [
+        section.querySelector(".coverflow-header"),
+        section.querySelector(".coverflow-mobile-row"),
+      ].filter((el): el is Element => el !== null);
+      reveal(entranceTargets, {
+        y: 24,
+        duration: 0.9,
+        stagger: 0.15,
+        start: "top 72%",
+        trigger: section,
+      });
+
       const mm = gsap.matchMedia();
 
       mm.add(DESKTOP_QUERY, () => {
@@ -80,9 +98,18 @@ export default function CoverflowArc() {
         measure();
         window.addEventListener("resize", measure);
 
+        // Entrance choreography: the five cards start as one stacked deck and
+        // fan out into the arc when the section scrolls into view — the
+        // motion literally performs the section's headline ("Five formulas,
+        // one arc"). `spread` interpolates every distance-derived quantity
+        // from "stacked at focus" (0) to the normal coverflow layout (1), so
+        // a drag mid-fan simply works with wherever the fan currently is.
+        const spread = { value: prefersReducedMotion() ? 1 : 0 };
+
         const applyState = (progress: number) => {
           const centerProgress = progress * (total - 1);
           const size = cardSizeRef.current;
+          const p = spread.value;
 
           cardRefs.current.forEach((card, i) => {
             if (!card) return;
@@ -91,13 +118,13 @@ export default function CoverflowArc() {
             const positionDelta = gsap.utils.clamp(-POSITION_CLAMP, POSITION_CLAMP, delta);
             const positionAbsDelta = Math.abs(positionDelta);
 
-            const rotateY = gsap.utils.clamp(-MAX_ANGLE, MAX_ANGLE, delta * ANGLE_STEP);
-            const z = (FORWARD_POP - positionAbsDelta * DEPTH_RATIO) * size;
-            const x = positionDelta * size * SPACING_RATIO;
-            const scale = gsap.utils.clamp(SCALE_MIN, 1, 1 - absDelta * SCALE_FALLOFF);
-            const opacity = gsap.utils.clamp(OPACITY_MIN, 1, 1 - absDelta * OPACITY_FALLOFF);
-            const shadowAlpha = gsap.utils.clamp(0, SHADOW_MAX_ALPHA, absDelta * SHADOW_RATE);
-            const blurPx = gsap.utils.clamp(0, BLUR_MAX_PX, (absDelta - BLUR_START) * BLUR_RATE);
+            const rotateY = gsap.utils.clamp(-MAX_ANGLE, MAX_ANGLE, delta * ANGLE_STEP) * p;
+            const z = (FORWARD_POP - positionAbsDelta * DEPTH_RATIO * p) * size;
+            const x = positionDelta * size * SPACING_RATIO * p;
+            const scale = gsap.utils.clamp(SCALE_MIN, 1, 1 - absDelta * SCALE_FALLOFF * p);
+            const opacity = gsap.utils.clamp(OPACITY_MIN, 1, 1 - absDelta * OPACITY_FALLOFF * p);
+            const shadowAlpha = gsap.utils.clamp(0, SHADOW_MAX_ALPHA, absDelta * SHADOW_RATE) * p;
+            const blurPx = gsap.utils.clamp(0, BLUR_MAX_PX, (absDelta - BLUR_START) * BLUR_RATE) * p;
 
             gsap.set(card, {
               x,
@@ -117,6 +144,16 @@ export default function CoverflowArc() {
         // way progress changes now. Starts centered on the middle card.
         let progress = 0.5;
         applyState(progress);
+
+        if (!prefersReducedMotion()) {
+          gsap.to(spread, {
+            value: 1,
+            duration: 1.6,
+            ease: "power3.inOut",
+            scrollTrigger: { trigger: section, start: "top 62%", once: true },
+            onUpdate: () => applyState(progress),
+          });
+        }
 
         let isDragging = false;
         let dragStartX = 0;
@@ -205,7 +242,7 @@ export default function CoverflowArc() {
       ref={sectionRef as React.RefObject<HTMLElement>}
       className="coverflow-section relative flex h-[100svh] w-full flex-col items-center justify-center overflow-hidden bg-ink px-6 pt-24 pb-16 md:pt-28"
     >
-      <div className="relative z-10 mb-14 text-center md:mb-20">
+      <div className="coverflow-header relative z-10 mb-14 text-center md:mb-20">
         <p className="text-xs tracking-[0.3em] text-gold uppercase">The Edit</p>
         <h2 className="mt-4 font-display text-2xl text-ivory md:text-4xl">
           Five formulas, one arc

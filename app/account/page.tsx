@@ -21,6 +21,7 @@ const STATUS_STYLES: Record<string, string> = {
   "Pending Verification": "text-gold",
   Confirmed: "text-sand",
   Shipped: "text-ivory-dim",
+  Completed: "text-emerald-500 font-semibold",
   Cancelled: "text-red-400",
 };
 
@@ -55,7 +56,7 @@ export default async function AccountPage({
             </h1>
           </div>
           <div className="flex items-center gap-6">
-            {user.role === "admin" && (
+            {(user.role === "admin" || user.role === "superadmin") && (
               <Link
                 href="/dashboard"
                 className="text-xs uppercase tracking-[0.2em] text-gold hover:underline"

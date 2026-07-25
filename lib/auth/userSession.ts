@@ -15,7 +15,12 @@
 const COOKIE_NAME = "atoreum_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
-export type UserRole = "customer" | "admin";
+export type UserRole = "customer" | "admin" | "superadmin";
+
+/** True for any role that may enter the admin dashboard. */
+export function isAdminRole(role: UserRole | string | undefined | null): boolean {
+  return role === "admin" || role === "superadmin";
+}
 
 export type SessionPayload = {
   userId: string;
@@ -87,7 +92,7 @@ export async function verifyUserSessionToken(
 
   const [userId, role, expiryStr] = payload.split(":");
   const expiry = Number(expiryStr);
-  if (!userId || (role !== "customer" && role !== "admin")) return null;
+  if (!userId || (role !== "customer" && role !== "admin" && role !== "superadmin")) return null;
   if (!Number.isFinite(expiry) || Date.now() >= expiry) return null;
 
   return { userId, role };

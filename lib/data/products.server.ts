@@ -21,7 +21,9 @@ const DATA_PATH = path.join(process.cwd(), "data", "products.json");
 
 function readAll(): Product[] {
   const raw = fs.readFileSync(DATA_PATH, "utf-8");
-  return JSON.parse(raw) as Product[];
+  const products = JSON.parse(raw) as Product[];
+  // Products saved before on-hand stock existed default to 0 units.
+  return products.map((p) => ({ ...p, stockOnHand: p.stockOnHand ?? 0 }));
 }
 
 function writeAll(products: Product[]) {

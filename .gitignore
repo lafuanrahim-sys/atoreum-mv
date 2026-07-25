@@ -66,3 +66,8 @@ next-env.d.ts
 .claude/settings.local.json
 .claude/skills/
 .agents/skills/
+
+# local dev server log + Playwright MCP debug artifacts (snapshots, console
+# logs, screenshots) — not project source.
+.dev-server.log
+.playwright-mcp/

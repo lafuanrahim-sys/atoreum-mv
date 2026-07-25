@@ -13,6 +13,7 @@ const STATUS_STYLES: Record<string, string> = {
   "Pending Verification": "text-gold",
   Confirmed: "text-sand",
   Shipped: "text-ivory-dim",
+  Completed: "text-emerald-600 font-semibold",
   Cancelled: "text-red-400",
 };
 
@@ -209,9 +210,11 @@ export default async function DashboardHomePage() {
                   href={`/products/${productId}`}
                   className="group rounded-lg border border-line bg-ink p-3 transition-colors hover:border-gold"
                 >
-                  <div className="relative aspect-square overflow-hidden rounded-md bg-ink-2">
+                  <div className="relative aspect-square overflow-hidden rounded-md bg-photo-well">
                     {entry.image && (
-                      <Image src={entry.image} alt={entry.name} fill className="object-cover" />
+                      <div className="absolute inset-2">
+                        <Image src={entry.image} alt={entry.name} fill className="object-contain" />
+                      </div>
                     )}
                     <span className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-ink/80 text-[10px] text-ivory">
                       {i + 1}

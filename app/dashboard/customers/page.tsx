@@ -1,14 +1,21 @@
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { listUsers } from "@/lib/data/users.server";
 import { getAllOrders } from "@/lib/data/orders.server";
-import { assignRoleAction } from "@/app/actions/auth";
+import { assignRoleAction, deleteUserAction } from "@/app/actions/auth";
 
 function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  superadmin: "Super Admin",
+  admin: "Admin",
+  customer: "Customer",
+};
+
 export default async function DashboardCustomersPage() {
   const me = await getCurrentUser();
+  const isSuperAdmin = me?.role === "superadmin";
   const users = listUsers();
   const orders = getAllOrders();
 
@@ -27,7 +34,10 @@ export default async function DashboardCustomersPage() {
     <div>
       <h1 className="font-display text-2xl text-ivory">Customers ({users.length})</h1>
       <p className="mt-1 text-sm text-ivory-dim">
-        Registered accounts, their order history, and role management.
+        Registered accounts and their order history.
+        {isSuperAdmin
+          ? " As super admin you can grant or revoke admin access and delete accounts."
+          : " Only the super admin can manage roles or delete accounts."}
       </p>
 
       <div className="mt-6 overflow-x-auto rounded-lg border border-line bg-ink">
@@ -47,6 +57,8 @@ export default async function DashboardCustomersPage() {
             {users.map((u) => {
               const stats = statsFor(u.email);
               const isSelf = me?.id === u.id;
+              const isTargetSuperAdmin = u.role === "superadmin";
+              const canManage = isSuperAdmin && !isSelf && !isTargetSuperAdmin;
               return (
                 <tr key={u.id} className="border-b border-line/50 last:border-b-0">
                   <td className="px-5 py-3 text-ivory">
@@ -64,28 +76,45 @@ export default async function DashboardCustomersPage() {
                   <td className="px-5 py-3">
                     <span
                       className={`text-xs uppercase tracking-[0.12em] ${
-                        u.role === "admin" ? "text-gold" : "text-ivory-dim"
+                        isTargetSuperAdmin
+                          ? "text-gold-deep font-semibold"
+                          : u.role === "admin"
+                            ? "text-gold"
+                            : "text-ivory-dim"
                       }`}
                     >
-                      {u.role}
+                      {ROLE_LABELS[u.role] ?? u.role}
                     </span>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    {!isSelf && (
-                      <form
-                        action={async () => {
-                          "use server";
-                          await assignRoleAction(u.id, u.role === "admin" ? "customer" : "admin");
-                        }}
-                        className="inline"
-                      >
-                        <button
-                          type="submit"
-                          className="text-xs text-gold hover:underline"
+                    {canManage && (
+                      <div className="flex items-center justify-end gap-4">
+                        <form
+                          action={async () => {
+                            "use server";
+                            await assignRoleAction(u.id, u.role === "admin" ? "customer" : "admin");
+                          }}
+                          className="inline"
                         >
-                          {u.role === "admin" ? "Revoke admin" : "Make admin"}
-                        </button>
-                      </form>
+                          <button type="submit" className="text-xs text-gold hover:underline">
+                            {u.role === "admin" ? "Revoke admin" : "Make admin"}
+                          </button>
+                        </form>
+                        <form
+                          action={async () => {
+                            "use server";
+                            await deleteUserAction(u.id);
+                          }}
+                          className="inline"
+                        >
+                          <button
+                            type="submit"
+                            className="text-xs text-ivory-dim transition-colors hover:text-red-500"
+                          >
+                            Delete
+                          </button>
+                        </form>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -97,6 +126,7 @@ export default async function DashboardCustomersPage() {
 
       <p className="mt-4 text-[11px] text-ivory-dim/70">
         Guest checkout orders (placed without an account) appear under Orders but not here.
+        Deleting an account does not delete its past orders.
       </p>
     </div>
   );

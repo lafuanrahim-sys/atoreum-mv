@@ -52,9 +52,11 @@ export default function CartDrawer() {
             <ul className="flex flex-col gap-6">
               {lines.map((line) => (
                 <li key={line.productId} className="flex gap-4">
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-sm bg-ink">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-sm bg-photo-well">
                     {line.image ? (
-                      <Image src={line.image} alt={line.name} fill className="object-cover" />
+                      <div className="absolute inset-1.5">
+                        <Image src={line.image} alt={line.name} fill className="object-contain" />
+                      </div>
                     ) : null}
                   </div>
                   <div className="flex flex-1 flex-col">

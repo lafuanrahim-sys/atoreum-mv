@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import gsap from "gsap";
 import { playKeySound } from "@/lib/keySound";
 
@@ -176,6 +184,68 @@ export default function LetterGrid() {
     Array.from(activeRef.current).forEach((index) => setCellState(index, false));
   }, [setCellState]);
 
+  // Entrance: the crossword solves itself. The ATOREUM answer types in
+  // first, letter by letter; then the noise letters ripple outward from the
+  // word — each flickering through random letters before settling on its
+  // own, the same decode vocabulary as the hover scramble. Ripple delays are
+  // distance-from-the-word, so the word is the animation's origin, not just
+  // its subject. Layout effect so cells are hidden before first paint.
+  useLayoutEffect(() => {
+    if (reduceMotion) return;
+    const { rows, cols } = dims;
+    const wordRow = Math.floor(rows / 2);
+    const wordStart = Math.floor((cols - WORD.length) / 2);
+
+    const ctx = gsap.context(() => {
+      const all = cellRefs.current.filter((el): el is HTMLDivElement => el !== null);
+      if (all.length === 0) return;
+      gsap.set(all, { opacity: 0, scale: 0.6 });
+
+      // 1) The answer is written in.
+      const tl = gsap.timeline();
+      for (let i = 0; i < WORD.length; i++) {
+        const el = cellRefs.current[wordRow * cols + wordStart + i];
+        if (el) {
+          tl.to(el, { opacity: 1, scale: 1, duration: 0.32, ease: "back.out(2)" }, 0.25 + i * 0.09);
+        }
+      }
+
+      // 2) The noise decodes outward from it.
+      const rng = createRng(rows * 31 + cols * 7);
+      cellRefs.current.forEach((el, index) => {
+        if (!el || el.dataset.word === "true") return;
+        const r = Math.floor(index / cols);
+        const c = index % cols;
+        let dist = Infinity;
+        for (let w = 0; w < WORD.length; w++) {
+          dist = Math.min(dist, Math.hypot(r - wordRow, c - (wordStart + w)));
+        }
+        const delay = 1.05 + dist * 0.07 + rng() * 0.08;
+        gsap
+          .timeline({ delay })
+          .call(() => {
+            el.textContent = randomLetter(rng);
+          })
+          .to(el, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.8)" }, 0)
+          .call(
+            () => {
+              el.textContent = randomLetter(rng);
+            },
+            undefined,
+            0.09
+          )
+          .call(
+            () => {
+              el.textContent = el.dataset.original ?? "";
+            },
+            undefined,
+            0.17
+          );
+      });
+    }, containerRef);
+    return () => ctx.revert();
+  }, [dims, reduceMotion]);
+
   useEffect(() => {
     if (isTouch || reduceMotion) return;
     const container = containerRef.current;
@@ -189,19 +259,26 @@ export default function LetterGrid() {
     };
   }, [isTouch, reduceMotion, handlePointerMove, handlePointerLeave]);
 
-  // Touch devices get no pointer tracking — a quiet ambient scramble instead.
+  // Touch devices get no pointer tracking — a quiet ambient scramble
+  // instead, held back until the solve-in entrance has finished.
   useEffect(() => {
     if (!isTouch || reduceMotion) return;
     const total = dims.rows * dims.cols;
     if (!total) return;
 
-    const id = window.setInterval(() => {
-      const index = Math.floor(Math.random() * total);
-      setCellState(index, true);
-      window.setTimeout(() => setCellState(index, false), 450);
-    }, 260);
+    let id: number | undefined;
+    const startDelay = window.setTimeout(() => {
+      id = window.setInterval(() => {
+        const index = Math.floor(Math.random() * total);
+        setCellState(index, true);
+        window.setTimeout(() => setCellState(index, false), 450);
+      }, 260);
+    }, 2400);
 
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearTimeout(startDelay);
+      if (id !== undefined) window.clearInterval(id);
+    };
   }, [isTouch, reduceMotion, dims, setCellState]);
 
   return (

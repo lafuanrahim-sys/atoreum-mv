@@ -13,26 +13,39 @@ type CategoryItem = {
   image?: string;
 };
 
-// Exact order/names as specified. Each links to its nearest real category
-// filter (see lib/products.ts) so every item is a working link even before
-// real per-category photography exists.
-const CATEGORIES: CategoryItem[] = [
-  { label: "Ampoule", href: "/products?category=Skincare" },
-  { label: "Cream", href: "/products?category=Skincare" },
-  { label: "Foam", href: "/products?category=Skincare" },
-  { label: "Sun Care", href: "/products?category=Suncare" },
-  { label: "Toner", href: "/products?category=Skincare" },
-  { label: "Mask Pack", href: "/products?category=Skincare" },
-  { label: "Foam Pack 2in1", href: "/products?category=Skincare" },
-  { label: "Toner Pad", href: "/products?category=Skincare" },
-  { label: "Lotion", href: "/products?category=Skincare" },
-  { label: "Make-up", href: "/products?category=Makeup" },
-  { label: "Eye Cream", href: "/products?category=Skincare" },
-  { label: "Soothing Gel", href: "/products?category=Skincare" },
-  { label: "Emulsion", href: "/products?category=Skincare" },
-  { label: "Essence", href: "/products?category=Skincare" },
-  { label: "Etc.", href: "/products" },
-];
+// One item per real catalog category (lib/types.ts CATEGORIES), in that
+// same canonical order, so this ring never drifts out of sync with what
+// the /products filter actually recognizes. Hrefs are built from the exact
+// category string (encoded) rather than hand-typed placeholder query
+// values — the previous version linked to made-up categories like
+// "Skincare"/"Suncare"/"Makeup", none of which exist in the real taxonomy,
+// so every ring item 404'd into an empty "no products match" filter.
+// Photos are attached only where real product photography exists in
+// public/images; categories without a photo yet fall back to the
+// gradient label tile (see CategoryTile below) rather than a placeholder.
+const CATEGORY_PHOTOS: Partial<Record<string, string>> = {
+  Ampoule: "/images/24K Gold Perfect Ampoule 50g/f56de9ef853768d1a0460e44d5e98fa6.png",
+  Foam: "/images/Aloe Bubble Chewy Foam 200ml/a112b772114236e866ab2cc51b35a3d5.png",
+  Toner: "/images/Centella Moisture Skin 150ml/Centella Moisture Skin.png",
+  "Mask Pack": "/images/Aloe Solution Mask Pack 25g x 10pcs/Aloe Solution Mask Pack.png",
+  "Foam Pack 2in1": "/images/Charcoal Clay 2in1 Pack Foam 120ml/d89e390c0d2c17e3decf01dd1cca30ed.png",
+  "Eye Cream": "/images/Black Snail Eye Cream EX 40ml/Black Snail Cream.png",
+  "Soothing Gel": "/images/Cica Moisture Soothing Gel 300ml/0922a719f81bda34f290ebd7b44bf12a.png",
+  Emulsion: "/images/Vitamin C Pure Emulsion 120ml/Vitamin C Pure Emulsion.png",
+  Essence: "/images/Heeyul Premium 24K Gold Essence 130ml/Heeyul Premium 24K Gold Essence 130ml.png",
+};
+
+const CATEGORY_LABELS = [
+  "Ampoule", "Cream", "Foam", "Sun Care", "Toner", "Mask Pack",
+  "Foam Pack 2in1", "Toner Pad", "Lotion", "Make-up", "Eye Cream",
+  "Soothing Gel", "Emulsion", "Essence", "Serum", "Etc.",
+] as const;
+
+const CATEGORIES: CategoryItem[] = CATEGORY_LABELS.map((label) => ({
+  label,
+  href: `/products?category=${encodeURIComponent(label)}`,
+  image: CATEGORY_PHOTOS[label] ? encodeURI(CATEGORY_PHOTOS[label]!) : undefined,
+}));
 
 function CategoryTile({
   label,

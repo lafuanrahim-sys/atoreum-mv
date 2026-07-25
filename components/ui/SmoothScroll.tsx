@@ -7,6 +7,12 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
+declare global {
+  interface Window {
+    __lenis?: Lenis;
+  }
+}
+
 /**
  * Site-wide smooth scroll. Lenis drives the actual scroll physics;
  * GSAP's ticker drives the RAF loop so ScrollTrigger stays in sync
@@ -21,6 +27,12 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
       smoothWheel: true,
     });
 
+    // Lenis owns the RAF-driven scroll position, so any *other* code that
+    // moves scroll natively (e.g. element.scrollIntoView()) gets silently
+    // overwritten on the very next tick. Exposing the instance lets call
+    // sites go through lib/motion.ts's scrollToElement() instead.
+    window.__lenis = lenis;
+
     lenis.on("scroll", ScrollTrigger.update);
 
     gsap.ticker.add((time) => {
@@ -30,6 +42,7 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
 
     return () => {
       lenis.destroy();
+      window.__lenis = undefined;
       gsap.ticker.remove((time) => lenis.raf(time * 1000));
     };
   }, []);

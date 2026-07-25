@@ -19,6 +19,7 @@ export const CATEGORIES = [
   "Soothing Gel",
   "Emulsion",
   "Essence",
+  "Serum",
   "Etc.",
 ] as const;
 
@@ -32,17 +33,25 @@ export type Product = {
   id: string;
   sku: string;
   name: string;
+  /** Volume/weight (e.g. "200ml", "25g x 10pcs") — kept out of `name` so it can render small/separate. */
+  size: string;
   brand: string;
   category: Category;
   price: number;
   currency: Currency;
   /** Short summary shown on cards and near the top of the detail page. */
   description: string;
-  /** Longer copy — ingredients, how-to-use, etc. */
-  details: string;
+  /** Three alternate marketing headlines, rotated on the detail page. */
+  headlines: [string, string, string];
+  /** Ingredient copy — full INCI list where verified, hero ingredient otherwise. */
+  ingredients: string;
+  /** Usage steps. */
+  howToUse: string;
   /** At least one image; first is the primary/thumbnail. */
   images: string[];
   stockStatus: StockStatus;
+  /** Units physically on hand — shown in the admin products table. */
+  stockOnHand: number;
   featured: boolean;
   createdAt: string;
   updatedAt: string;
@@ -55,7 +64,10 @@ export type OrderStatus =
   | "Pending Verification"
   | "Confirmed"
   | "Shipped"
+  | "Completed"
   | "Cancelled";
+
+export type PaymentMethod = "cash" | "transfer";
 
 export type OrderItem = {
   productId: string;
@@ -80,6 +92,8 @@ export type Order = {
   subtotal: number;
   currency: Currency;
   customer: OrderCustomer;
+  /** How the customer pays. Orders predating this field are bank transfers. */
+  paymentMethod?: PaymentMethod;
   /** Public path under /uploads to the receipt/screenshot, once uploaded. */
   paymentProofPath: string | null;
   status: OrderStatus;

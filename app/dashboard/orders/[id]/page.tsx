@@ -8,7 +8,13 @@ function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
 }
 
-const STATUSES: OrderStatus[] = ["Pending Verification", "Confirmed", "Shipped", "Cancelled"];
+const STATUSES: OrderStatus[] = [
+  "Pending Verification",
+  "Confirmed",
+  "Shipped",
+  "Completed",
+  "Cancelled",
+];
 
 export default async function DashboardOrderDetailPage({
   params,
@@ -20,13 +26,40 @@ export default async function DashboardOrderDetailPage({
   if (!order) notFound();
 
   const isProofImage = order.paymentProofPath && !order.paymentProofPath.endsWith(".pdf");
+  const paymentMethod = order.paymentMethod ?? "transfer";
 
   return (
     <div className="max-w-3xl">
-      <h1 className="font-display text-2xl text-ivory">{order.orderNumber}</h1>
-      <p className="mt-1 text-xs text-ivory-dim">
-        Placed {new Date(order.createdAt).toLocaleString()}
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl text-ivory">{order.orderNumber}</h1>
+          <p className="mt-1 text-xs text-ivory-dim">
+            Placed {new Date(order.createdAt).toLocaleString()}
+          </p>
+        </div>
+
+        {order.status === "Completed" ? (
+          <p className="flex items-center gap-2 border-2 border-emerald-600 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">
+            ✓ Order Completed
+          </p>
+        ) : (
+          order.status !== "Cancelled" && (
+            <form
+              action={async () => {
+                "use server";
+                await changeOrderStatus(order.id, "Completed");
+              }}
+            >
+              <button
+                type="submit"
+                className="bg-emerald-600 px-8 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-white shadow-lg transition-colors hover:bg-emerald-500"
+              >
+                ✓ Mark as Completed
+              </button>
+            </form>
+          )
+        )}
+      </div>
 
       <div className="mt-8 grid grid-cols-2 gap-8">
         <div>
@@ -88,6 +121,13 @@ export default async function DashboardOrderDetailPage({
       </div>
 
       <div className="mt-8">
+        <h2 className="text-xs uppercase tracking-wide text-ivory-dim">Payment</h2>
+        <p className="mt-2 text-sm text-ivory">
+          {paymentMethod === "cash" ? "Cash on delivery" : "Bank transfer"}
+        </p>
+      </div>
+
+      <div className="mt-8">
         <h2 className="text-xs uppercase tracking-wide text-ivory-dim">Payment Proof</h2>
         {order.paymentProofPath ? (
           isProofImage ? (
@@ -107,7 +147,11 @@ export default async function DashboardOrderDetailPage({
             </a>
           )
         ) : (
-          <p className="mt-3 text-sm text-ivory-dim">No proof uploaded yet.</p>
+          <p className="mt-3 text-sm text-ivory-dim">
+            {paymentMethod === "cash"
+              ? "Not applicable — payment is collected in cash on delivery."
+              : "No proof uploaded yet."}
+          </p>
         )}
       </div>
     </div>

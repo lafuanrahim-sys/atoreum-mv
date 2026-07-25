@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getAllProducts } from "@/lib/data/products.server";
 import { deleteProductAction } from "@/app/actions/products";
 
+const PAGE_SIZE = 20;
+
 function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
 }
@@ -9,9 +11,9 @@ function formatPrice(price: number, currency: string) {
 export default async function DashboardProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; page?: string }>;
 }) {
-  const { q = "", category = "" } = await searchParams;
+  const { q = "", category = "", page: pageParam = "1" } = await searchParams;
   const all = getAllProducts();
 
   const filtered = all.filter((p) => {
@@ -19,6 +21,18 @@ export default async function DashboardProductsPage({
     const matchesCategory = category ? p.category === category : true;
     return matchesQuery && matchesCategory;
   });
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const page = Math.min(pageCount, Math.max(1, Number(pageParam) || 1));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (category) params.set("category", category);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return qs ? `/dashboard/products?${qs}` : "/dashboard/products";
+  };
 
   return (
     <div>
@@ -52,18 +66,26 @@ export default async function DashboardProductsPage({
             <th className="py-3 pr-4">SKU</th>
             <th className="py-3 pr-4">Category</th>
             <th className="py-3 pr-4">Price</th>
+            <th className="py-3 pr-4">On Hand</th>
             <th className="py-3 pr-4">Stock</th>
             <th className="py-3 pr-4">Featured</th>
             <th className="py-3 pr-4"></th>
           </tr>
         </thead>
         <tbody>
-          {filtered.map((p) => (
+          {paged.map((p) => (
             <tr key={p.id} className="border-b border-line/50">
               <td className="py-3 pr-4 text-ivory">{p.name}</td>
               <td className="py-3 pr-4 text-ivory-dim">{p.sku}</td>
               <td className="py-3 pr-4 text-ivory-dim">{p.category}</td>
               <td className="py-3 pr-4 text-ivory-dim tabular-nums">{formatPrice(p.price, p.currency)}</td>
+              <td
+                className={`py-3 pr-4 tabular-nums ${
+                  p.stockOnHand === 0 ? "text-red-400" : "text-ivory"
+                }`}
+              >
+                {p.stockOnHand}
+              </td>
               <td className="py-3 pr-4 text-ivory-dim">{p.stockStatus}</td>
               <td className="py-3 pr-4 text-ivory-dim">{p.featured ? "Yes" : ""}</td>
               <td className="py-3 pr-4 text-right">
@@ -89,6 +111,38 @@ export default async function DashboardProductsPage({
 
       {filtered.length === 0 && (
         <p className="mt-6 text-sm text-ivory-dim">No products match.</p>
+      )}
+
+      {filtered.length > 0 && pageCount > 1 && (
+        <div className="mt-6 flex items-center justify-center gap-6">
+          {page > 1 ? (
+            <Link
+              href={pageHref(page - 1)}
+              className="border border-line px-5 py-2 text-[10px] uppercase tracking-[0.2em] text-ivory-dim transition-colors hover:border-gold hover:text-gold"
+            >
+              Prev
+            </Link>
+          ) : (
+            <span className="cursor-not-allowed border border-line px-5 py-2 text-[10px] uppercase tracking-[0.2em] text-ivory-dim opacity-30">
+              Prev
+            </span>
+          )}
+          <span className="text-xs tracking-[0.15em] text-ivory-dim">
+            Page {page} of {pageCount}
+          </span>
+          {page < pageCount ? (
+            <Link
+              href={pageHref(page + 1)}
+              className="border border-line px-5 py-2 text-[10px] uppercase tracking-[0.2em] text-ivory-dim transition-colors hover:border-gold hover:text-gold"
+            >
+              Next
+            </Link>
+          ) : (
+            <span className="cursor-not-allowed border border-line px-5 py-2 text-[10px] uppercase tracking-[0.2em] text-ivory-dim opacity-30">
+              Next
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

@@ -1,542 +1,2292 @@
 [
   {
-    "id": "amp-001",
-    "sku": "LBL-AMP-001",
-    "name": "Lebelage Vita Ampoule",
-    "brand": "Lebelage",
-    "category": "Ampoule",
-    "price": 420,
-    "currency": "MVR",
-    "description": "A concentrated brightening ampoule for tired, dull skin.",
-    "details": "Key ingredients: Niacinamide, Vitamin C derivative, Centella Asiatica. Apply 2-3 drops after toner, morning and night. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-ampoule-1.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": true,
-    "createdAt": "2026-06-01T09:00:00.000Z",
-    "updatedAt": "2026-06-01T09:00:00.000Z"
-  },
-  {
-    "id": "amp-002",
-    "sku": "LBL-AMP-002",
-    "name": "Lebelage Collagen Firming Ampoule",
-    "brand": "Lebelage",
-    "category": "Ampoule",
-    "price": 460,
-    "currency": "MVR",
-    "description": "A firming ampoule that targets fine lines and loss of elasticity.",
-    "details": "Key ingredients: Marine Collagen, Adenosine, Peptide Complex. Apply after cleansing before moisturizer. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-ampoule-2.svg"
-    ],
-    "stockStatus": "low-stock",
-    "featured": false,
-    "createdAt": "2026-06-02T09:00:00.000Z",
-    "updatedAt": "2026-06-02T09:00:00.000Z"
-  },
-  {
-    "id": "crm-001",
-    "sku": "LBL-CRM-001",
-    "name": "Lebelage Aqua Ceramide Cream",
-    "brand": "Lebelage",
-    "category": "Cream",
-    "price": 380,
-    "currency": "MVR",
-    "description": "A lightweight moisture cream that locks in hydration under humidity.",
-    "details": "Key ingredients: Ceramide NP, Hyaluronic Acid, Squalane. Use as the last step of your morning and evening routine. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-cream-1.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": true,
-    "createdAt": "2026-06-03T09:00:00.000Z",
-    "updatedAt": "2026-06-03T09:00:00.000Z"
-  },
-  {
-    "id": "crm-002",
-    "sku": "LBL-CRM-002",
-    "name": "Lebelage Snail Repair Cream",
-    "brand": "Lebelage",
-    "category": "Cream",
-    "price": 350,
-    "currency": "MVR",
-    "description": "A repairing night cream for stressed, sun-exposed skin.",
-    "details": "Key ingredients: Snail Secretion Filtrate 92%, Panthenol. Best used at night as the final step. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-cream-2.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": false,
-    "createdAt": "2026-06-04T09:00:00.000Z",
-    "updatedAt": "2026-06-04T09:00:00.000Z"
-  },
-  {
     "id": "fom-001",
     "sku": "LBL-FOM-001",
-    "name": "Lebelage Rice Bright Foam Cleanser",
+    "name": "Lebelage Centella Bubble Chewy Foam",
     "brand": "Lebelage",
     "category": "Foam",
-    "price": 220,
+    "price": 0,
     "currency": "MVR",
-    "description": "A gentle brightening foam cleanser for daily use.",
-    "details": "Key ingredients: Rice Extract, Amino Acid Surfactants. Massage onto damp skin, rinse with lukewarm water. Made in South Korea.",
+    "description": "Bubble foam cleanser for soothing, cica-calmed skin.",
     "images": [
-      "/images/products/placeholder-foam-1.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": false,
-    "createdAt": "2026-06-05T09:00:00.000Z",
-    "updatedAt": "2026-06-05T09:00:00.000Z"
-  },
-  {
-    "id": "fom-002",
-    "sku": "LBL-FOM-002",
-    "name": "Lebelage Tea Tree Purifying Foam",
-    "brand": "Lebelage",
-    "category": "Foam",
-    "price": 235,
-    "currency": "MVR",
-    "description": "A purifying cleanser for oily, congestion-prone skin.",
-    "details": "Key ingredients: Tea Tree Leaf Oil, Salicylic Acid (BHA). Use morning and night on damp skin. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-foam-2.svg"
+      "/images/products/fom-001.png"
     ],
     "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
     "featured": false,
-    "createdAt": "2026-06-06T09:00:00.000Z",
-    "updatedAt": "2026-06-06T09:00:00.000Z"
-  },
-  {
-    "id": "sun-001",
-    "sku": "LBL-SUN-001",
-    "name": "Lebelage Sun Shield SPF50+",
-    "brand": "Lebelage",
-    "category": "Sun Care",
-    "price": 320,
-    "currency": "MVR",
-    "description": "A lightweight, no-white-cast SPF built for island days.",
-    "details": "SPF50+ PA++++. Broad spectrum. Reapply every 2-3 hours in direct sun. Water-resistant. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-suncare-1.svg"
+    "createdAt": "2026-07-25T09:00:00Z",
+    "updatedAt": "2026-07-25T09:00:00Z",
+    "headlines": [
+      "Calm skin, no drama.",
+      "Centella Asiatica does the work.",
+      "Where every good routine begins."
     ],
-    "stockStatus": "in-stock",
-    "featured": true,
-    "createdAt": "2026-06-07T09:00:00.000Z",
-    "updatedAt": "2026-06-07T09:00:00.000Z"
-  },
-  {
-    "id": "sun-002",
-    "sku": "LBL-SUN-002",
-    "name": "Lebelage Aqua Sun Stick SPF50+",
-    "brand": "Lebelage",
-    "category": "Sun Care",
-    "price": 270,
-    "currency": "MVR",
-    "description": "A portable, mess-free sun stick for on-the-go reapplication.",
-    "details": "SPF50+ PA++++. Twist-up stick format, easy to reapply over makeup. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-suncare-2.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": false,
-    "createdAt": "2026-06-08T09:00:00.000Z",
-    "updatedAt": "2026-06-08T09:00:00.000Z"
-  },
-  {
-    "id": "ton-001",
-    "sku": "LBL-TON-001",
-    "name": "Lebelage Calming Green Toner",
-    "brand": "Lebelage",
-    "category": "Toner",
-    "price": 260,
-    "currency": "MVR",
-    "description": "A soothing first-step toner for sensitive, heat-flushed skin.",
-    "details": "Key ingredients: Centella Asiatica, Green Tea Extract, Panthenol. Pat onto cleansed skin with hands or cotton pad. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-toner-1.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": false,
-    "createdAt": "2026-06-09T09:00:00.000Z",
-    "updatedAt": "2026-06-09T09:00:00.000Z"
-  },
-  {
-    "id": "ton-002",
-    "sku": "LBL-TON-002",
-    "name": "Lebelage Vita Brightening Toner",
-    "brand": "Lebelage",
-    "category": "Toner",
-    "price": 265,
-    "currency": "MVR",
-    "description": "A brightening toner that preps skin for the rest of your routine.",
-    "details": "Key ingredients: Vitamin C derivative, Niacinamide. Apply after cleansing, before serum. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-toner-2.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": false,
-    "createdAt": "2026-06-10T09:00:00.000Z",
-    "updatedAt": "2026-06-10T09:00:00.000Z"
-  },
-  {
-    "id": "msk-001",
-    "sku": "LBL-MSK-001",
-    "name": "Lebelage Aqua Reset Mask",
-    "brand": "Lebelage",
-    "category": "Mask Pack",
-    "price": 285,
-    "currency": "MVR",
-    "description": "A calming overnight mask that restores moisture after long days by the sea.",
-    "details": "Key ingredients: Hyaluronic Acid, Aloe Vera, Panthenol. Sheet mask, 15-20 minutes, or leave on overnight (wash-off type). Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-mask-1.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": true,
-    "createdAt": "2026-06-11T09:00:00.000Z",
-    "updatedAt": "2026-06-11T09:00:00.000Z"
-  },
-  {
-    "id": "msk-002",
-    "sku": "LBL-MSK-002",
-    "name": "Lebelage Rice Sheet Mask (5-Pack)",
-    "brand": "Lebelage",
-    "category": "Mask Pack",
-    "price": 240,
-    "currency": "MVR",
-    "description": "A brightening rice sheet mask set for a weekly glow ritual.",
-    "details": "Key ingredients: Rice Extract, Rice Bran Water. 5 individually packed sheet masks. 15-20 minutes per use. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-mask-2.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": false,
-    "createdAt": "2026-06-12T09:00:00.000Z",
-    "updatedAt": "2026-06-12T09:00:00.000Z"
+    "ingredients": "Formulated around Centella Asiatica. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "200ml"
   },
   {
     "id": "fp2-001",
     "sku": "LBL-FP2-001",
-    "name": "Lebelage Foam Pack 2in1 Cleanser & Mask",
+    "name": "Lebelage Charcoal Clay 2in1 Pack Foam",
     "brand": "Lebelage",
     "category": "Foam Pack 2in1",
-    "price": 250,
+    "price": 0,
     "currency": "MVR",
-    "description": "A dual-purpose foam that works as a wash-off mask or everyday cleanser.",
-    "details": "Key ingredients: Kaolin Clay, Charcoal. Leave on 5-10 minutes as a mask, or rinse immediately as a cleanser. Made in South Korea.",
+    "description": "2-in-1 clay cleansing pack for pore & oil control.",
     "images": [
-      "/images/products/placeholder-foampack-1.svg"
+      "/images/products/fp2-001.png"
     ],
-    "stockStatus": "in-stock",
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
     "featured": false,
-    "createdAt": "2026-06-13T09:00:00.000Z",
-    "updatedAt": "2026-06-13T09:00:00.000Z"
+    "createdAt": "2026-07-25T09:00:01Z",
+    "updatedAt": "2026-07-25T09:00:01Z",
+    "headlines": [
+      "Shine control that lasts all day.",
+      "The Charcoal step your skin's been missing.",
+      "A cleaner start, every morning."
+    ],
+    "ingredients": "Formulated around Charcoal. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "120ml"
   },
   {
-    "id": "fp2-002",
-    "sku": "LBL-FP2-002",
-    "name": "Lebelage Milk Foam Pack 2in1",
+    "id": "fom-002",
+    "sku": "LBL-FOM-002",
+    "name": "Lebelage Real Sensation Pore Cleansing Foam 1+1",
     "brand": "Lebelage",
-    "category": "Foam Pack 2in1",
-    "price": 245,
+    "category": "Foam",
+    "price": 0,
     "currency": "MVR",
-    "description": "A gentle milk-based 2-in-1 foam pack for soft, calm skin.",
-    "details": "Key ingredients: Milk Protein, Shea Butter. Use daily as a cleanser or twice weekly as a mask. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-foampack-2.svg"
-    ],
-    "stockStatus": "low-stock",
+    "description": "Twin-pack foam cleanser for pore & oil control.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
     "featured": false,
-    "createdAt": "2026-06-14T09:00:00.000Z",
-    "updatedAt": "2026-06-14T09:00:00.000Z"
+    "createdAt": "2026-07-25T09:00:02Z",
+    "updatedAt": "2026-07-25T09:00:02Z",
+    "headlines": [
+      "Pores, put in their place.",
+      "A twin-pack foam cleanser, done right.",
+      "A cleaner start, every morning."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "150ml x 2"
+  },
+  {
+    "id": "fom-003",
+    "sku": "LBL-FOM-003",
+    "name": "Lebelage Real Sensation Blemish Cleansing Foam 1+1",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Twin-pack foam cleanser for blemish & acne care.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:03Z",
+    "updatedAt": "2026-07-25T09:00:03Z",
+    "headlines": [
+      "For skin that's working through it.",
+      "The twin-pack foam cleanser your routine needs.",
+      "Where every good routine begins."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "150ml x 2"
+  },
+  {
+    "id": "fom-004",
+    "sku": "LBL-FOM-004",
+    "name": "Lebelage Charcoal Pore Clay Cleansing Foam",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Foam cleanser for pore & oil control.",
+    "images": [
+      "/images/products/fom-004.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:04Z",
+    "updatedAt": "2026-07-25T09:00:04Z",
+    "headlines": [
+      "Shine control that lasts all day.",
+      "The Charcoal step your skin's been missing.",
+      "The first minute of a better routine."
+    ],
+    "ingredients": "Formulated around Charcoal. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "180ml"
+  },
+  {
+    "id": "crm-001",
+    "sku": "LBL-CRM-001",
+    "name": "Lebelage Dr. Madecassoside Cure Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Cica cream for barrier repair & redness relief.",
+    "images": [
+      "/images/products/crm-001.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:05Z",
+    "updatedAt": "2026-07-25T09:00:05Z",
+    "headlines": [
+      "Redness, quietly turned down.",
+      "Madecassoside does the work.",
+      "The last word in your routine."
+    ],
+    "ingredients": "Formulated around Madecassoside. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "70ml"
+  },
+  {
+    "id": "amp-001",
+    "sku": "LBL-AMP-001",
+    "name": "Lebelage Dr. Cica Derma Ampoule",
+    "brand": "Lebelage",
+    "category": "Ampoule",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Ampoule for acne & redness calming.",
+    "images": [
+      "/images/products/amp-001.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:06Z",
+    "updatedAt": "2026-07-25T09:00:06Z",
+    "headlines": [
+      "For skin that needs a minute.",
+      "The Centella Asiatica step your skin's been missing.",
+      "The step worth the extra minute."
+    ],
+    "ingredients": "Formulated around Centella Asiatica (Cica). Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "30ml"
+  },
+  {
+    "id": "amp-002",
+    "sku": "LBL-AMP-002",
+    "name": "Lebelage Dr. Vitamin C Derma Ampoule",
+    "brand": "Lebelage",
+    "category": "Ampoule",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Ampoule for brightening.",
+    "images": [
+      "/images/products/amp-002.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:07Z",
+    "updatedAt": "2026-07-25T09:00:07Z",
+    "headlines": [
+      "Brighter skin starts here.",
+      "Vitamin C does the work.",
+      "Small bottle, real difference."
+    ],
+    "ingredients": "Formulated around Vitamin C. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "30ml"
+  },
+  {
+    "id": "ser-001",
+    "sku": "LBL-SER-001",
+    "name": "Lebelage Truly Glutathione Serum",
+    "brand": "Lebelage",
+    "category": "Serum",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Serum for a brightening glow.",
+    "images": [
+      "/images/products/ser-001.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:08Z",
+    "updatedAt": "2026-07-25T09:00:08Z",
+    "headlines": [
+      "For skin that catches the light.",
+      "Built around Glutathione.",
+      "Small bottle, real difference."
+    ],
+    "ingredients": "Formulated around Glutathione. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "35ml"
+  },
+  {
+    "id": "ser-002",
+    "sku": "LBL-SER-002",
+    "name": "Lebelage Truly Centella Serum",
+    "brand": "Lebelage",
+    "category": "Serum",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Serum for soothing acne-prone skin.",
+    "images": [
+      "/images/products/ser-002.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:09Z",
+    "updatedAt": "2026-07-25T09:00:09Z",
+    "headlines": [
+      "Gentle enough for the bad-skin days.",
+      "The Centella Asiatica step your skin's been missing.",
+      "The step worth the extra minute."
+    ],
+    "ingredients": "Formulated around Centella Asiatica. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "35ml"
+  },
+  {
+    "id": "ser-003",
+    "sku": "LBL-SER-003",
+    "name": "Lebelage Truly Centella High Concentration Serum",
+    "brand": "Lebelage",
+    "category": "Serum",
+    "price": 0,
+    "currency": "MVR",
+    "description": "High-concentration serum for soothing acne-prone skin.",
+    "images": [
+      "/images/products/ser-003.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:10Z",
+    "updatedAt": "2026-07-25T09:00:10Z",
+    "headlines": [
+      "Gentle enough for the bad-skin days.",
+      "Built around Centella Asiatica.",
+      "The step worth the extra minute."
+    ],
+    "ingredients": "Formulated around Centella Asiatica. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "20g"
+  },
+  {
+    "id": "ser-004",
+    "sku": "LBL-SER-004",
+    "name": "Lebelage Truly Glutathione High Concentration Serum",
+    "brand": "Lebelage",
+    "category": "Serum",
+    "price": 0,
+    "currency": "MVR",
+    "description": "High-concentration serum for brightening.",
+    "images": [
+      "/images/products/ser-004.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:11Z",
+    "updatedAt": "2026-07-25T09:00:11Z",
+    "headlines": [
+      "Brighter skin starts here.",
+      "Built around Glutathione.",
+      "A few drops, a real difference."
+    ],
+    "ingredients": "Formulated around Glutathione. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "20g"
+  },
+  {
+    "id": "sun-001",
+    "sku": "LBL-SUN-001",
+    "name": "Lebelage High Protection Daily No Sebum Sun Cream",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 0,
+    "currency": "MVR",
+    "description": "No-sebum sunscreen for daily UV protection with oil control.",
+    "images": [
+      "/images/products/sun-001.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:12Z",
+    "updatedAt": "2026-07-25T09:00:12Z",
+    "headlines": [
+      "SPF that doesn't feel like SPF.",
+      "Simple formula, real results.",
+      "Protection that doesn't feel like a chore."
+    ],
+    "ingredients": "Water, Dimethicone, Mineral Oil, Glycerin, Stearic Acid, Hydrogenated Polydecene, Polysorbate 60, Titanium Dioxide, Aluminum Hydroxide, Sodium Hyaluronate, Butylene Glycol, 1,2-Hexanediol, Bismuth Oxychloride, Cetearyl Alcohol, Glyceryl Stearate.",
+    "howToUse": "Apply generously as the final step of your morning routine, at least 15 minutes before sun exposure. Reapply every 2-3 hours, or after swimming/sweating.",
+    "size": "30ml"
+  },
+  {
+    "id": "sun-002",
+    "sku": "LBL-SUN-002",
+    "name": "Lebelage High Protection Long Lasting Sun Cream",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Long-wear sunscreen for daily UV protection that wears long.",
+    "images": [
+      "/images/products/sun-002.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:13Z",
+    "updatedAt": "2026-07-25T09:00:13Z",
+    "headlines": [
+      "Protection that stays put.",
+      "A long-wear sunscreen, done right.",
+      "The one step you can't skip."
+    ],
+    "ingredients": "Water, Ethylhexyl Methoxycinnamate, Glycerin, Isopropyl Myristate, Ethylhexyl Salicylate, Titanium Dioxide, Isoamyl p-Methoxycinnamate, Diethylamino Hydroxybenzoyl Hexyl Benzoate, Zinc Oxide, Cetyl PEG/PPG-10/1 Dimethicone, Cetyl Alcohol, Stearic Acid, Glyceryl Stearate, Polysorbate 60, Beeswax, Ethylhexyl Triazone, PEG-100 Stearate, Dimethicone, Butylene Glycol, Phenoxyethanol, Rosmarinus Officinalis (Rosemary) Extract, Aloe Barbadensis Leaf Extract, Morus Alba Bark Extract, Centella Asiatica Extract, Camellia Sinensis Leaf Extract, Allantoin, Tocopheryl Acetate, Carbomer, Triethanolamine, Disodium EDTA, Fragrance.",
+    "howToUse": "Apply generously as the final step of your morning routine, at least 15 minutes before sun exposure. Reapply every 2-3 hours, or after swimming/sweating.",
+    "size": "30ml"
+  },
+  {
+    "id": "sun-003",
+    "sku": "LBL-SUN-003",
+    "name": "Lebelage High Protection Extreme Sun Cream",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 0,
+    "currency": "MVR",
+    "description": "High-protection sunscreen for strong UV protection.",
+    "images": [
+      "/images/products/sun-003.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:14Z",
+    "updatedAt": "2026-07-25T09:00:14Z",
+    "headlines": [
+      "High protection, high standards.",
+      "A high-protection sunscreen, done right.",
+      "Protection that doesn't feel like a chore."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply generously as the final step of your morning routine, at least 15 minutes before sun exposure. Reapply every 2-3 hours, or after swimming/sweating.",
+    "size": "30ml"
+  },
+  {
+    "id": "sun-004",
+    "sku": "LBL-SUN-004",
+    "name": "Lebelage UV Sun Protect Sun Stick",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Sun stick for easy on-the-go reapplication.",
+    "images": [
+      "/images/products/sun-004.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:15Z",
+    "updatedAt": "2026-07-25T09:00:15Z",
+    "headlines": [
+      "SPF that fits in one hand.",
+      "Simple formula, real results.",
+      "The one step you can't skip."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply generously as the final step of your morning routine, at least 15 minutes before sun exposure. Reapply every 2-3 hours, or after swimming/sweating.",
+    "size": "18g"
+  },
+  {
+    "id": "sun-005",
+    "sku": "LBL-SUN-005",
+    "name": "Lebelage UV Sun Oil Free Matte Sun Stick",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Matte sun stick for oil control with easy reapplication.",
+    "images": [
+      "/images/products/sun-005.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:16Z",
+    "updatedAt": "2026-07-25T09:00:16Z",
+    "headlines": [
+      "Shine-proof sun care.",
+      "Simple formula, real results.",
+      "Protection that doesn't feel like a chore."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply generously as the final step of your morning routine, at least 15 minutes before sun exposure. Reapply every 2-3 hours, or after swimming/sweating.",
+    "size": "23g"
+  },
+  {
+    "id": "sun-006",
+    "sku": "LBL-SUN-006",
+    "name": "Lebelage Perfect Care Cica Soothing Sun",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Cica sunscreen for soothing sensitive, acne-prone skin.",
+    "images": [
+      "/images/products/sun-006.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:17Z",
+    "updatedAt": "2026-07-25T09:00:17Z",
+    "headlines": [
+      "Sun care that plays nice.",
+      "Centella Asiatica (Cica), concentrated.",
+      "The one step you can't skip."
+    ],
+    "ingredients": "Formulated around Centella Asiatica (Cica). Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply generously as the final step of your morning routine, at least 15 minutes before sun exposure. Reapply every 2-3 hours, or after swimming/sweating.",
+    "size": "50g"
   },
   {
     "id": "tpd-001",
     "sku": "LBL-TPD-001",
-    "name": "Lebelage Centella Toner Pad (70pcs)",
+    "name": "Lebelage Truly Glutathione Toner Pad",
     "brand": "Lebelage",
     "category": "Toner Pad",
-    "price": 300,
+    "price": 0,
     "currency": "MVR",
-    "description": "Pre-soaked calming pads for quick, gentle exfoliation and toning.",
-    "details": "Key ingredients: Centella Asiatica, PHA. 70 pads per jar. Sweep across cleansed skin, avoiding eye area. Made in South Korea.",
+    "description": "Toner pad for brightening.",
     "images": [
-      "/images/products/placeholder-tonerpad-1.svg"
+      "/images/products/tpd-001.png"
     ],
-    "stockStatus": "in-stock",
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
     "featured": false,
-    "createdAt": "2026-06-15T09:00:00.000Z",
-    "updatedAt": "2026-06-15T09:00:00.000Z"
+    "createdAt": "2026-07-25T09:00:18Z",
+    "updatedAt": "2026-07-25T09:00:18Z",
+    "headlines": [
+      "Brighter skin starts here.",
+      "Built around Glutathione.",
+      "The step between cleansing and caring."
+    ],
+    "ingredients": "Formulated around Glutathione. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After cleansing, sweep a pad gently across the face, avoiding the eye area. Follow with serum or moisturizer.",
+    "size": "60pads"
   },
   {
     "id": "tpd-002",
     "sku": "LBL-TPD-002",
-    "name": "Lebelage Vita Glow Toner Pad (70pcs)",
+    "name": "Lebelage Truly Centella Toner Pad",
     "brand": "Lebelage",
     "category": "Toner Pad",
-    "price": 300,
+    "price": 0,
     "currency": "MVR",
-    "description": "Brightening toner pads for a quick radiance boost.",
-    "details": "Key ingredients: Vitamin C derivative, Adenosine. Use morning and night after cleansing. Made in South Korea.",
+    "description": "Toner pad for soothing acne-prone skin.",
     "images": [
-      "/images/products/placeholder-tonerpad-2.svg"
+      "/images/products/tpd-002.png"
     ],
-    "stockStatus": "in-stock",
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
     "featured": false,
-    "createdAt": "2026-06-16T09:00:00.000Z",
-    "updatedAt": "2026-06-16T09:00:00.000Z"
+    "createdAt": "2026-07-25T09:00:19Z",
+    "updatedAt": "2026-07-25T09:00:19Z",
+    "headlines": [
+      "Breakouts, met with calm.",
+      "Centella Asiatica, concentrated.",
+      "Prep that actually shows results."
+    ],
+    "ingredients": "Formulated around Centella Asiatica. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After cleansing, sweep a pad gently across the face, avoiding the eye area. Follow with serum or moisturizer.",
+    "size": "60pads"
   },
   {
-    "id": "lot-001",
-    "sku": "LBL-LOT-001",
-    "name": "Lebelage Aqua Body Lotion",
+    "id": "ton-001",
+    "sku": "LBL-TON-001",
+    "name": "Lebelage Tea Tree Derma Skin",
     "brand": "Lebelage",
-    "category": "Lotion",
-    "price": 310,
+    "category": "Toner",
+    "price": 0,
     "currency": "MVR",
-    "description": "A fast-absorbing body lotion for all-day hydration in humid climates.",
-    "details": "Key ingredients: Hyaluronic Acid, Shea Butter, Aloe Vera. Apply after showering. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-lotion-1.svg"
-    ],
-    "stockStatus": "in-stock",
+    "description": "Tea tree toner for acne & oil control.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
     "featured": false,
-    "createdAt": "2026-06-17T09:00:00.000Z",
-    "updatedAt": "2026-06-17T09:00:00.000Z"
-  },
-  {
-    "id": "lot-002",
-    "sku": "LBL-LOT-002",
-    "name": "Lebelage Milk Skin Lotion",
-    "brand": "Lebelage",
-    "category": "Lotion",
-    "price": 270,
-    "currency": "MVR",
-    "description": "A classic lightweight facial lotion for the second step of your routine.",
-    "details": "Key ingredients: Milk Protein, Niacinamide. Apply after toner, before cream. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-lotion-2.svg"
+    "createdAt": "2026-07-25T09:00:20Z",
+    "updatedAt": "2026-07-25T09:00:20Z",
+    "headlines": [
+      "For skin that runs a little oily.",
+      "Built around Tea Tree.",
+      "Prep that actually shows results."
     ],
-    "stockStatus": "in-stock",
-    "featured": false,
-    "createdAt": "2026-06-18T09:00:00.000Z",
-    "updatedAt": "2026-06-18T09:00:00.000Z"
-  },
-  {
-    "id": "mkp-001",
-    "sku": "LBL-MKP-001",
-    "name": "Lebelage Velvet Matte Lip Tint",
-    "brand": "Lebelage",
-    "category": "Make-up",
-    "price": 190,
-    "currency": "MVR",
-    "description": "A weightless matte tint that lasts through island humidity.",
-    "details": "Long-wearing, transfer-resistant formula. Available in a range of coral and rose shades. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-makeup-1.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": true,
-    "createdAt": "2026-06-19T09:00:00.000Z",
-    "updatedAt": "2026-06-19T09:00:00.000Z"
-  },
-  {
-    "id": "mkp-002",
-    "sku": "LBL-MKP-002",
-    "name": "Lebelage Skin Fit Cushion Foundation",
-    "brand": "Lebelage",
-    "category": "Make-up",
-    "price": 420,
-    "currency": "MVR",
-    "description": "A lightweight cushion foundation with buildable, natural coverage.",
-    "details": "SPF50+ PA+++. Includes refill-compatible compact and puff. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-makeup-2.svg"
-    ],
-    "stockStatus": "low-stock",
-    "featured": false,
-    "createdAt": "2026-06-20T09:00:00.000Z",
-    "updatedAt": "2026-06-20T09:00:00.000Z"
-  },
-  {
-    "id": "eye-001",
-    "sku": "LBL-EYE-001",
-    "name": "Lebelage Peptide Eye Cream",
-    "brand": "Lebelage",
-    "category": "Eye Cream",
-    "price": 340,
-    "currency": "MVR",
-    "description": "A firming eye cream that targets fine lines and puffiness.",
-    "details": "Key ingredients: Peptide Complex, Caffeine, Adenosine. Pat gently around the orbital bone morning and night. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-eyecream-1.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": false,
-    "createdAt": "2026-06-21T09:00:00.000Z",
-    "updatedAt": "2026-06-21T09:00:00.000Z"
-  },
-  {
-    "id": "eye-002",
-    "sku": "LBL-EYE-002",
-    "name": "Lebelage Snail Eye Gel Cream",
-    "brand": "Lebelage",
-    "category": "Eye Cream",
-    "price": 320,
-    "currency": "MVR",
-    "description": "A cooling gel-cream hybrid for tired, dehydrated under-eyes.",
-    "details": "Key ingredients: Snail Secretion Filtrate, Hyaluronic Acid. Lightweight gel texture, ideal for humid climates. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-eyecream-2.svg"
-    ],
-    "stockStatus": "in-stock",
-    "featured": false,
-    "createdAt": "2026-06-22T09:00:00.000Z",
-    "updatedAt": "2026-06-22T09:00:00.000Z"
+    "ingredients": "Formulated around Tea Tree. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Pat 2-3 drops onto cleansed skin with your hands, morning and evening. Follow with the rest of your routine.",
+    "size": "210ml"
   },
   {
     "id": "sgl-001",
     "sku": "LBL-SGL-001",
-    "name": "Lebelage Centella Soothing Gel",
+    "name": "Lebelage Cica Moisture Soothing Gel",
     "brand": "Lebelage",
     "category": "Soothing Gel",
-    "price": 230,
+    "price": 0,
     "currency": "MVR",
-    "description": "A multi-use soothing gel for sun-stressed skin, hair, and body.",
-    "details": "Key ingredients: Centella Asiatica 80%. Use as a lightweight moisturizer, after-sun gel, or hair treatment. Made in South Korea.",
+    "description": "Soothing gel for after-sun cooling.",
     "images": [
-      "/images/products/placeholder-soothinggel-1.svg"
+      "/images/products/sgl-001.png"
     ],
-    "stockStatus": "in-stock",
-    "featured": true,
-    "createdAt": "2026-06-23T09:00:00.000Z",
-    "updatedAt": "2026-06-23T09:00:00.000Z"
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:21Z",
+    "updatedAt": "2026-07-25T09:00:21Z",
+    "headlines": [
+      "Relief, right after the sun.",
+      "Centella Asiatica (Cica), concentrated.",
+      "The cool-down your skin deserves."
+    ],
+    "ingredients": "Formulated around Centella Asiatica (Cica). Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply a thin layer to clean skin and massage in gently until absorbed. Use as needed, especially after sun exposure.",
+    "size": "300ml"
   },
   {
-    "id": "sgl-002",
-    "sku": "LBL-SGL-002",
-    "name": "Lebelage Aloe Soothing Gel",
+    "id": "fom-005",
+    "sku": "LBL-FOM-005",
+    "name": "Lebelage Vitamin C + Turmeric Bubble Chewy Foam",
     "brand": "Lebelage",
-    "category": "Soothing Gel",
-    "price": 210,
+    "category": "Foam",
+    "price": 0,
     "currency": "MVR",
-    "description": "A classic aloe gel for daily cooling hydration after sun exposure.",
-    "details": "Key ingredients: Aloe Vera Leaf Extract 90%. Apply generously to face and body after sun exposure. Made in South Korea.",
+    "description": "Bubble foam cleanser for brightening dull skin.",
     "images": [
-      "/images/products/placeholder-soothinggel-2.svg"
+      "/images/products/fom-005.png"
     ],
-    "stockStatus": "in-stock",
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
     "featured": false,
-    "createdAt": "2026-06-24T09:00:00.000Z",
-    "updatedAt": "2026-06-24T09:00:00.000Z"
+    "createdAt": "2026-07-25T09:00:22Z",
+    "updatedAt": "2026-07-25T09:00:22Z",
+    "headlines": [
+      "Dull skin's new rival.",
+      "Vitamin C, concentrated.",
+      "Where every good routine begins."
+    ],
+    "ingredients": "Formulated around Vitamin C. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "200ml"
+  },
+  {
+    "id": "fom-006",
+    "sku": "LBL-FOM-006",
+    "name": "Lebelage Aloe Bubble Chewy Foam",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Bubble foam cleanser for soothing skin.",
+    "images": [
+      "/images/products/fom-006.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:23Z",
+    "updatedAt": "2026-07-25T09:00:23Z",
+    "headlines": [
+      "A quiet moment for your skin.",
+      "Built around Aloe Vera.",
+      "A cleaner start, every morning."
+    ],
+    "ingredients": "Formulated around Aloe Vera. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "200ml"
+  },
+  {
+    "id": "fom-007",
+    "sku": "LBL-FOM-007",
+    "name": "Lebelage Glutathione Bubble Chewy Foam",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Bubble foam cleanser for brightening.",
+    "images": [
+      "/images/products/fom-007.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:24Z",
+    "updatedAt": "2026-07-25T09:00:24Z",
+    "headlines": [
+      "Dullness, dealt with.",
+      "Glutathione, concentrated.",
+      "A cleaner start, every morning."
+    ],
+    "ingredients": "Formulated around Glutathione. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "200ml"
+  },
+  {
+    "id": "fom-008",
+    "sku": "LBL-FOM-008",
+    "name": "Lebelage Panthenol Bubble Chewy Foam",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Bubble foam cleanser for barrier support.",
+    "images": [
+      "/images/products/fom-008.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:25Z",
+    "updatedAt": "2026-07-25T09:00:25Z",
+    "headlines": [
+      "Rebuild before you react.",
+      "Panthenol, concentrated.",
+      "Where every good routine begins."
+    ],
+    "ingredients": "Formulated around Panthenol. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "200ml"
+  },
+  {
+    "id": "fp2-002",
+    "sku": "LBL-FP2-002",
+    "name": "Lebelage Glutinous Rice Clay 2in1 Pack Foam",
+    "brand": "Lebelage",
+    "category": "Foam Pack 2in1",
+    "price": 0,
+    "currency": "MVR",
+    "description": "2-in-1 clay cleansing pack for brightening & smoothing.",
+    "images": [
+      "/images/products/fp2-002.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:26Z",
+    "updatedAt": "2026-07-25T09:00:26Z",
+    "headlines": [
+      "Texture and tone, both handled.",
+      "Rice Extract, concentrated.",
+      "A cleaner start, every morning."
+    ],
+    "ingredients": "Formulated around Rice Extract. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "120ml"
+  },
+  {
+    "id": "fom-009",
+    "sku": "LBL-FOM-009",
+    "name": "Lebelage Rice Cleansing Foam Set 1+1",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Twin-pack foam cleanser for gentle brightening.",
+    "images": [
+      "/images/products/fom-009.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:27Z",
+    "updatedAt": "2026-07-25T09:00:27Z",
+    "headlines": [
+      "Brightening without the harshness.",
+      "The Rice Extract step your skin's been missing.",
+      "Where every good routine begins."
+    ],
+    "ingredients": "Formulated around Rice Extract. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "100ml x 2"
+  },
+  {
+    "id": "fom-010",
+    "sku": "LBL-FOM-010",
+    "name": "Lebelage Lemon Brightening Cleansing Foam",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Foam cleanser for brightening.",
+    "images": [
+      "/images/products/fom-010.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:28Z",
+    "updatedAt": "2026-07-25T09:00:28Z",
+    "headlines": [
+      "Dullness, dealt with.",
+      "Lemon Extract does the work.",
+      "The first minute of a better routine."
+    ],
+    "ingredients": "Formulated around Lemon Extract. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "180ml"
+  },
+  {
+    "id": "fom-011",
+    "sku": "LBL-FOM-011",
+    "name": "Lebelage Green Tea Balancing Cleansing Foam",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Foam cleanser for oil balance.",
+    "images": [
+      "/images/products/fom-011.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:29Z",
+    "updatedAt": "2026-07-25T09:00:29Z",
+    "headlines": [
+      "Oil control that respects your skin.",
+      "Green Tea, concentrated.",
+      "A cleaner start, every morning."
+    ],
+    "ingredients": "Formulated around Green Tea. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "180ml"
+  },
+  {
+    "id": "mkp-001",
+    "sku": "LBL-MKP-001",
+    "name": "Lebelage The Glow Color Lip Balm #102 Smoothie Pink",
+    "brand": "Lebelage",
+    "category": "Make-up",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Tinted lip balm for tint & moisture.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:30Z",
+    "updatedAt": "2026-07-25T09:00:30Z",
+    "headlines": [
+      "Color that cares for your lips.",
+      "The tinted lip balm your routine needs.",
+      "Color that never skips care."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply directly to lips as needed throughout the day.",
+    "size": "3.6g"
+  },
+  {
+    "id": "mkp-002",
+    "sku": "LBL-MKP-002",
+    "name": "Lebelage The Glow Color Lip Balm #103 Raspberry",
+    "brand": "Lebelage",
+    "category": "Make-up",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Tinted lip balm for tint & moisture.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:31Z",
+    "updatedAt": "2026-07-25T09:00:31Z",
+    "headlines": [
+      "Tint now, treat always.",
+      "The tinted lip balm your routine needs.",
+      "The one that lives in your bag."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply directly to lips as needed throughout the day.",
+    "size": "3.6g"
+  },
+  {
+    "id": "mkp-003",
+    "sku": "LBL-MKP-003",
+    "name": "Lebelage The Glow Color Lip Balm #104 Rosewood",
+    "brand": "Lebelage",
+    "category": "Make-up",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Tinted lip balm for tint & moisture.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:32Z",
+    "updatedAt": "2026-07-25T09:00:32Z",
+    "headlines": [
+      "Color that cares for your lips.",
+      "A tinted lip balm, done right.",
+      "Lips, looked after."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply directly to lips as needed throughout the day.",
+    "size": "3.6g"
+  },
+  {
+    "id": "msk-001",
+    "sku": "LBL-MSK-001",
+    "name": "Lebelage Cica Solution Mask Pack",
+    "brand": "Lebelage",
+    "category": "Mask Pack",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Sheet mask for soothing skin.",
+    "images": [
+      "/images/products/msk-001.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:33Z",
+    "updatedAt": "2026-07-25T09:00:33Z",
+    "headlines": [
+      "Calm, in a bottle.",
+      "Centella Asiatica (Cica), concentrated.",
+      "A pause built into your week."
+    ],
+    "ingredients": "Water, Methylpropanediol, Glycereth-26, Polysorbate 20, Carbomer, Triethanolamine, Betaine, Allantoin, Butylene Glycol, Glycerin, Centella Asiatica Extract (100ppm).",
+    "howToUse": "Unfold and apply to a cleansed, dry face. Leave on for 15-20 minutes, then remove and pat in the remaining essence — no need to rinse.",
+    "size": "25g x 10pcs"
+  },
+  {
+    "id": "msk-002",
+    "sku": "LBL-MSK-002",
+    "name": "Lebelage Snail Solution Mask Pack",
+    "brand": "Lebelage",
+    "category": "Mask Pack",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Sheet mask for hydration & repair.",
+    "images": [
+      "/images/products/msk-002.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:34Z",
+    "updatedAt": "2026-07-25T09:00:34Z",
+    "headlines": [
+      "Thirsty skin, answered.",
+      "Snail Mucin does the work.",
+      "Skincare that feels like a ritual."
+    ],
+    "ingredients": "Formulated around Snail Mucin. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Unfold and apply to a cleansed, dry face. Leave on for 15-20 minutes, then remove and pat in the remaining essence — no need to rinse.",
+    "size": "25g x 10pcs"
+  },
+  {
+    "id": "msk-003",
+    "sku": "LBL-MSK-003",
+    "name": "Lebelage Vitamin Solution Mask Pack",
+    "brand": "Lebelage",
+    "category": "Mask Pack",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Sheet mask for brightening.",
+    "images": [
+      "/images/products/msk-003.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:35Z",
+    "updatedAt": "2026-07-25T09:00:35Z",
+    "headlines": [
+      "Dullness, dealt with.",
+      "A sheet mask, done right.",
+      "Skincare that feels like a ritual."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Unfold and apply to a cleansed, dry face. Leave on for 15-20 minutes, then remove and pat in the remaining essence — no need to rinse.",
+    "size": "25g x 10pcs"
+  },
+  {
+    "id": "msk-004",
+    "sku": "LBL-MSK-004",
+    "name": "Lebelage Hyaluronic Collagen Solution Mask Pack",
+    "brand": "Lebelage",
+    "category": "Mask Pack",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Sheet mask for hydration & plumping.",
+    "images": [
+      "/images/products/msk-004.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:36Z",
+    "updatedAt": "2026-07-25T09:00:36Z",
+    "headlines": [
+      "Plump skin, deeply hydrated.",
+      "Built around Collagen.",
+      "Skincare that feels like a ritual."
+    ],
+    "ingredients": "Formulated around Collagen. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Unfold and apply to a cleansed, dry face. Leave on for 15-20 minutes, then remove and pat in the remaining essence — no need to rinse.",
+    "size": "25g x 10pcs"
+  },
+  {
+    "id": "msk-005",
+    "sku": "LBL-MSK-005",
+    "name": "Lebelage Aloe Solution Mask Pack",
+    "brand": "Lebelage",
+    "category": "Mask Pack",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Sheet mask for soothing skin.",
+    "images": [
+      "/images/products/msk-005.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:37Z",
+    "updatedAt": "2026-07-25T09:00:37Z",
+    "headlines": [
+      "Calm, in a bottle.",
+      "Aloe Vera does the work.",
+      "Skincare that feels like a ritual."
+    ],
+    "ingredients": "Formulated around Aloe Vera. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Unfold and apply to a cleansed, dry face. Leave on for 15-20 minutes, then remove and pat in the remaining essence — no need to rinse.",
+    "size": "25g x 10pcs"
+  },
+  {
+    "id": "eye-001",
+    "sku": "LBL-EYE-001",
+    "name": "Lebelage Black Snail Eye Cream EX",
+    "brand": "Lebelage",
+    "category": "Eye Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Eye cream for fine lines & hydration.",
+    "images": [
+      "/images/products/eye-001.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:38Z",
+    "updatedAt": "2026-07-25T09:00:38Z",
+    "headlines": [
+      "Hydration that shows around the eyes.",
+      "Built around Snail Mucin.",
+      "Twenty minutes, well spent."
+    ],
+    "ingredients": "Water, Mineral Oil, Glycerin, Butylene Glycol, Cetyl Alcohol, Stearic Acid, Beeswax, PEG-100 Stearate, Glyceryl Stearate, Polysorbate 60, Dimethicone, Phenoxyethanol, Galactomyces Ferment Filtrate, Centella Asiatica Extract, Triethanolamine, Carbomer, Snail Secretion Filtrate, Allantoin, Fragrance, Disodium EDTA.",
+    "howToUse": "Using the ring finger, pat a small amount gently around the eye area, morning and evening, avoiding direct contact with the eye.",
+    "size": "40ml"
+  },
+  {
+    "id": "msk-006",
+    "sku": "LBL-MSK-006",
+    "name": "Lebelage Collagen Hydrogel Eye Patch",
+    "brand": "Lebelage",
+    "category": "Mask Pack",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Hydrogel eye patch for de-puffing & hydration.",
+    "images": [
+      "/images/products/msk-006.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:39Z",
+    "updatedAt": "2026-07-25T09:00:39Z",
+    "headlines": [
+      "Tired eyes, refreshed.",
+      "Collagen does the work.",
+      "A pause built into your week."
+    ],
+    "ingredients": "Formulated around Collagen. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Place under clean, dry eyes for 15-20 minutes. Remove and pat any remaining essence into the skin.",
+    "size": "90g / 60 sheets"
   },
   {
     "id": "emu-001",
     "sku": "LBL-EMU-001",
-    "name": "Lebelage Aqua Ceramide Emulsion",
+    "name": "Lebelage Vitamin C Pure Emulsion",
     "brand": "Lebelage",
     "category": "Emulsion",
-    "price": 300,
+    "price": 0,
     "currency": "MVR",
-    "description": "A lightweight lotion-cream hybrid that layers well under Maldives humidity.",
-    "details": "Key ingredients: Ceramide NP, Hyaluronic Acid. Apply after toner, before cream. Made in South Korea.",
+    "description": "Emulsion for brightening.",
     "images": [
-      "/images/products/placeholder-emulsion-1.svg"
+      "/images/products/emu-001.png"
     ],
-    "stockStatus": "in-stock",
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
     "featured": false,
-    "createdAt": "2026-06-25T09:00:00.000Z",
-    "updatedAt": "2026-06-25T09:00:00.000Z"
+    "createdAt": "2026-07-25T09:00:40Z",
+    "updatedAt": "2026-07-25T09:00:40Z",
+    "headlines": [
+      "Brighter skin starts here.",
+      "Built around Vitamin C.",
+      "The last word in your routine."
+    ],
+    "ingredients": "Water, Mineral Oil, Caprylic/Capric Triglyceride, Glycerin, Butylene Glycol, Petrolatum, Glyceryl Stearate, Stearic Acid, Cetearyl Alcohol, Polysorbate 60, Dimethicone, Allantoin, Tocopheryl Acetate, Dipotassium Glycyrrhizate, Sodium Hyaluronate, Ascorbic Acid, Tranexamic Acid, Hippophae Rhamnoides Fruit Extract.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "120ml"
   },
   {
-    "id": "emu-002",
-    "sku": "LBL-EMU-002",
-    "name": "Lebelage Snail Repair Emulsion",
+    "id": "crm-002",
+    "sku": "LBL-CRM-002",
+    "name": "Lebelage Vitamin C Pure Cream",
     "brand": "Lebelage",
-    "category": "Emulsion",
-    "price": 295,
+    "category": "Cream",
+    "price": 0,
     "currency": "MVR",
-    "description": "A repairing emulsion for dull, tired skin in need of a reset.",
-    "details": "Key ingredients: Snail Secretion Filtrate, Panthenol. Apply after toner or essence. Made in South Korea.",
+    "description": "Cream for brightening.",
     "images": [
-      "/images/products/placeholder-emulsion-2.svg"
+      "/images/products/crm-002.png"
     ],
-    "stockStatus": "in-stock",
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
     "featured": false,
-    "createdAt": "2026-06-26T09:00:00.000Z",
-    "updatedAt": "2026-06-26T09:00:00.000Z"
+    "createdAt": "2026-07-25T09:00:41Z",
+    "updatedAt": "2026-07-25T09:00:41Z",
+    "headlines": [
+      "Dullness, dealt with.",
+      "The Vitamin C step your skin's been missing.",
+      "The last word in your routine."
+    ],
+    "ingredients": "Formulated around Vitamin C. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "55ml"
+  },
+  {
+    "id": "lot-001",
+    "sku": "LBL-LOT-001",
+    "name": "Lebelage Collagen + Green Tea Moisture Lotion",
+    "brand": "Lebelage",
+    "category": "Lotion",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Lotion for hydration & balance.",
+    "images": [
+      "/images/products/lot-001.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:42Z",
+    "updatedAt": "2026-07-25T09:00:42Z",
+    "headlines": [
+      "Balance, hydrated in.",
+      "The Collagen step your skin's been missing.",
+      "Ten seconds that change your skin."
+    ],
+    "ingredients": "Formulated around Collagen. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "150ml"
+  },
+  {
+    "id": "crm-003",
+    "sku": "LBL-CRM-003",
+    "name": "Lebelage Collagen + Green Tea Moisture Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Cream for hydration.",
+    "images": [
+      "/images/products/crm-003.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:43Z",
+    "updatedAt": "2026-07-25T09:00:43Z",
+    "headlines": [
+      "Thirsty skin's new favorite.",
+      "The Collagen step your skin's been missing.",
+      "Ten seconds that change your skin."
+    ],
+    "ingredients": "Formulated around Collagen. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "70ml"
+  },
+  {
+    "id": "crm-004",
+    "sku": "LBL-CRM-004",
+    "name": "Lebelage Dr. Vitamin C Cure Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Brightening cream for brightening.",
+    "images": [
+      "/images/products/crm-004.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:44Z",
+    "updatedAt": "2026-07-25T09:00:44Z",
+    "headlines": [
+      "Brighter skin starts here.",
+      "The Vitamin C step your skin's been missing.",
+      "Ten seconds that change your skin."
+    ],
+    "ingredients": "Formulated around Vitamin C. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "70ml"
+  },
+  {
+    "id": "crm-005",
+    "sku": "LBL-CRM-005",
+    "name": "Lebelage Hyaluronic Derma Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Cream for hydration.",
+    "images": [
+      "/images/products/crm-005.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:45Z",
+    "updatedAt": "2026-07-25T09:00:45Z",
+    "headlines": [
+      "Thirsty skin's new favorite.",
+      "Hyaluronic Acid, concentrated.",
+      "The step your skin waits all day for."
+    ],
+    "ingredients": "Formulated around Hyaluronic Acid. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "50ml"
+  },
+  {
+    "id": "lot-002",
+    "sku": "LBL-LOT-002",
+    "name": "Lebelage Tea Tree Derma Lotion",
+    "brand": "Lebelage",
+    "category": "Lotion",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Lotion for acne & oil control.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:46Z",
+    "updatedAt": "2026-07-25T09:00:46Z",
+    "headlines": [
+      "Balance, not stripped.",
+      "Tea Tree, concentrated.",
+      "The step your skin waits all day for."
+    ],
+    "ingredients": "Formulated around Tea Tree. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "210ml"
+  },
+  {
+    "id": "crm-006",
+    "sku": "LBL-CRM-006",
+    "name": "Lebelage Tea Tree Derma Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Cream for acne & oil control.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:47Z",
+    "updatedAt": "2026-07-25T09:00:47Z",
+    "headlines": [
+      "Balance, not stripped.",
+      "Built around Tea Tree.",
+      "The step your skin waits all day for."
+    ],
+    "ingredients": "Formulated around Tea Tree. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "50ml"
+  },
+  {
+    "id": "amp-003",
+    "sku": "LBL-AMP-003",
+    "name": "Lebelage Dr. Ceramide Derma Ampoule",
+    "brand": "Lebelage",
+    "category": "Ampoule",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Ampoule for barrier repair.",
+    "images": [
+      "/images/products/amp-003.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:48Z",
+    "updatedAt": "2026-07-25T09:00:48Z",
+    "headlines": [
+      "Rebuild the barrier, restore the calm.",
+      "The Ceramide step your skin's been missing.",
+      "A few drops, a real difference."
+    ],
+    "ingredients": "Formulated around Ceramide. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "30ml"
+  },
+  {
+    "id": "ser-005",
+    "sku": "LBL-SER-005",
+    "name": "Lebelage Truly Retinol Serum",
+    "brand": "Lebelage",
+    "category": "Serum",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Serum for texture refinement & anti-aging.",
+    "images": [
+      "/images/products/ser-005.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:49Z",
+    "updatedAt": "2026-07-25T09:00:49Z",
+    "headlines": [
+      "Time-tested texture care.",
+      "The Retinol step your skin's been missing.",
+      "Small bottle, real difference."
+    ],
+    "ingredients": "Formulated around Retinol. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "35ml"
+  },
+  {
+    "id": "ser-006",
+    "sku": "LBL-SER-006",
+    "name": "Lebelage Truly Panthenol Serum",
+    "brand": "Lebelage",
+    "category": "Serum",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Serum for barrier repair.",
+    "images": [
+      "/images/products/ser-006.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:50Z",
+    "updatedAt": "2026-07-25T09:00:50Z",
+    "headlines": [
+      "Rebuild the barrier, restore the calm.",
+      "Built around Panthenol.",
+      "The step worth the extra minute."
+    ],
+    "ingredients": "Formulated around Panthenol. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "35ml"
+  },
+  {
+    "id": "ser-007",
+    "sku": "LBL-SER-007",
+    "name": "Lebelage Truly PDRN Serum",
+    "brand": "Lebelage",
+    "category": "Serum",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Serum for repair & elasticity.",
+    "images": [
+      "/images/products/ser-007.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:51Z",
+    "updatedAt": "2026-07-25T09:00:51Z",
+    "headlines": [
+      "Bounce and repair, together.",
+      "PDRN (salmon DNA) does the work.",
+      "Small bottle, real difference."
+    ],
+    "ingredients": "Formulated around PDRN (salmon DNA). Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "35ml"
+  },
+  {
+    "id": "amp-004",
+    "sku": "LBL-AMP-004",
+    "name": "Lebelage Vitamin C Pure Ampoule",
+    "brand": "Lebelage",
+    "category": "Ampoule",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Ampoule for brightening.",
+    "images": [
+      "/images/products/amp-004.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:52Z",
+    "updatedAt": "2026-07-25T09:00:52Z",
+    "headlines": [
+      "Dullness, dealt with.",
+      "Vitamin C, concentrated.",
+      "Small bottle, real difference."
+    ],
+    "ingredients": "Water, Butylene Glycol, Glycerin, Niacinamide, PEG/PPG-17/6 Copolymer, Phenoxyethanol, Hydroxyethyl Urea, Betaine, Allantoin, Panthenol, Sodium Hyaluronate, Adenosine, Hippophae Rhamnoides Fruit Extract, Glutathione, Dipotassium Glycyrrhizate, Citrus Limon (Lemon) Fruit Extract, Ascorbic Acid, Tranexamic Acid, and several forms of hyaluronic acid.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "35ml"
+  },
+  {
+    "id": "ser-008",
+    "sku": "LBL-SER-008",
+    "name": "Lebelage Truly Panthenol High Concentration Serum",
+    "brand": "Lebelage",
+    "category": "Serum",
+    "price": 0,
+    "currency": "MVR",
+    "description": "High-concentration serum for barrier support.",
+    "images": [
+      "/images/products/ser-008.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:53Z",
+    "updatedAt": "2026-07-25T09:00:53Z",
+    "headlines": [
+      "Barrier care, simplified.",
+      "The Panthenol step your skin's been missing.",
+      "A few drops, a real difference."
+    ],
+    "ingredients": "Formulated around Panthenol. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "20g"
+  },
+  {
+    "id": "ser-009",
+    "sku": "LBL-SER-009",
+    "name": "Lebelage Truly PDRN High Concentration Serum",
+    "brand": "Lebelage",
+    "category": "Serum",
+    "price": 0,
+    "currency": "MVR",
+    "description": "High-concentration serum for repair & elasticity.",
+    "images": [
+      "/images/products/ser-009.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:54Z",
+    "updatedAt": "2026-07-25T09:00:54Z",
+    "headlines": [
+      "Skin that springs back.",
+      "The PDRN step your skin's been missing.",
+      "Small bottle, real difference."
+    ],
+    "ingredients": "Formulated around PDRN (salmon DNA). Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "20g"
+  },
+  {
+    "id": "amp-005",
+    "sku": "LBL-AMP-005",
+    "name": "Lebelage Real Sensation Pore Ampoule",
+    "brand": "Lebelage",
+    "category": "Ampoule",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Pore ampoule for pores & oiliness.",
+    "images": [
+      "/images/products/amp-005.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:55Z",
+    "updatedAt": "2026-07-25T09:00:55Z",
+    "headlines": [
+      "For skin that runs a little shiny.",
+      "The pore ampoule your routine needs.",
+      "The step worth the extra minute."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "30ml"
+  },
+  {
+    "id": "amp-006",
+    "sku": "LBL-AMP-006",
+    "name": "Lebelage Cica Propolis Myrrh Ampoule",
+    "brand": "Lebelage",
+    "category": "Ampoule",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Cica-propolis ampoule for soothing barrier care.",
+    "images": [
+      "/images/products/amp-006.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:56Z",
+    "updatedAt": "2026-07-25T09:00:56Z",
+    "headlines": [
+      "Calm now, stronger later.",
+      "The Centella Asiatica step your skin's been missing.",
+      "The step worth the extra minute."
+    ],
+    "ingredients": "Formulated around Centella Asiatica (Cica). Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "15ml"
+  },
+  {
+    "id": "sun-007",
+    "sku": "LBL-SUN-007",
+    "name": "Lebelage Collagen Hyaluronic Sun Cream",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Hydrating sunscreen for hydration with UV protection.",
+    "images": [
+      "/images/products/sun-007.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:57Z",
+    "updatedAt": "2026-07-25T09:00:57Z",
+    "headlines": [
+      "Hydration that doesn't forget the SPF.",
+      "Collagen, concentrated.",
+      "Protection that doesn't feel like a chore."
+    ],
+    "ingredients": "Formulated around Collagen. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply generously as the final step of your morning routine, at least 15 minutes before sun exposure. Reapply every 2-3 hours, or after swimming/sweating.",
+    "size": "50ml"
+  },
+  {
+    "id": "sun-008",
+    "sku": "LBL-SUN-008",
+    "name": "Lebelage Moisture Aloe Sun Cream",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Aloe sunscreen for soothing hydration.",
+    "images": [
+      "/images/products/sun-008.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:58Z",
+    "updatedAt": "2026-07-25T09:00:58Z",
+    "headlines": [
+      "Soft skin, sun-ready.",
+      "Built around Aloe Vera.",
+      "Protection that doesn't feel like a chore."
+    ],
+    "ingredients": "Formulated around Aloe Vera. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply generously as the final step of your morning routine, at least 15 minutes before sun exposure. Reapply every 2-3 hours, or after swimming/sweating.",
+    "size": "50ml"
+  },
+  {
+    "id": "sun-009",
+    "sku": "LBL-SUN-009",
+    "name": "Lebelage Perfect Care Moisture Aqua Sun",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Moisture sunscreen for hydrating UV protection.",
+    "images": [
+      "/images/products/sun-009.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:00:59Z",
+    "updatedAt": "2026-07-25T09:00:59Z",
+    "headlines": [
+      "SPF that hydrates as it protects.",
+      "A moisture sunscreen, done right.",
+      "The one step you can't skip."
+    ],
+    "ingredients": "Water, Ethylhexyl Methoxycinnamate, Butylene Glycol, Zinc Oxide, Octocrylene, Stearic Acid, Cetearyl Alcohol, Titanium Dioxide, Niacinamide, Butyl Methoxydibenzoylmethane, Cyclopentasiloxane, Glyceryl Stearate, Methylene Bis-Benzotriazolyl Tetramethylbutylphenol, Bis-Ethylhexyloxyphenol Methoxyphenyl Triazine, Triethylhexanoin, Sodium Chloride, Dimethicone, Allantoin, Glycerin, Tocopheryl Acetate, Adenosine, Sodium Hyaluronate, and other ingredients.",
+    "howToUse": "Apply generously as the final step of your morning routine, at least 15 minutes before sun exposure. Reapply every 2-3 hours, or after swimming/sweating.",
+    "size": "50g"
+  },
+  {
+    "id": "sun-010",
+    "sku": "LBL-SUN-010",
+    "name": "Lebelage UV Sun Ultra Shield Sun Stick",
+    "brand": "Lebelage",
+    "category": "Sun Care",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Sun stick for portable UV protection.",
+    "images": [
+      "/images/products/sun-010.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:00Z",
+    "updatedAt": "2026-07-25T09:01:00Z",
+    "headlines": [
+      "SPF for the on-the-move days.",
+      "Simple formula, real results.",
+      "The one step you can't skip."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply generously as the final step of your morning routine, at least 15 minutes before sun exposure. Reapply every 2-3 hours, or after swimming/sweating.",
+    "size": "20g"
+  },
+  {
+    "id": "ton-002",
+    "sku": "LBL-TON-002",
+    "name": "Lebelage Vitamin C Pure Toner",
+    "brand": "Lebelage",
+    "category": "Toner",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Toner for brightening.",
+    "images": [
+      "/images/products/ton-002.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:01Z",
+    "updatedAt": "2026-07-25T09:01:01Z",
+    "headlines": [
+      "Dullness, dealt with.",
+      "Vitamin C does the work.",
+      "A quiet reset for your skin."
+    ],
+    "ingredients": "Formulated around Vitamin C. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Pat 2-3 drops onto cleansed skin with your hands, morning and evening. Follow with the rest of your routine.",
+    "size": "120ml"
+  },
+  {
+    "id": "ton-003",
+    "sku": "LBL-TON-003",
+    "name": "Lebelage Collagen + Green Tea Moisture Skin",
+    "brand": "Lebelage",
+    "category": "Toner",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Toner for hydration & balance.",
+    "images": [
+      "/images/products/ton-003.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:02Z",
+    "updatedAt": "2026-07-25T09:01:02Z",
+    "headlines": [
+      "Made for hydration & balance.",
+      "Collagen does the work.",
+      "The step between cleansing and caring."
+    ],
+    "ingredients": "Water, Glycerin, Alcohol, Phenyl Trimethicone, Hydrogenated Castor Oil, Sodium Hyaluronate, Collagen, Camellia Sinensis Leaf Extract, Methylparaben, Hyaluronic Acid, Allantoin, Benzophenone-5, Triethanolamine, Carbomer, Parfum, Imidazolidinyl Urea, Disodium EDTA, CI 16185.",
+    "howToUse": "Pat 2-3 drops onto cleansed skin with your hands, morning and evening. Follow with the rest of your routine.",
+    "size": "150ml"
+  },
+  {
+    "id": "tpd-003",
+    "sku": "LBL-TPD-003",
+    "name": "Lebelage Truly PDRN Toner Pad",
+    "brand": "Lebelage",
+    "category": "Toner Pad",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Toner pad for repair & elasticity.",
+    "images": [
+      "/images/products/tpd-003.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:03Z",
+    "updatedAt": "2026-07-25T09:01:03Z",
+    "headlines": [
+      "Skin that springs back.",
+      "Built around PDRN (salmon DNA).",
+      "The step between cleansing and caring."
+    ],
+    "ingredients": "Formulated around PDRN (salmon DNA). Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After cleansing, sweep a pad gently across the face, avoiding the eye area. Follow with serum or moisturizer.",
+    "size": "60pads"
+  },
+  {
+    "id": "tpd-004",
+    "sku": "LBL-TPD-004",
+    "name": "Lebelage Pore Peeling Pad",
+    "brand": "Lebelage",
+    "category": "Toner Pad",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Exfoliating pad for pores & texture.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:04Z",
+    "updatedAt": "2026-07-25T09:01:04Z",
+    "headlines": [
+      "Smoother skin, refined pores.",
+      "The exfoliating pad your routine needs.",
+      "The step between cleansing and caring."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After cleansing, sweep a pad gently across the face, avoiding the eye area. Follow with serum or moisturizer.",
+    "size": "60pads"
+  },
+  {
+    "id": "ton-004",
+    "sku": "LBL-TON-004",
+    "name": "Lebelage Centella Moisture Skin",
+    "brand": "Lebelage",
+    "category": "Toner",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Cica toner for soothing skin.",
+    "images": [
+      "/images/products/ton-004.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:05Z",
+    "updatedAt": "2026-07-25T09:01:05Z",
+    "headlines": [
+      "A quiet moment for your skin.",
+      "Centella Asiatica, concentrated.",
+      "A quiet reset for your skin."
+    ],
+    "ingredients": "Formulated around Centella Asiatica. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Pat 2-3 drops onto cleansed skin with your hands, morning and evening. Follow with the rest of your routine.",
+    "size": "150ml"
+  },
+  {
+    "id": "ton-005",
+    "sku": "LBL-TON-005",
+    "name": "Lebelage Super Aqua Moisture Skin",
+    "brand": "Lebelage",
+    "category": "Toner",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Hydrating toner for light hydration.",
+    "images": [
+      "/images/products/ton-005.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:06Z",
+    "updatedAt": "2026-07-25T09:01:06Z",
+    "headlines": [
+      "Hydration that never feels heavy.",
+      "A hydrating toner, done right.",
+      "The step between cleansing and caring."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Pat 2-3 drops onto cleansed skin with your hands, morning and evening. Follow with the rest of your routine.",
+    "size": "150ml"
+  },
+  {
+    "id": "sgl-002",
+    "sku": "LBL-SGL-002",
+    "name": "Lebelage Vitamin Moisture Soothing Gel",
+    "brand": "Lebelage",
+    "category": "Soothing Gel",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Soothing gel for glow & soothing.",
+    "images": [
+      "/images/products/sgl-002.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:07Z",
+    "updatedAt": "2026-07-25T09:01:07Z",
+    "headlines": [
+      "Calm skin, quietly glowing.",
+      "A soothing gel, done right.",
+      "Comfort, on standby."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Apply a thin layer to clean skin and massage in gently until absorbed. Use as needed, especially after sun exposure.",
+    "size": "300ml"
+  },
+  {
+    "id": "fom-012",
+    "sku": "LBL-FOM-012",
+    "name": "Lebelage Retinol Bubble Chewy Foam",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Bubble foam cleanser for texture refinement & anti-aging.",
+    "images": [
+      "/images/products/fom-012.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:08Z",
+    "updatedAt": "2026-07-25T09:01:08Z",
+    "headlines": [
+      "Time-tested texture care.",
+      "Built around Retinol.",
+      "A cleaner start, every morning."
+    ],
+    "ingredients": "Formulated around Retinol. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "200ml"
+  },
+  {
+    "id": "fom-013",
+    "sku": "LBL-FOM-013",
+    "name": "Lebelage PDRN Bubble Chewy Foam",
+    "brand": "Lebelage",
+    "category": "Foam",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Bubble foam cleanser for repair & elasticity.",
+    "images": [
+      "/images/products/fom-013.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:09Z",
+    "updatedAt": "2026-07-25T09:01:09Z",
+    "headlines": [
+      "Bounce and repair, together.",
+      "The PDRN step your skin's been missing.",
+      "Where every good routine begins."
+    ],
+    "ingredients": "Formulated around PDRN (salmon DNA). Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "200ml"
+  },
+  {
+    "id": "fp2-003",
+    "sku": "LBL-FP2-003",
+    "name": "Lebelage Ssook/Mugwort Clay 2in1 Pack Foam",
+    "brand": "Lebelage",
+    "category": "Foam Pack 2in1",
+    "price": 0,
+    "currency": "MVR",
+    "description": "2-in-1 clay cleansing pack for calming.",
+    "images": [
+      "/images/products/fp2-003.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:10Z",
+    "updatedAt": "2026-07-25T09:01:10Z",
+    "headlines": [
+      "Calm, restored.",
+      "The Mugwort step your skin's been missing.",
+      "A cleaner start, every morning."
+    ],
+    "ingredients": "Formulated around Mugwort (Ssook). Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "120ml"
+  },
+  {
+    "id": "fp2-004",
+    "sku": "LBL-FP2-004",
+    "name": "Lebelage Soybean Clay 2in1 Pack Foam",
+    "brand": "Lebelage",
+    "category": "Foam Pack 2in1",
+    "price": 0,
+    "currency": "MVR",
+    "description": "2-in-1 clay cleansing pack for softening barrier care.",
+    "images": [
+      "/images/products/fp2-004.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:11Z",
+    "updatedAt": "2026-07-25T09:01:11Z",
+    "headlines": [
+      "Softer skin, stronger defenses.",
+      "The Soybean Extract step your skin's been missing.",
+      "A cleaner start, every morning."
+    ],
+    "ingredients": "Formulated around Soybean Extract. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Dispense onto damp skin, work into a light lather, and massage for 30-60 seconds. Rinse thoroughly with lukewarm water.",
+    "size": "120ml"
+  },
+  {
+    "id": "eye-002",
+    "sku": "LBL-EYE-002",
+    "name": "Lebelage Heeyul 24K Gold Eye Cream",
+    "brand": "Lebelage",
+    "category": "Eye Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Eye cream for glow & anti-aging.",
+    "images": [
+      "/images/products/eye-002.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:12Z",
+    "updatedAt": "2026-07-25T09:01:12Z",
+    "headlines": [
+      "The glow that ages well.",
+      "Built around 24K Gold.",
+      "Twenty minutes, well spent."
+    ],
+    "ingredients": "Formulated around 24K Gold. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Using the ring finger, pat a small amount gently around the eye area, morning and evening, avoiding direct contact with the eye.",
+    "size": "40ml"
+  },
+  {
+    "id": "msk-007",
+    "sku": "LBL-MSK-007",
+    "name": "Lebelage Vitamin Hydrogel Eye Patch",
+    "brand": "Lebelage",
+    "category": "Mask Pack",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Hydrogel eye patch for brightening.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:13Z",
+    "updatedAt": "2026-07-25T09:01:13Z",
+    "headlines": [
+      "Dullness, dealt with.",
+      "The hydrogel eye patch your routine needs.",
+      "Skincare that feels like a ritual."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Place under clean, dry eyes for 15-20 minutes. Remove and pat any remaining essence into the skin.",
+    "size": "90g / 60 sheets"
+  },
+  {
+    "id": "crm-007",
+    "sku": "LBL-CRM-007",
+    "name": "Lebelage Dr. Collagen Cure Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Collagen cream for elasticity.",
+    "images": [
+      "/images/products/crm-007.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:14Z",
+    "updatedAt": "2026-07-25T09:01:14Z",
+    "headlines": [
+      "Bounce, brought back.",
+      "Collagen, concentrated.",
+      "The step your skin waits all day for."
+    ],
+    "ingredients": "Formulated around Collagen. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "70ml"
+  },
+  {
+    "id": "crm-008",
+    "sku": "LBL-CRM-008",
+    "name": "Lebelage Dr. Peptide Cure Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Peptide cream for firmness.",
+    "images": [
+      "/images/products/crm-008.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:15Z",
+    "updatedAt": "2026-07-25T09:01:15Z",
+    "headlines": [
+      "Firmer skin starts here.",
+      "Peptide does the work.",
+      "Ten seconds that change your skin."
+    ],
+    "ingredients": "Formulated around Peptide. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "70ml"
+  },
+  {
+    "id": "crm-009",
+    "sku": "LBL-CRM-009",
+    "name": "Lebelage Wrinkle Collagen Ampoule Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Ampoule cream for wrinkle care & elasticity.",
+    "images": [
+      "/images/products/crm-009.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:16Z",
+    "updatedAt": "2026-07-25T09:01:16Z",
+    "headlines": [
+      "Smoother lines, stronger skin.",
+      "Collagen does the work.",
+      "The last word in your routine."
+    ],
+    "ingredients": "Formulated around Collagen. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "70ml"
+  },
+  {
+    "id": "crm-010",
+    "sku": "LBL-CRM-010",
+    "name": "Lebelage Real Sensation Blemish Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Treatment cream for blemish & acne mark care.",
+    "images": [
+      "/images/products/crm-010.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:17Z",
+    "updatedAt": "2026-07-25T09:01:17Z",
+    "headlines": [
+      "For the skin that's healing.",
+      "Simple formula, real results.",
+      "The step your skin waits all day for."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "55g"
+  },
+  {
+    "id": "crm-011",
+    "sku": "LBL-CRM-011",
+    "name": "Lebelage Real Sensation Pore Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Treatment cream for pores & oil control.",
+    "images": [
+      "/images/products/crm-011.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:18Z",
+    "updatedAt": "2026-07-25T09:01:18Z",
+    "headlines": [
+      "Shine control that lasts all day.",
+      "Simple formula, real results.",
+      "Ten seconds that change your skin."
+    ],
+    "ingredients": "Water, Glycerin, Cetyl Ethylhexanoate, Panthenol, Propanediol, Sorbitan Stearate, Niacinamide, Isohexadecane, Alcohol, Stearyl Alcohol, Salicylic Acid, Allantoin, Adenosine, Sodium Hyaluronate, Hyaluronic Acid, Acetyl Tetrapeptide-5, Palmitoyl Pentapeptide-4, Palmitoyl Tripeptide-5, and other ingredients.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "55g"
+  },
+  {
+    "id": "lot-003",
+    "sku": "LBL-LOT-003",
+    "name": "Lebelage Hyaluronic Derma Lotion",
+    "brand": "Lebelage",
+    "category": "Lotion",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Lotion for hydration.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:19Z",
+    "updatedAt": "2026-07-25T09:01:19Z",
+    "headlines": [
+      "Thirsty skin's new favorite.",
+      "Hyaluronic Acid does the work.",
+      "The last word in your routine."
+    ],
+    "ingredients": "Formulated around Hyaluronic Acid. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "200ml"
+  },
+  {
+    "id": "amp-007",
+    "sku": "LBL-AMP-007",
+    "name": "Lebelage Dr. Collagen Derma Ampoule",
+    "brand": "Lebelage",
+    "category": "Ampoule",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Ampoule for elasticity.",
+    "images": [
+      "/images/products/amp-007.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:20Z",
+    "updatedAt": "2026-07-25T09:01:20Z",
+    "headlines": [
+      "Firmer skin, one step at a time.",
+      "Collagen does the work.",
+      "The step worth the extra minute."
+    ],
+    "ingredients": "Formulated around Collagen. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "30ml"
+  },
+  {
+    "id": "ser-010",
+    "sku": "LBL-SER-010",
+    "name": "Lebelage Truly Oligopeptide High Concentration Serum",
+    "brand": "Lebelage",
+    "category": "Serum",
+    "price": 0,
+    "currency": "MVR",
+    "description": "High-concentration serum for elasticity.",
+    "images": [
+      "/images/products/ser-010.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:21Z",
+    "updatedAt": "2026-07-25T09:01:21Z",
+    "headlines": [
+      "Bounce, brought back.",
+      "The Oligopeptide step your skin's been missing.",
+      "The step worth the extra minute."
+    ],
+    "ingredients": "Formulated around Oligopeptide. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "20g"
   },
   {
     "id": "ess-001",
     "sku": "LBL-ESS-001",
-    "name": "Lebelage Vita Serum",
+    "name": "Lebelage Heeyul Premium 24K Gold Essence",
     "brand": "Lebelage",
     "category": "Essence",
-    "price": 450,
+    "price": 0,
     "currency": "MVR",
-    "description": "A Lebelage debut essence selected for Maldives skin — brightening, hydrating, and weightless under tropical humidity.",
-    "details": "Key ingredients: Vitamin C derivative, Niacinamide, Adenosine. Apply after toner, before moisturizer. Made in South Korea.",
+    "description": "Essence for glow & anti-aging.",
     "images": [
-      "/images/products/placeholder-essence-1.svg"
+      "/images/products/ess-001.png"
     ],
-    "stockStatus": "in-stock",
-    "featured": true,
-    "createdAt": "2026-06-27T09:00:00.000Z",
-    "updatedAt": "2026-06-27T09:00:00.000Z"
-  },
-  {
-    "id": "ess-002",
-    "sku": "LBL-ESS-002",
-    "name": "Lebelage Galactomyces Essence",
-    "brand": "Lebelage",
-    "category": "Essence",
-    "price": 400,
-    "currency": "MVR",
-    "description": "A fermented essence that softens and preps skin for the rest of your routine.",
-    "details": "Key ingredients: Galactomyces Ferment Filtrate 90%. Pat onto skin after toner. Made in South Korea.",
-    "images": [
-      "/images/products/placeholder-essence-2.svg"
-    ],
-    "stockStatus": "in-stock",
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
     "featured": false,
-    "createdAt": "2026-06-28T09:00:00.000Z",
-    "updatedAt": "2026-06-28T09:00:00.000Z"
+    "createdAt": "2026-07-25T09:01:22Z",
+    "updatedAt": "2026-07-25T09:01:22Z",
+    "headlines": [
+      "Radiance with staying power.",
+      "24K Gold, concentrated.",
+      "The step worth the extra minute."
+    ],
+    "ingredients": "Formulated around 24K Gold. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "130ml"
   },
   {
-    "id": "etc-001",
-    "sku": "LBL-ETC-001",
-    "name": "Lebelage Lip Sleeping Balm",
+    "id": "amp-008",
+    "sku": "LBL-AMP-008",
+    "name": "Lebelage Real Sensation Blemish Ampoule",
     "brand": "Lebelage",
-    "category": "Etc.",
-    "price": 160,
+    "category": "Ampoule",
+    "price": 0,
     "currency": "MVR",
-    "description": "An overnight lip treatment for soft, hydrated lips by morning.",
-    "details": "Key ingredients: Shea Butter, Vitamin E. Apply generously before bed. Made in South Korea.",
+    "description": "Blemish ampoule for blemishes & acne marks.",
     "images": [
-      "/images/products/placeholder-etc-1.svg"
+      "/images/products/amp-008.png"
     ],
-    "stockStatus": "in-stock",
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
     "featured": false,
-    "createdAt": "2026-06-29T09:00:00.000Z",
-    "updatedAt": "2026-06-29T09:00:00.000Z"
+    "createdAt": "2026-07-25T09:01:23Z",
+    "updatedAt": "2026-07-25T09:01:23Z",
+    "headlines": [
+      "For the skin that's healing.",
+      "A blemish ampoule, done right.",
+      "Small bottle, real difference."
+    ],
+    "ingredients": "Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "30ml"
   },
   {
-    "id": "etc-002",
-    "sku": "LBL-ETC-002",
-    "name": "Lebelage Travel Pouch Gift Set",
+    "id": "amp-009",
+    "sku": "LBL-AMP-009",
+    "name": "Lebelage 24K Gold Perfect Ampoule",
     "brand": "Lebelage",
-    "category": "Etc.",
-    "price": 550,
+    "category": "Ampoule",
+    "price": 0,
     "currency": "MVR",
-    "description": "A curated travel-size set of Atoreum MV bestsellers in a reusable pouch.",
-    "details": "Includes travel sizes of toner, essence, and cream. Perfect for gifting or island-hopping. Made in South Korea.",
+    "description": "Gold ampoule for a premium glow.",
     "images": [
-      "/images/products/placeholder-etc-2.svg"
+      "/images/products/amp-009.png"
     ],
-    "stockStatus": "in-stock",
-    "featured": true,
-    "createdAt": "2026-06-30T09:00:00.000Z",
-    "updatedAt": "2026-06-30T09:00:00.000Z"
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:24Z",
+    "updatedAt": "2026-07-25T09:01:24Z",
+    "headlines": [
+      "The glow that feels expensive.",
+      "24K Gold, concentrated.",
+      "Small bottle, real difference."
+    ],
+    "ingredients": "Formulated around 24K Gold. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After toner, apply 2-3 drops to the face and pat gently until absorbed. Follow with moisturizer.",
+    "size": "50g"
+  },
+  {
+    "id": "tpd-005",
+    "sku": "LBL-TPD-005",
+    "name": "Lebelage Truly Retinol Toner Pad",
+    "brand": "Lebelage",
+    "category": "Toner Pad",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Toner pad for texture refinement & anti-aging.",
+    "images": [
+      "/images/products/tpd-005.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:25Z",
+    "updatedAt": "2026-07-25T09:01:25Z",
+    "headlines": [
+      "Time-tested texture care.",
+      "Retinol, concentrated.",
+      "The step between cleansing and caring."
+    ],
+    "ingredients": "Formulated around Retinol. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "After cleansing, sweep a pad gently across the face, avoiding the eye area. Follow with serum or moisturizer.",
+    "size": "60pads"
+  },
+  {
+    "id": "ton-006",
+    "sku": "LBL-TON-006",
+    "name": "Lebelage Collagen Derma Skin",
+    "brand": "Lebelage",
+    "category": "Toner",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Collagen toner for elasticity & hydration.",
+    "images": [
+      "/images/products/ton-006.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:26Z",
+    "updatedAt": "2026-07-25T09:01:26Z",
+    "headlines": [
+      "Bounce and moisture, in one toner.",
+      "The Collagen step your skin's been missing.",
+      "Prep that actually shows results."
+    ],
+    "ingredients": "Water, Butylene Glycol, Glycerin, Arginine, Carbomer, Allantoin, Panthenol, Hydrolyzed Collagen (20ppm), Sodium Hyaluronate, Beta-Glucan, and several forms of hyaluronic acid.",
+    "howToUse": "Pat 2-3 drops onto cleansed skin with your hands, morning and evening. Follow with the rest of your routine.",
+    "size": "200ml"
+  },
+  {
+    "id": "ton-007",
+    "sku": "LBL-TON-007",
+    "name": "Lebelage Collagen Hyaluronic Toner",
+    "brand": "Lebelage",
+    "category": "Toner",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Toner for hydration & plumping.",
+    "images": [],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:27Z",
+    "updatedAt": "2026-07-25T09:01:27Z",
+    "headlines": [
+      "Plump skin, deeply hydrated.",
+      "Collagen, concentrated.",
+      "A quiet reset for your skin."
+    ],
+    "ingredients": "Formulated around Collagen. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Pat 2-3 drops onto cleansed skin with your hands, morning and evening. Follow with the rest of your routine.",
+    "size": "300ml"
+  },
+  {
+    "id": "crm-012",
+    "sku": "LBL-CRM-012",
+    "name": "Lebelage Gold Caviar Ampoule Cream",
+    "brand": "Lebelage",
+    "category": "Cream",
+    "price": 0,
+    "currency": "MVR",
+    "description": "Premium cream for a premium glow.",
+    "images": [
+      "/images/products/crm-012.png"
+    ],
+    "stockStatus": "out-of-stock",
+    "stockOnHand": 0,
+    "featured": false,
+    "createdAt": "2026-07-25T09:01:28Z",
+    "updatedAt": "2026-07-25T09:01:28Z",
+    "headlines": [
+      "The glow that feels expensive.",
+      "Gold & Caviar, concentrated.",
+      "The step your skin waits all day for."
+    ],
+    "ingredients": "Formulated around Gold & Caviar. Full ingredient list (INCI) pending confirmation from the manufacturer — see product packaging or contact Lebelage directly for the complete list.",
+    "howToUse": "Take an appropriate amount and smooth over the face and neck as the last step of your morning and evening routine.",
+    "size": "70ml"
   }
 ]

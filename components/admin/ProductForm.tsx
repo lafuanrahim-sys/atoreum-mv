@@ -34,6 +34,14 @@ export default function ProductForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
+        <TextField
+          label="Size (volume/weight, e.g. 200ml)"
+          name="size"
+          defaultValue={product?.size}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1">
           <span className="text-xs uppercase tracking-wide text-ivory-dim">Brand</span>
           <select
@@ -67,8 +75,15 @@ export default function ProductForm({
         </label>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <TextField label="Price" name="price" type="number" step="0.01" defaultValue={product?.price} required />
+        <TextField
+          label="On-hand stock"
+          name="stockOnHand"
+          type="number"
+          step="1"
+          defaultValue={product?.stockOnHand ?? 0}
+        />
         <label className="flex flex-col gap-1">
           <span className="text-xs uppercase tracking-wide text-ivory-dim">Currency</span>
           <select
@@ -95,7 +110,18 @@ export default function ProductForm({
       </div>
 
       <TextArea label="Description (short)" name="description" defaultValue={product?.description} rows={2} />
-      <TextArea label="Details (ingredients / how to use)" name="details" defaultValue={product?.details} rows={4} />
+
+      <div className="grid grid-cols-1 gap-3">
+        <span className="text-xs uppercase tracking-wide text-ivory-dim">
+          Headlines (3 alternate taglines, rotated on the product page)
+        </span>
+        <TextField label="Headline 1" name="headline1" defaultValue={product?.headlines?.[0]} />
+        <TextField label="Headline 2" name="headline2" defaultValue={product?.headlines?.[1]} />
+        <TextField label="Headline 3" name="headline3" defaultValue={product?.headlines?.[2]} />
+      </div>
+
+      <TextArea label="Ingredients" name="ingredients" defaultValue={product?.ingredients} rows={4} />
+      <TextArea label="How to Use" name="howToUse" defaultValue={product?.howToUse} rows={3} />
 
       <label className="flex items-center gap-2 text-sm text-ivory">
         <input type="checkbox" name="featured" defaultChecked={product?.featured} />
@@ -108,8 +134,10 @@ export default function ProductForm({
         {existingImages.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-3">
             {existingImages.map((img) => (
-              <div key={img} className="relative h-20 w-20 overflow-hidden rounded-sm border border-line">
-                <Image src={img} alt="" fill className="object-cover" />
+              <div key={img} className="relative h-20 w-20 overflow-hidden rounded-sm border border-line bg-photo-well">
+                <div className="absolute inset-1.5">
+                  <Image src={img} alt="" fill className="object-contain" />
+                </div>
                 <input type="hidden" name="existingImages" value={img} />
                 <button
                   type="button"

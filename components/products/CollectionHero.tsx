@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Image from "next/image";
+import gsap from "gsap";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { parallax } from "@/lib/motion";
 
 // This hero sits directly on the unedited photo -- no gradient/scrim is
 // layered on top of it. Text color is a fixed warm palette (not the site's
@@ -24,17 +27,37 @@ function SparkleIcon({ className }: { className?: string }) {
 
 export default function CollectionHero() {
   const ref = useScrollReveal<HTMLDivElement>({ start: "top 85%" });
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const bgRef = useRef<HTMLDivElement | null>(null);
+
+  // Subtle scroll parallax on the photo only — the layer bleeds 8% past the
+  // section top/bottom so its drift never exposes an edge. Text stays put.
+  useEffect(() => {
+    const section = sectionRef.current;
+    const bg = bgRef.current;
+    if (!section || !bg) return;
+
+    const ctx = gsap.context(() => {
+      parallax(bg, { trigger: section, yPercent: 8 });
+    }, section);
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <section className="relative -mt-24 flex h-[100svh] w-full items-start overflow-hidden md:-mt-28">
-      <Image
-        src="/images/hero/collection.png"
-        alt="Lebelage Real Sensation Blemish Ampoule and Pore Cream staged on stone with cherry blossom"
-        fill
-        priority
-        className="object-cover object-[62%_center]"
-        sizes="100vw"
-      />
+    <section
+      ref={sectionRef}
+      className="relative -mt-24 flex h-[100svh] w-full items-start overflow-hidden md:-mt-28"
+    >
+      <div ref={bgRef} className="absolute inset-x-0 top-[-8%] bottom-[-8%]">
+        <Image
+          src="/images/hero/collection.png"
+          alt="Lebelage Real Sensation Blemish Ampoule and Pore Cream staged on stone with cherry blossom"
+          fill
+          priority
+          className="object-cover object-[62%_center]"
+          sizes="100vw"
+        />
+      </div>
       {/* Header is 80px tall, so pt-[180px] lands the text exactly 100px
           below it. Padding matches the header's px scale exactly (no
           max-w/mx-auto centering here) so the two stay left-aligned at

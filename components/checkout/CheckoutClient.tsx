@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCart } from "@/lib/cart/CartContext";
 import { submitOrder } from "@/app/actions/checkout";
 import type { StoreSettings } from "@/lib/data/settings.server";
+import type { PaymentMethod } from "@/lib/types";
 
 function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
@@ -25,6 +26,7 @@ export default function CheckoutClient({ bankDetails }: { bankDetails: StoreSett
 
   const [step, setStep] = useState<Step>("shipping");
   const [contact, setContact] = useState({ name: "", email: "", phone: "", address: "" });
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("transfer");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,6 +101,7 @@ export default function CheckoutClient({ bankDetails }: { bankDetails: StoreSett
           <input type="hidden" name="email" value={contact.email} />
           <input type="hidden" name="phone" value={contact.phone} />
           <input type="hidden" name="address" value={contact.address} />
+          <input type="hidden" name="paymentMethod" value={paymentMethod} />
 
           {step === "shipping" && (
             <div className="flex flex-col gap-5">
@@ -185,6 +188,8 @@ export default function CheckoutClient({ bankDetails }: { bankDetails: StoreSett
           {step === "payment" && (
             <PaymentStep
               bankDetails={bankDetails}
+              method={paymentMethod}
+              onMethodChange={setPaymentMethod}
               onBack={() => setStep("review")}
               submitting={submitting}
               error={error}
@@ -235,6 +240,8 @@ function Field({
 
 function PaymentStep({
   bankDetails,
+  method,
+  onMethodChange,
   onBack,
   submitting,
   error,
@@ -242,52 +249,95 @@ function PaymentStep({
   currency,
 }: {
   bankDetails: StoreSettings;
+  method: PaymentMethod;
+  onMethodChange: (m: PaymentMethod) => void;
   onBack: () => void;
   submitting: boolean;
   error: string | null;
   total: number;
   currency: string;
 }) {
+  const METHODS: { key: PaymentMethod; label: string; hint: string }[] = [
+    { key: "transfer", label: "Bank Transfer", hint: "Pay now and upload your receipt" },
+    { key: "cash", label: "Cash", hint: "Pay in cash when your order is delivered" },
+  ];
+
   return (
     <div>
-      <div className="border border-line p-6">
-        <p className="text-xs uppercase tracking-[0.15em] text-gold">Bank Transfer Details</p>
-        <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-ivory-dim">Bank</dt>
-            <dd className="text-ivory">{bankDetails.bankName}</dd>
-          </div>
-          <div>
-            <dt className="text-ivory-dim">Account Name</dt>
-            <dd className="text-ivory">{bankDetails.accountName}</dd>
-          </div>
-          <div>
-            <dt className="text-ivory-dim">Account Number</dt>
-            <dd className="text-ivory">{bankDetails.accountNumber}</dd>
-          </div>
-          <div>
-            <dt className="text-ivory-dim">SWIFT</dt>
-            <dd className="text-ivory">{bankDetails.swift}</dd>
-          </div>
-        </dl>
-        <p className="mt-6 text-sm leading-relaxed text-ivory-dim">
-          Please transfer <span className="text-ivory">{formatPrice(total, currency)}</span> to
-          the account above, then upload your receipt or screenshot below. Your order will be
-          confirmed once payment is verified.
-        </p>
-      </div>
+      <fieldset>
+        <legend className="text-xs uppercase tracking-[0.15em] text-ivory">Payment method</legend>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {METHODS.map((m) => (
+            <label
+              key={m.key}
+              className={`flex cursor-pointer flex-col gap-1 border p-4 transition-colors ${
+                method === m.key ? "border-gold" : "border-line hover:border-ivory-dim"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="paymentMethodChoice"
+                  checked={method === m.key}
+                  onChange={() => onMethodChange(m.key)}
+                  className="accent-[var(--gold)]"
+                />
+                <span className="text-sm text-ivory">{m.label}</span>
+              </span>
+              <span className="text-xs text-ivory-dim">{m.hint}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
-      <label className="mt-6 flex flex-col gap-2">
-        <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">
-          Proof of payment (optional now — you can transfer after submitting)
-        </span>
-        <input
-          type="file"
-          name="paymentProof"
-          accept="image/jpeg,image/png,image/webp,application/pdf"
-          className="border border-line bg-transparent px-4 py-3 text-sm text-ivory-dim file:mr-4 file:border-0 file:bg-gold-deep file:px-4 file:py-2 file:text-xs file:uppercase file:tracking-[0.15em] file:text-ink"
-        />
-      </label>
+      {method === "transfer" ? (
+        <>
+          <div className="mt-6 border border-line p-6">
+            <p className="text-xs uppercase tracking-[0.15em] text-gold">Bank Transfer Details</p>
+            <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-ivory-dim">Bank</dt>
+                <dd className="text-ivory">{bankDetails.bankName}</dd>
+              </div>
+              <div>
+                <dt className="text-ivory-dim">Account Name</dt>
+                <dd className="text-ivory">{bankDetails.accountName}</dd>
+              </div>
+              <div>
+                <dt className="text-ivory-dim">Account Number</dt>
+                <dd className="text-ivory">{bankDetails.accountNumber}</dd>
+              </div>
+              <div>
+                <dt className="text-ivory-dim">SWIFT</dt>
+                <dd className="text-ivory">{bankDetails.swift}</dd>
+              </div>
+            </dl>
+            <p className="mt-6 text-sm leading-relaxed text-ivory-dim">
+              Please transfer <span className="text-ivory">{formatPrice(total, currency)}</span> to
+              the account above, then upload your receipt or screenshot below. Your order will be
+              confirmed once payment is verified.
+            </p>
+          </div>
+
+          <label className="mt-6 flex flex-col gap-2">
+            <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">
+              Proof of payment (required)
+            </span>
+            <input
+              type="file"
+              name="paymentProof"
+              required
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              className="border border-line bg-transparent px-4 py-3 text-sm text-ivory-dim file:mr-4 file:border-0 file:bg-gold-deep file:px-4 file:py-2 file:text-xs file:uppercase file:tracking-[0.15em] file:text-ink"
+            />
+          </label>
+        </>
+      ) : (
+        <p className="mt-6 border border-line p-6 text-sm leading-relaxed text-ivory-dim">
+          You&apos;ll pay <span className="text-ivory">{formatPrice(total, currency)}</span> in
+          cash when your order is delivered. No payment is needed now.
+        </p>
+      )}
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 

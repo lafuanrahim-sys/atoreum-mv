@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { loginAction, registerAction } from "@/app/actions/auth";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
+import { isAdminRole } from "@/lib/auth/userSession";
 
 export const metadata: Metadata = {
   title: "Sign in — Atoreum MV",
@@ -30,7 +31,7 @@ export default async function LoginPage({
 
   // Already signed in? Straight to the right home.
   const user = await getCurrentUser();
-  if (user) redirect(user.role === "admin" ? "/dashboard" : "/account");
+  if (user) redirect(isAdminRole(user.role) ? "/dashboard" : "/account");
 
   const errorMessage = ERROR_MESSAGES[error];
   const modeHref = (m: string) =>

@@ -14,7 +14,7 @@ type SessionState = {
   /** null = still loading (unknown). */
   loggedIn: boolean | null;
   name: string;
-  role: "customer" | "admin" | null;
+  role: "customer" | "admin" | "superadmin" | null;
   favorites: string[];
   /** Toggle a favorite; redirects to /login when signed out. */
   toggleFavorite: (productId: string) => void;
@@ -36,7 +36,7 @@ const SessionContext = createContext<SessionState>({
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"customer" | "admin" | null>(null);
+  const [role, setRole] = useState<"customer" | "admin" | "superadmin" | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const router = useRouter();
   const pathname = usePathname();

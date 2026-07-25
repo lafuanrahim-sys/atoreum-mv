@@ -465,7 +465,7 @@ export default function LogoOriginSequence() {
           label: SVGTextElement
         ) => {
           tl.to(mapEl, { opacity: 1, strokeWidth: 3, fillOpacity: 0.5, duration: 0.7 })
-            .to(leader, { strokeDashoffset: 0, duration: 0.6 }, "<0.1")
+            .to(leader, { strokeDashoffset: 0, opacity: 1, duration: 0.6 }, "<0.1")
             .to(dot, { opacity: 1, duration: 0.35 }, "<0.35")
             .to(label, { opacity: 1, x: 0, duration: 0.6 }, "<");
         };
@@ -770,23 +770,23 @@ export default function LogoOriginSequence() {
                   dot reads as "this is the filled/highlighted atoll", matching
                   the labelBeat's own mapEl opacity bump to 1 at the same beat. */}
               <g ref={lhavCalloutRef}>
-                <line ref={lhavLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} />
-                <circle ref={lhavDotRef} r={3} fill="var(--ivory)" />
-                <text ref={lhavLabelRef} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
+                <line ref={lhavLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} opacity={0} />
+                <circle ref={lhavDotRef} r={3} fill="var(--ivory)" opacity={0} />
+                <text ref={lhavLabelRef} opacity={0} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
                   LHAVIYANI ATOLL
                 </text>
               </g>
               <g ref={kaafuCalloutRef}>
-                <line ref={kaafuLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} />
-                <circle ref={kaafuDotRef} r={3} fill="var(--ivory)" />
-                <text ref={kaafuLabelRef} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
+                <line ref={kaafuLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} opacity={0} />
+                <circle ref={kaafuDotRef} r={3} fill="var(--ivory)" opacity={0} />
+                <text ref={kaafuLabelRef} opacity={0} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
                   KAAFU ATOLL
                 </text>
               </g>
               <g ref={huvCalloutRef}>
-                <line ref={huvLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} />
-                <circle ref={huvDotRef} r={3} fill="var(--ivory)" />
-                <text ref={huvLabelRef} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
+                <line ref={huvLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} opacity={0} />
+                <circle ref={huvDotRef} r={3} fill="var(--ivory)" opacity={0} />
+                <text ref={huvLabelRef} opacity={0} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
                   GAAFU DHAALU ATOLL
                 </text>
               </g>

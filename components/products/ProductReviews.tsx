@@ -23,18 +23,21 @@ function Stars({ rating, className }: { rating: number; className?: string }) {
 
 /**
  * Approved reviews + a submission form. Signed-out visitors get a sign-in
- * prompt instead of the form; new reviews are held for admin approval
- * (Dashboard → Reviews) before appearing here.
+ * prompt; signed-in customers only get the form once they have a COMPLETED
+ * order containing this product (verified purchase). New reviews are held
+ * for admin approval (Dashboard → Reviews) before appearing here.
  */
 export default function ProductReviews({
   productId,
   reviews,
   isLoggedIn,
+  canReview,
   flag,
 }: {
   productId: string;
   reviews: Review[];
   isLoggedIn: boolean;
+  canReview: boolean;
   flag?: string;
 }) {
   return (
@@ -82,8 +85,13 @@ export default function ProductReviews({
             Please pick a rating and write a few words.
           </p>
         )}
+        {flag === "not-purchased" && (
+          <p className="mb-4 text-sm text-red-400" role="alert">
+            Only customers with a completed order for this product can review it.
+          </p>
+        )}
 
-        {isLoggedIn ? (
+        {isLoggedIn && canReview ? (
           <form action={submitReviewAction} className="flex flex-col gap-4">
             <h3 className="text-xs uppercase tracking-[0.2em] text-ivory">Write a review</h3>
             <input type="hidden" name="productId" value={productId} />
@@ -121,6 +129,11 @@ export default function ProductReviews({
               Submit Review
             </button>
           </form>
+        ) : isLoggedIn ? (
+          <p className="text-sm text-ivory-dim">
+            Reviews are open to verified buyers — you can write one once you&apos;ve purchased
+            this product and your order is completed.
+          </p>
         ) : (
           <p className="text-sm text-ivory-dim">
             <a
@@ -129,7 +142,7 @@ export default function ProductReviews({
             >
               Sign in
             </a>{" "}
-            to write a review.
+            to write a review. Reviews are open to customers who have purchased this product.
           </p>
         )}
       </div>
