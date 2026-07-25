@@ -180,7 +180,7 @@ export function clamp(min: number, max: number, v: number) {
  * Lenis when it's mounted; falls back to native scrolling otherwise (e.g.
  * during the brief window before SmoothScroll's effect has run).
  */
-export function scrollToElement(target: Element | number, options: { offset?: number } = {}) {
+export function scrollToElement(target: HTMLElement | number, options: { offset?: number } = {}) {
   const { offset = 0 } = options;
   const lenis = typeof window !== "undefined" ? window.__lenis : undefined;
 

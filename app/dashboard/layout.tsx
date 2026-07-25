@@ -31,7 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       className={`dashboard-theme ${isDark ? "dashboard-dark" : ""} -mt-24 flex min-h-screen bg-ink-2 md:-mt-28`}
     >
       <aside className="fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-line bg-ink px-4 py-6">
-        <Link href="/dashboard" className="flex items-center gap-3 px-2">
+        <Link href="/products" className="flex items-center gap-3 px-2">
           <span className="block h-9 w-9">
             <Logo />
           </span>

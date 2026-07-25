@@ -5,17 +5,17 @@
     "name": "Lebelage Centella Bubble Chewy Foam",
     "brand": "Lebelage",
     "category": "Foam",
-    "price": 0,
+    "price": 500,
     "currency": "MVR",
     "description": "Bubble foam cleanser for soothing, cica-calmed skin.",
     "images": [
       "/images/products/fom-001.png"
     ],
-    "stockStatus": "out-of-stock",
-    "stockOnHand": 0,
+    "stockStatus": "in-stock",
+    "stockOnHand": 4,
     "featured": false,
     "createdAt": "2026-07-25T09:00:00Z",
-    "updatedAt": "2026-07-25T09:00:00Z",
+    "updatedAt": "2026-07-25T14:19:25.844Z",
     "headlines": [
       "Calm skin, no drama.",
       "Centella Asiatica does the work.",

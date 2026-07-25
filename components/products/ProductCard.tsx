@@ -8,10 +8,6 @@ import { useCart } from "@/lib/cart/CartContext";
 import StockBadge from "@/components/products/StockBadge";
 import FavoriteButton from "@/components/products/FavoriteButton";
 
-function formatPrice(price: number, currency: Product["currency"]) {
-  return `${currency} ${price.toLocaleString("en-US")}`;
-}
-
 // The handful of supplier photos that are full-bleed lifestyle shots (a
 // styled scene behind the bottle) rather than a cutout on a plain/transparent
 // backdrop. Only these leave a visible flat photo-well bar above/below in the
@@ -28,7 +24,6 @@ const BACKGROUNDED_PRODUCT_IDS = new Set([
   "crm-011",
   "emu-001",
   "ton-002",
-  "fom-004", // black studio backdrop, not transparent
 ]);
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -128,8 +123,13 @@ export default function ProductCard({ product }: { product: Product }) {
         </p>
 
         <div className="mt-auto flex items-center justify-between pt-6">
-          <span className="text-sm text-ivory tabular-nums">
-            {formatPrice(product.price, product.currency)}
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-[10px] tracking-[0.15em] text-ivory-dim uppercase">
+              {product.currency}
+            </span>
+            <span className="font-display text-3xl font-semibold not-italic text-gold tabular-nums">
+              {product.price.toLocaleString("en-US")}
+            </span>
           </span>
           <button
             type="button"

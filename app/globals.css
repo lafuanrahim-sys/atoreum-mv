@@ -256,6 +256,41 @@ button:not(:disabled),
   opacity: 1;
 }
 
+/* Collection filter dropdowns (LuxSelect.tsx). Two panel layouts share one
+   motion language: vertical drops in from the trigger's bottom edge,
+   horizontal fans in from its right edge. */
+@keyframes lux-select-in-v {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes lux-select-in-h {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lux-select-panel-v {
+    animation: lux-select-in-v 0.18s ease-out;
+  }
+  .lux-select-panel-h {
+    animation: lux-select-in-h 0.18s ease-out;
+  }
+}
+.lux-select-panel-v {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-soft) transparent;
+}
+
+/* CategoryRail.tsx: the routine-order category filmstrip scrolls natively
+   (wheel/touch/drag) but the scrollbar itself would clutter a typographic
+   rail that has no other chrome — the fade mask already signals overflow. */
+.category-rail {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.category-rail::-webkit-scrollbar {
+  display: none;
+}
+
 /* Product detail page: rotating headline crossfade (ProductHeadlines.tsx) */
 @keyframes product-headline-fadein {
   from { opacity: 0; transform: translateY(4px); }

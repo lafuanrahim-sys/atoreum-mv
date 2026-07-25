@@ -20,7 +20,6 @@ export const CATEGORIES = [
   "Emulsion",
   "Essence",
   "Serum",
-  "Etc.",
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];

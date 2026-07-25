@@ -13,7 +13,10 @@ export type CheckoutResult =
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "payment-proofs");
 const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+// HEIC/HEIF included for iPhone camera photos; some browsers report an empty
+// MIME type for them, so the extension check below is the real gate.
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"];
+const ALLOWED_EXT = /\.(jpe?g|png|webp|heic|heif|pdf)$/i;
 
 export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
   const name = String(formData.get("name") ?? "").trim();
@@ -57,8 +60,8 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
     if (proofFile.size > MAX_FILE_BYTES) {
       return { ok: false, error: "Payment proof file is too large (max 8MB)." };
     }
-    if (!ALLOWED_TYPES.includes(proofFile.type)) {
-      return { ok: false, error: "Payment proof must be a JPG, PNG, WEBP, or PDF." };
+    if (!ALLOWED_TYPES.includes(proofFile.type) && !ALLOWED_EXT.test(proofFile.name)) {
+      return { ok: false, error: "Payment proof must be a JPG, PNG, WEBP, HEIC, or PDF." };
     }
 
     await fs.mkdir(UPLOAD_DIR, { recursive: true });

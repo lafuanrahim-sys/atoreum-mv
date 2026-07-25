@@ -38,7 +38,7 @@ const CATEGORY_PHOTOS: Partial<Record<string, string>> = {
 const CATEGORY_LABELS = [
   "Ampoule", "Cream", "Foam", "Sun Care", "Toner", "Mask Pack",
   "Foam Pack 2in1", "Toner Pad", "Lotion", "Make-up", "Eye Cream",
-  "Soothing Gel", "Emulsion", "Essence", "Serum", "Etc.",
+  "Soothing Gel", "Emulsion", "Essence", "Serum",
 ] as const;
 
 const CATEGORIES: CategoryItem[] = CATEGORY_LABELS.map((label) => ({

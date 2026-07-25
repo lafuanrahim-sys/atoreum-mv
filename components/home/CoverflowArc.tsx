@@ -30,7 +30,7 @@ const CARDS: CoverflowCard[] = [
 // pick up a soft shadow as they recede.
 const ANGLE_STEP = 46; // deg of rotateY per step away from focus
 const MAX_ANGLE = 72; // clamp so far cards approach edge-on but never flip
-const SPACING_RATIO = 0.86; // translateX per step, relative to card size — breathing room between cards
+const SPACING_RATIO = 0.8; // translateX per step, relative to card size — breathing room between cards
 const DEPTH_RATIO = 0.95; // translateZ pushed back per step, relative to card size
 // With 5 cards the raw distance-from-focus reaches ±4 at the very start/end
 // of the drag sweep — letting x/z grow unbounded at that range flings the

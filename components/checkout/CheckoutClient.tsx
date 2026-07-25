@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/CartContext";
@@ -10,6 +10,32 @@ import type { PaymentMethod } from "@/lib/types";
 
 function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
+}
+
+const MAX_PROOF_BYTES = 8 * 1024 * 1024;
+// Broad on purpose: bank-app screenshots arrive as JPG/PNG/WEBP on most
+// phones but as HEIC/HEIF on iPhones — those were greyed out in the file
+// picker before, which read as "upload is broken" with no explanation.
+const PROOF_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,application/pdf";
+
+function formatBytes(bytes: number) {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+/** Client-side mirror of the server's checks so problems surface on
+ *  selection, not after a full submit round-trip. Returns an error or null. */
+function validateProof(file: File): string | null {
+  if (file.size > MAX_PROOF_BYTES) {
+    return `That file is ${formatBytes(file.size)} — the limit is 8 MB. Try a screenshot instead of a full-resolution photo.`;
+  }
+  const okType =
+    ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"].includes(file.type) ||
+    /\.(jpe?g|png|webp|heic|heif|pdf)$/i.test(file.name);
+  if (!okType) {
+    return "That file type isn't supported — please upload a photo (JPG, PNG, WEBP, HEIC) or a PDF.";
+  }
+  return null;
 }
 
 type Step = "shipping" | "review" | "payment";
@@ -27,6 +53,11 @@ export default function CheckoutClient({ bankDetails }: { bankDetails: StoreSett
   const [step, setStep] = useState<Step>("shipping");
   const [contact, setContact] = useState({ name: "", email: "", phone: "", address: "" });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("transfer");
+  // Held in React state rather than left in the <input type="file"> DOM node:
+  // React 19 resets uncontrolled form fields after a server action returns,
+  // which silently wiped the chosen file whenever submission failed — the
+  // user saw "No file chosen" again with no idea why.
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,18 +91,37 @@ export default function CheckoutClient({ bankDetails }: { bankDetails: StoreSett
   }
 
   const handleSubmit = async (formData: FormData) => {
-    setSubmitting(true);
     setError(null);
-    const result = await submitOrder(formData);
-    setSubmitting(false);
 
-    if (!result.ok) {
-      setError(result.error);
-      return;
+    if (paymentMethod === "transfer") {
+      if (!proofFile) {
+        setError("Please attach your transfer receipt before placing the order.");
+        return;
+      }
+      const proofError = validateProof(proofFile);
+      if (proofError) {
+        setError(proofError);
+        return;
+      }
+      formData.set("paymentProof", proofFile);
     }
 
-    clearCart();
-    router.push(`/order-confirmation/${result.orderId}`);
+    setSubmitting(true);
+    try {
+      const result = await submitOrder(formData);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      clearCart();
+      router.push(`/order-confirmation/${result.orderId}`);
+    } catch {
+      // Network / transport failure (offline, request too large, timeout) —
+      // without this the rejection left the button stuck on "Placing Order…".
+      setError("We couldn't reach the server. Check your connection and try again — your details are still filled in.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -190,6 +240,11 @@ export default function CheckoutClient({ bankDetails }: { bankDetails: StoreSett
               bankDetails={bankDetails}
               method={paymentMethod}
               onMethodChange={setPaymentMethod}
+              proofFile={proofFile}
+              onProofChange={(f) => {
+                setProofFile(f);
+                setError(null); // a stale "attach your receipt" error shouldn't outlive the attach
+              }}
               onBack={() => setStep("review")}
               submitting={submitting}
               error={error}
@@ -242,6 +297,8 @@ function PaymentStep({
   bankDetails,
   method,
   onMethodChange,
+  proofFile,
+  onProofChange,
   onBack,
   submitting,
   error,
@@ -251,6 +308,8 @@ function PaymentStep({
   bankDetails: StoreSettings;
   method: PaymentMethod;
   onMethodChange: (m: PaymentMethod) => void;
+  proofFile: File | null;
+  onProofChange: (f: File | null) => void;
   onBack: () => void;
   submitting: boolean;
   error: string | null;
@@ -319,27 +378,33 @@ function PaymentStep({
             </p>
           </div>
 
-          <label className="mt-6 flex flex-col gap-2">
-            <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">
-              Proof of payment (required)
-            </span>
-            <input
-              type="file"
-              name="paymentProof"
-              required
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              className="border border-line bg-transparent px-4 py-3 text-sm text-ivory-dim file:mr-4 file:border-0 file:bg-gold-deep file:px-4 file:py-2 file:text-xs file:uppercase file:tracking-[0.15em] file:text-ink"
-            />
-          </label>
+          <ProofUpload file={proofFile} onChange={onProofChange} />
         </>
       ) : (
-        <p className="mt-6 border border-line p-6 text-sm leading-relaxed text-ivory-dim">
-          You&apos;ll pay <span className="text-ivory">{formatPrice(total, currency)}</span> in
-          cash when your order is delivered. No payment is needed now.
-        </p>
+        <div className="mt-6 border border-line p-6 text-sm leading-relaxed text-ivory-dim">
+          <p>
+            You&apos;ll pay <span className="text-ivory">{formatPrice(total, currency)}</span> in
+            cash when your order is delivered. No payment is needed now.
+          </p>
+          <p className="mt-3 flex items-start gap-2 text-gold">
+            <svg viewBox="0 0 16 16" aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0">
+              <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M8 5v3.5M8 10.8v.7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            </svg>
+            Please have the exact amount ready before delivery — our courier may not carry change.
+          </p>
+        </div>
       )}
 
-      {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-4 flex items-start gap-2 text-sm text-red-400">
+          <svg viewBox="0 0 16 16" aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0">
+            <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M8 5v3.5M8 10.8v.7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+          {error}
+        </p>
+      )}
 
       <div className="mt-8 flex gap-4">
         <button
@@ -357,6 +422,133 @@ function PaymentStep({
           {submitting ? "Placing Order…" : "Place Order"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function ProofUpload({
+  file,
+  onChange,
+}: {
+  file: File | null;
+  onChange: (f: File | null) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  const takeFile = (next: File | undefined) => {
+    if (!next) return;
+    const validationError = validateProof(next);
+    setFileError(validationError);
+    if (validationError) return;
+    onChange(next);
+    if (preview) URL.revokeObjectURL(preview);
+    // PDFs and HEIC don't render in <img>; only preview browser-displayable types.
+    setPreview(
+      ["image/jpeg", "image/png", "image/webp"].includes(next.type)
+        ? URL.createObjectURL(next)
+        : null
+    );
+  };
+
+  const clearFile = () => {
+    onChange(null);
+    setFileError(null);
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  return (
+    <div className="mt-6 flex flex-col gap-2">
+      <span id="proof-label" className="text-xs uppercase tracking-[0.15em] text-ivory-dim">
+        Proof of payment (required)
+      </span>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept={PROOF_ACCEPT}
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={(e) => takeFile(e.target.files?.[0])}
+      />
+
+      {file ? (
+        <div className="flex items-center gap-4 border border-line p-4">
+          {preview ? (
+            // Plain <img>: the source is a local blob URL, next/image can't optimize it.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={preview} alt="" className="h-14 w-14 shrink-0 rounded-sm object-cover" />
+          ) : (
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm bg-ink-2 text-gold">
+              <svg viewBox="0 0 20 20" aria-hidden="true" className="h-6 w-6">
+                <path d="M5 2h7l4 4v12H5z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                <path d="M12 2v4h4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+              </svg>
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm text-ivory">{file.name}</p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-gold">
+              <svg viewBox="0 0 12 12" aria-hidden="true" className="h-3 w-3">
+                <path d="M2 6.5L4.8 9 10 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {formatBytes(file.size)} — attached
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={clearFile}
+            className="min-h-11 shrink-0 border border-line px-4 text-[10px] uppercase tracking-[0.2em] text-ivory-dim transition-colors hover:border-gold hover:text-gold"
+          >
+            Remove
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          aria-labelledby="proof-label"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            takeFile(e.dataTransfer.files?.[0]);
+          }}
+          className={`flex min-h-28 w-full cursor-pointer flex-col items-center justify-center gap-2 border border-dashed px-6 py-6 text-center transition-colors focus:border-gold focus:outline-none ${
+            dragOver ? "border-gold bg-gold/5" : "border-line hover:border-ivory-dim"
+          }`}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 text-gold">
+            <path d="M12 15V4m0 0L8 8m4-4l4 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <span className="text-sm text-ivory">
+            Drop your receipt here, or <span className="text-gold underline underline-offset-4">browse</span>
+          </span>
+          <span className="text-xs text-ivory-dim">
+            Screenshot or photo of the transfer — JPG, PNG, WEBP, HEIC, or PDF, up to 8 MB
+          </span>
+        </button>
+      )}
+
+      {fileError && (
+        <p role="alert" className="flex items-start gap-2 text-sm text-red-400">
+          <svg viewBox="0 0 16 16" aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0">
+            <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M8 5v3.5M8 10.8v.7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+          {fileError}
+        </p>
+      )}
     </div>
   );
 }

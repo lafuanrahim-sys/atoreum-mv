@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Product, SortOption } from "@/lib/products";
 import { CATEGORIES } from "@/lib/products";
 import ProductCard from "./ProductCard";
+import LuxSelect from "@/components/ui/LuxSelect";
+import CategoryRail, { orderCategoriesByRoutine } from "@/components/products/CategoryRail";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { prefersReducedMotion, scrollToElement } from "@/lib/motion";
@@ -36,7 +38,7 @@ function sortProducts(products: Product[], sort: SortOption): Product[] {
 }
 
 export default function ProductGrid({ products }: { products: Product[] }) {
-  const categories = ["All", ...CATEGORIES] as const;
+  const categories = ["All", ...orderCategoriesByRoutine(CATEGORIES)];
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -144,48 +146,46 @@ export default function ProductGrid({ products }: { products: Product[] }) {
 
   return (
     <div>
-      <div className="flex flex-col gap-6 border-b border-line pb-8 lg:flex-row lg:items-end lg:justify-between">
-        <label className="flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wide text-ivory-dim">Category</span>
-          <select
-            value={active}
-            onChange={(e) => setActive(e.target.value)}
-            className="border border-line bg-transparent px-4 py-2 text-xs uppercase tracking-[0.15em] text-ivory-dim focus:border-gold focus:outline-none"
-          >
-            {categories.map((category) => (
-              <option key={category} value={category} className="bg-ink-2 text-ivory">
-                {category}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="flex flex-col gap-6 border-b border-line pb-8">
+        <CategoryRail
+          categories={categories}
+          active={active}
+          onChange={setActive}
+          counts={Object.fromEntries(
+            categories.map((category) => [
+              category,
+              category === "All"
+                ? products.length
+                : products.filter((p) => p.category === category).length,
+            ])
+          )}
+        />
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search products…"
-            className="border border-line bg-transparent px-4 py-2 text-sm text-ivory placeholder:text-ivory-dim focus:border-gold focus:outline-none"
+            aria-label="Search products"
+            className="min-h-11 border border-line bg-transparent px-4 py-2.5 text-sm text-ivory placeholder:text-ivory-dim focus:border-gold focus:outline-none"
           />
-          <select
+          <LuxSelect
+            label="Sort by"
             value={sort}
-            onChange={(e) => setSort(e.target.value as SortOption)}
-            className="border border-line bg-transparent px-4 py-2 text-xs uppercase tracking-[0.15em] text-ivory-dim focus:border-gold focus:outline-none"
-          >
-            {(Object.keys(SORT_LABELS) as SortOption[]).map((option) => (
-              <option key={option} value={option} className="bg-ink-2 text-ivory">
-                {SORT_LABELS[option]}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setSort(v as SortOption)}
+            options={(Object.keys(SORT_LABELS) as SortOption[]).map((option) => ({
+              value: option,
+              label: SORT_LABELS[option],
+            }))}
+          />
         </div>
       </div>
 
       <div
         key={`${active}-${sort}-${query}-${currentPage}`}
         ref={ref}
-        className="mt-12 grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3"
+        className="mt-12 grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-4"
       >
         {paged.map((product) => (
           <ProductCard key={product.id} product={product} />
