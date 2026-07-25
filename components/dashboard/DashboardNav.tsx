@@ -74,7 +74,13 @@ const NAV_ITEMS = [
   },
 ];
 
-export default function DashboardNav({ unreadMessages = 0 }: { unreadMessages?: number }) {
+export default function DashboardNav({
+  unreadMessages = 0,
+  onNavigate,
+}: {
+  unreadMessages?: number;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
@@ -88,6 +94,7 @@ export default function DashboardNav({ unreadMessages = 0 }: { unreadMessages?: 
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
             aria-current={isActive ? "page" : undefined}
             className={cn(
               "flex items-center gap-3 rounded-md px-4 py-2.5 text-xs uppercase tracking-[0.12em] transition-colors",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -24,12 +24,28 @@ import {
 
 gsap.registerPlugin(ScrollTrigger);
 
-const DESKTOP_QUERY = "(min-width: 768px)";
+// The mobile address bar showing/hiding mid-scroll changes window.innerHeight
+// on its own, which otherwise makes ScrollTrigger think a real resize
+// happened and re-run its (expensive, and for a pinned scene, disruptive)
+// refresh — a well-documented cause of pinned scroll animations desyncing
+// or freezing specifically on real phones despite working fine against any
+// desktop-simulated mobile width. This is GSAP's own documented fix.
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 const TITLE_LINE_1 = "How Atoreum was made.";
 const TITLE_LINE_2 = "Three origins, one name. Korea's beauty, carried home to the Maldives.";
 const FLOWER_TEXT = "The Mugunghwa — South Korea's national flower — represents where Atoreum's journey began.";
 const WAVE_TEXT = "A wave connecting two oceans — Korea to the Maldives.";
+
+// Below md the caption column stacks full-width under the stage (see the
+// layout below) so the text gets a generous phone-appropriate max-width;
+// from md up every value here is untouched from the original desktop
+// design and matches the caption column's own width tiers there
+// (md:h-36→lg:h-48→xl:h-64→2xl:h-80) so the text never has more max-width
+// than the column it sits in has room for before hitting the section's
+// overflow-hidden edge.
+const CAPTION_TEXT_CLASS =
+  "max-w-xs text-base font-montserrat font-light leading-relaxed tracking-wide text-ivory md:max-w-[9rem] md:text-sm lg:max-w-[12rem] xl:max-w-[16rem] xl:text-base 2xl:max-w-xs 2xl:text-xl";
 
 type Bbox = { x: number; y: number; width: number; height: number };
 
@@ -94,6 +110,21 @@ function TypedLine({
 }
 
 export default function LogoOriginSequence() {
+  // TEMP diagnostic — visible on-page readout to find out why this scene
+  // keeps reporting as static on one real phone despite multiple different
+  // implementations (including a version with zero scroll dependency at
+  // all) all failing identically, which points at the reduced-motion gate
+  // itself rather than anything scroll/pin-related. Remove once root-caused.
+  const [diag, setDiag] = useState<string | null>(null);
+  useLayoutEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    const saveData = (navigator as { connection?: { saveData?: boolean } }).connection?.saveData ?? false;
+    setDiag(
+      `reduced-motion:${reduced} | coarse-pointer:${coarse} | save-data:${saveData} | w:${window.innerWidth} | UA:${navigator.userAgent.slice(0, 60)}`
+    );
+  }, []);
+
   const sectionRef = useRef<HTMLElement | null>(null);
   const fallbackRef = useRef<HTMLDivElement | null>(null);
   const motionRootRef = useRef<HTMLDivElement | null>(null);
@@ -152,9 +183,6 @@ export default function LogoOriginSequence() {
     if (prefersReducedMotion()) return;
 
     const ctx = gsap.context(() => {
-      const mm = gsap.matchMedia();
-
-      mm.add(DESKTOP_QUERY, () => {
         const svg = svgRef.current;
         const art = artGroupRef.current;
         const contextGroup = contextGroupRef.current;
@@ -637,25 +665,23 @@ export default function LogoOriginSequence() {
           // scenes for attention.
           .set(cta, { pointerEvents: "auto" })
           .to(cta, { opacity: 1, duration: 0.8, ease: "power1.out" }, "<");
-
-        return () => {
-          gsap.set(fallback, { display: "flex" });
-          gsap.set(motionRoot, { display: "none" });
-          gsap.set(titleContainer, { display: "none" });
-        };
-      });
     }, section);
 
     return () => ctx.revert();
   }, []);
+
+  // Reduced-motion fallback: no attempt at any animation, ever — this is
+  // the *only* branch reduced-motion visitors reach (the motion-safe effect
+  // above returns immediately for them), so it just needs to look right
+  // sitting fully static — no effect needed here at all.
 
   return (
     <section
       ref={sectionRef as React.RefObject<HTMLElement>}
       className="logo-origin-section relative flex h-[100svh] w-full items-center justify-center overflow-hidden bg-ink"
     >
-      {/* Default / reduced-motion / mobile fallback: the narrative told as a
-          static readable block above the real shipped logo, no animation. */}
+      {/* Reduced-motion fallback only now — every motion-safe visitor, any
+          width, gets the real scene below instead. */}
       <div ref={fallbackRef} className="flex h-full w-full flex-col items-center justify-center gap-8 px-6 text-center">
         <div className="max-w-xl space-y-3">
           <p className="font-script text-3xl text-ivory md:text-5xl">{TITLE_LINE_1}</p>
@@ -676,23 +702,35 @@ export default function LogoOriginSequence() {
       </div>
 
       {/* Desktop, motion-safe: the art stage is the visually centered
-          element on the page -- a mirror-image spacer on the left balances
-          the real caption column on the right, so the stage's center always
-          lands on the page's center regardless of whether any caption text
-          is currently visible (an unbalanced single side column would look
-          "centered as a group" but visually off-center, since an empty text
-          slot doesn't read the same as a matching blank spacer). Caption
-          and stage are still separate flex children, never absolutely
-          overlaid, so narrative text structurally cannot intersect the
-          circular seal at any breakpoint. */}
+          element on the page -- at md+, a mirror-image spacer on the left
+          balances the real caption column on the right, so the stage's
+          center always lands on the page's center regardless of whether any
+          caption text is currently visible (an unbalanced single side
+          column would look "centered as a group" but visually off-center,
+          since an empty text slot doesn't read the same as a matching blank
+          spacer). Below md there's no side-by-side row to balance — the
+          spacer is dropped and the caption stacks under the stage instead.
+          Caption and stage are still separate flex children, never
+          absolutely overlaid, so narrative text structurally cannot
+          intersect the circular seal at any breakpoint. */}
       <div
         ref={motionRootRef}
-        className="relative hidden w-full max-w-6xl flex-1 flex-row items-center justify-center gap-10 px-6 md:gap-16 lg:gap-20"
+        className="relative hidden w-full max-w-6xl flex-1 flex-col items-center justify-center gap-10 px-6 py-20 md:flex-row md:gap-8 md:py-0 lg:gap-12 xl:gap-16 2xl:gap-20"
       >
-        <div aria-hidden className="h-72 w-72 shrink-0 md:h-80 md:w-80" />
+        {/* Mirror-balance spacer only exists for the md+ side-by-side row —
+            a stacked mobile layout has nothing to balance. Side columns
+            start much narrower than the original 320px design — at that
+            fixed width the three-column row (spacer + stage + caption)
+            doesn't actually fit any viewport under ~1450px, which silently
+            clipped the caption text against the section's own
+            overflow-hidden edge on every tablet and most laptops. Each tier
+            below is sized so the row fits with margin to spare; by 2xl it
+            converges back to the exact original h-80/w-80 + gap-20, so wide
+            desktop is pixel-identical to before. */}
+        <div aria-hidden className="hidden shrink-0 md:block md:h-36 md:w-36 lg:h-48 lg:w-48 xl:h-64 xl:w-64 2xl:h-80 2xl:w-80" />
 
         <div className="flex shrink-0 flex-col items-center gap-6">
-        <div ref={stageRef} className="logo-origin-stage relative aspect-square w-[min(40vw,62vh)] shrink-0">
+        <div ref={stageRef} className="logo-origin-stage relative aspect-square w-[min(84vw,58vh)] shrink-0 md:w-[min(40vw,62vh)]">
           <svg
             ref={svgRef}
             viewBox={`0 0 ${CANVAS} ${CANVAS}`}
@@ -845,13 +883,20 @@ export default function LogoOriginSequence() {
         </Link>
         </div>
 
-        <div className="relative z-10 flex h-72 w-72 shrink-0 items-center justify-start text-left md:h-80 md:w-80">
-          <div ref={flowerTextContainerRef} className="pointer-events-none absolute inset-0 flex items-center justify-start">
-            <TypedLine text={FLOWER_TEXT} lineRef={flowerTextLineRef} className="max-w-xs font-montserrat text-base font-light leading-relaxed tracking-wide text-ivory md:text-xl" />
+        {/* Below md this is a fixed-height box (not auto) because its two
+            children are position:absolute overlays (flower/wave text
+            crossfade in place) — an auto-height parent can't size itself
+            from out-of-flow absolute children, it would collapse to 0. h-40
+            comfortably fits the longer of the two lines at the mobile font
+            size. From md up this reverts to the exact original narrow
+            side-column treatment. */}
+        <div className="relative z-10 flex h-40 w-full shrink-0 items-center justify-center px-4 text-center md:h-36 md:w-36 md:items-center md:justify-start md:px-0 md:text-left lg:h-48 lg:w-48 xl:h-64 xl:w-64 2xl:h-80 2xl:w-80">
+          <div ref={flowerTextContainerRef} className="pointer-events-none absolute inset-0 flex items-center justify-center md:justify-start">
+            <TypedLine text={FLOWER_TEXT} lineRef={flowerTextLineRef} className={CAPTION_TEXT_CLASS} />
           </div>
 
-          <div ref={waveTextContainerRef} className="pointer-events-none absolute inset-0 flex items-center justify-start">
-            <TypedLine text={WAVE_TEXT} lineRef={waveTextLineRef} className="max-w-xs font-montserrat text-base font-light leading-relaxed tracking-wide text-ivory md:text-xl" />
+          <div ref={waveTextContainerRef} className="pointer-events-none absolute inset-0 flex items-center justify-center md:justify-start">
+            <TypedLine text={WAVE_TEXT} lineRef={waveTextLineRef} className={CAPTION_TEXT_CLASS} />
           </div>
         </div>
       </div>
@@ -861,9 +906,10 @@ export default function LogoOriginSequence() {
           blank canvas. Line 1 is pre-revealed at progress 0 — it must be
           readable before any scrolling happens; line 2 types on with the
           first scroll, then the whole card fades and hands off to the map.
-          Hidden by default; the desktop motion boot switches it on alongside
-          motionRoot (the reduced-motion/mobile fallback has its own static
-          title, so this overlay must never show there). */}
+          Hidden by default; the motion boot switches it on alongside
+          motionRoot for any motion-safe visitor, any width (the
+          reduced-motion fallback has its own static title, so this overlay
+          must never show there). */}
       {/* pb-24/28 mirrors main's own header offset: at load the pinned
           section starts that far below the true viewport top, so centering
           within the section alone reads visibly low — this pulls the title
@@ -877,7 +923,7 @@ export default function LogoOriginSequence() {
       >
         <p
           ref={titleLine1Ref}
-          className="max-w-5xl font-script text-6xl leading-[1.15] text-ivory md:text-8xl"
+          className="max-w-5xl font-script text-4xl leading-[1.15] text-ivory md:text-8xl"
         >
           {TITLE_LINE_1}
         </p>
@@ -885,9 +931,16 @@ export default function LogoOriginSequence() {
         <TypedLine
           text={TITLE_LINE_2}
           lineRef={titleLine2Ref}
-          className="font-montserrat text-xl font-light tracking-[0.08em] text-ivory-dim md:text-3xl"
+          className="font-montserrat text-base font-light tracking-[0.08em] text-ivory-dim md:text-3xl"
         />
       </div>
+
+      {/* TEMP diagnostic banner — see the comment on the diag state above. */}
+      {diag && (
+        <div className="fixed inset-x-0 top-0 z-[999] break-words bg-red-600 px-2 py-1 text-[10px] leading-tight text-white">
+          {diag}
+        </div>
+      )}
     </section>
   );
 }

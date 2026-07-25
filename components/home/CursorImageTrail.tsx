@@ -76,18 +76,26 @@ export default function CursorImageTrail() {
   const poolIndexRef = useRef(0);
   const idRef = useRef(0);
   const [items, setItems] = useState<TrailItem[]>([]);
+  // "Move your cursor" is meaningless on a touchscreen, and without a
+  // pointermove stream the section otherwise renders as a large, permanently
+  // empty block — this drives a static fallback presentation instead.
+  const [isTouch, setIsTouch] = useState(false);
 
   const handleDone = useCallback((id: number) => {
     setItems((prev) => prev.filter((it) => it.id !== id));
   }, []);
 
   useEffect(() => {
+    setIsTouch(window.matchMedia("(hover: none), (pointer: coarse)").matches);
+  }, []);
+
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+    const touch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (isTouch || reduceMotion) return;
+    if (touch || reduceMotion) return;
 
     function handlePointerMove(event: PointerEvent) {
       const rect = container!.getBoundingClientRect();
@@ -124,17 +132,39 @@ export default function CursorImageTrail() {
   }, []);
 
   return (
-    <section className="relative flex h-[70svh] w-full items-center justify-center overflow-hidden bg-ink">
+    <section className="relative flex h-[70svh] w-full flex-col items-center justify-center gap-10 overflow-hidden bg-ink">
       <div className="pointer-events-none relative z-10 text-center">
         <p className="text-xs tracking-[0.3em] text-gold uppercase">Explore</p>
-        <h2 className="mt-4 font-display text-2xl text-ivory md:text-4xl">Move your cursor</h2>
+        <h2 className="mt-4 font-display text-2xl text-ivory md:text-4xl">
+          {isTouch ? "A closer look" : "Move your cursor"}
+        </h2>
       </div>
 
-      <div ref={containerRef} className="absolute inset-0">
-        {items.map((item) => (
-          <TrailImage key={item.id} item={item} onDone={handleDone} />
-        ))}
-      </div>
+      {isTouch ? (
+        // Static stand-in for the pointer-driven trail above — same photos,
+        // fanned out like a dealt hand instead of spawned along a cursor
+        // path that doesn't exist on a touchscreen.
+        <div className="flex items-center justify-center">
+          {TRAIL_IMAGES.map((src, i) => (
+            <div
+              key={src}
+              className="-ml-6 h-20 w-20 shrink-0 rounded-lg bg-ink-2 shadow-lg first:ml-0 sm:h-24 sm:w-24"
+              style={{
+                transform: `rotate(${(i - (TRAIL_IMAGES.length - 1) / 2) * 8}deg)`,
+                zIndex: i,
+              }}
+            >
+              <img src={src} alt="" className="h-full w-full rounded-lg object-contain" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div ref={containerRef} className="absolute inset-0">
+          {items.map((item) => (
+            <TrailImage key={item.id} item={item} onDone={handleDone} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

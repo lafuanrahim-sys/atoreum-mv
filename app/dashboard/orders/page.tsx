@@ -21,7 +21,8 @@ export default function DashboardOrdersPage() {
     <div>
       <h1 className="font-display text-2xl text-ivory">Orders ({orders.length})</h1>
 
-      <table className="mt-6 w-full border-collapse text-sm">
+      <div className="mt-6 overflow-x-auto rounded-lg border border-line bg-ink">
+      <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ivory-dim">
             <th className="py-3 pr-4">Order #</th>
@@ -75,6 +76,7 @@ export default function DashboardOrdersPage() {
           ))}
         </tbody>
       </table>
+      </div>
 
       {orders.length === 0 && (
         <p className="mt-6 text-sm text-ivory-dim">No orders yet.</p>

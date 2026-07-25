@@ -42,7 +42,9 @@ export default function Header() {
   // blurred bg-ink backdrop below takes over supplying contrast -- the
   // themed `text-ivory` token (dark in light mode, light in dark mode) is
   // what stays readable.
-  const textClass = pathname === "/products" && !isScrolled ? "text-[#241d17]" : "text-ivory";
+  const onPhotoHero = pathname === "/products" && !isScrolled;
+  const textClass = onPhotoHero ? "text-[#241d17]" : "text-ivory";
+  const hamburgerBg = onPhotoHero ? "bg-[#241d17]" : "bg-ivory";
 
   return (
     <header
@@ -52,17 +54,12 @@ export default function Header() {
       )}
     >
       <div className="flex w-full items-center justify-between px-6 py-5 md:px-12 lg:px-16 xl:px-20 2xl:px-24">
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden items-center gap-6 lg:flex">
           {NAV_LINKS.map((link) => {
             // Sub-routes keep their section lit (/products/abc → Collection).
             const isActive =
               pathname === link.href ||
               (link.href !== "/" && pathname.startsWith(link.href + "/"));
-            // On the Collection photo hero the header text is pinned dark
-            // for contrast against the photo — a gold active label would
-            // fall below readable there, so the underline alone (bg-current,
-            // matching whatever the label color is) carries the state.
-            const onPhotoHero = pathname === "/products" && !isScrolled;
             return (
               <Link
                 key={link.href}
@@ -93,23 +90,26 @@ export default function Header() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-4 md:hidden">
+        <div className="flex items-center gap-4 lg:hidden">
           <ProfileButton />
           <CartButton />
           <button
             aria-label="Toggle menu"
+            aria-expanded={menuOpen}
             className="flex flex-col gap-1.5"
             onClick={() => setMenuOpen((v) => !v)}
           >
             <span
               className={cn(
-                "h-px w-6 bg-ivory transition-transform duration-300",
+                "h-px w-6 transition-transform duration-300",
+                hamburgerBg,
                 menuOpen && "translate-y-[3.5px] rotate-45"
               )}
             />
             <span
               className={cn(
-                "h-px w-6 bg-ivory transition-transform duration-300",
+                "h-px w-6 transition-transform duration-300",
+                hamburgerBg,
                 menuOpen && "-translate-y-[3.5px] -rotate-45"
               )}
             />
@@ -118,7 +118,7 @@ export default function Header() {
       </div>
 
       {menuOpen && (
-        <nav className="flex flex-col gap-6 border-t border-line bg-ink px-6 py-8 md:hidden">
+        <nav className="flex flex-col gap-6 border-t border-line bg-ink px-6 py-8 lg:hidden">
           {NAV_LINKS.map((link) => {
             const isActive =
               pathname === link.href ||
@@ -138,6 +138,10 @@ export default function Header() {
               </Link>
             );
           })}
+          <div className="flex items-center justify-between border-t border-line pt-6">
+            <span className="text-sm tracking-[0.2em] uppercase text-ivory-dim">Theme</span>
+            <ThemeToggle />
+          </div>
         </nav>
       )}
     </header>

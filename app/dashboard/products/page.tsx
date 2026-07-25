@@ -59,7 +59,8 @@ export default async function DashboardProductsPage({
         </button>
       </form>
 
-      <table className="mt-6 w-full border-collapse text-sm">
+      <div className="mt-6 overflow-x-auto rounded-lg border border-line bg-ink">
+      <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ivory-dim">
             <th className="py-3 pr-4">Name</th>
@@ -108,6 +109,7 @@ export default async function DashboardProductsPage({
           ))}
         </tbody>
       </table>
+      </div>
 
       {filtered.length === 0 && (
         <p className="mt-6 text-sm text-ivory-dim">No products match.</p>

@@ -245,7 +245,7 @@ export default function CategoryRail({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        className={`category-rail flex w-full items-center gap-9 overflow-x-auto px-24 py-4 [-webkit-mask-image:linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] [mask-image:linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] [perspective:800px] [scrollbar-width:none] [touch-action:pan-y] [&::-webkit-scrollbar]:hidden ${
+        className={`category-rail flex w-full items-center gap-6 overflow-x-auto px-6 py-4 sm:gap-9 sm:px-10 md:px-24 [-webkit-mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)] [mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)] sm:[-webkit-mask-image:linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] sm:[mask-image:linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] [perspective:800px] [scrollbar-width:none] [touch-action:pan-y] [&::-webkit-scrollbar]:hidden ${
           dragging ? "[&_button]:pointer-events-none" : ""
         }`}
       >

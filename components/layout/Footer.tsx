@@ -13,7 +13,7 @@ export default function Footer() {
 
   return (
     <footer ref={ref} className="page-gutter border-t border-line bg-ink py-16">
-      <div className="flex flex-col gap-12 md:flex-row md:justify-between">
+      <div className="flex flex-col gap-12 lg:flex-row lg:justify-between">
         <div data-reveal className="max-w-sm">
           <p className="font-display text-lg tracking-[0.25em] text-ivory uppercase">
             Atoreum <span className="text-gold">MV</span>
