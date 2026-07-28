@@ -27,6 +27,28 @@ let cached: Pool | null = null;
 
 export function pool(): Pool {
   if (cached) return cached;
-  cached = new Pool({ connectionString: getEnv("DATABASE_URL") });
+  cached = new Pool({
+    connectionString: getEnv("DATABASE_URL"),
+    // `pg`'s own default (max: 10) assumes one long-lived server process
+    // handling many concurrent requests through a single pool — the
+    // opposite of Vercel's model, where each invocation can get its own
+    // fresh serverless instance (and therefore its own fresh Pool, since
+    // `cached` only survives for that instance's lifetime). A burst of N
+    // concurrent cold starts each opening up to 10 connections adds up
+    // fast against Supabase's connection cap (60 here) — a handful of
+    // simultaneous requests were enough to occasionally exhaust it and
+    // 500 an unlucky page. A serverless instance genuinely only needs a
+    // couple of connections at once (this app's heaviest page does 4
+    // parallel queries via Promise.all), and connecting through the
+    // Session pooler (see .env.example) already multiplexes across
+    // instances at the PgBouncer layer, so a small per-instance cap here
+    // is the right layer to constrain — not the only one, but the
+    // cheapest and most direct fix for this specific failure mode.
+    max: 3,
+    // Release idle connections back to the pooler quickly rather than
+    // holding them open for a serverless instance that may not see
+    // another request before it's recycled anyway.
+    idleTimeoutMillis: 10_000,
+  });
   return cached;
 }
