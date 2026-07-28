@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -110,21 +110,6 @@ function TypedLine({
 }
 
 export default function LogoOriginSequence() {
-  // TEMP diagnostic — visible on-page readout to find out why this scene
-  // keeps reporting as static on one real phone despite multiple different
-  // implementations (including a version with zero scroll dependency at
-  // all) all failing identically, which points at the reduced-motion gate
-  // itself rather than anything scroll/pin-related. Remove once root-caused.
-  const [diag, setDiag] = useState<string | null>(null);
-  useLayoutEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
-    const saveData = (navigator as { connection?: { saveData?: boolean } }).connection?.saveData ?? false;
-    setDiag(
-      `reduced-motion:${reduced} | coarse-pointer:${coarse} | save-data:${saveData} | w:${window.innerWidth} | UA:${navigator.userAgent.slice(0, 60)}`
-    );
-  }, []);
-
   const sectionRef = useRef<HTMLElement | null>(null);
   const fallbackRef = useRef<HTMLDivElement | null>(null);
   const motionRootRef = useRef<HTMLDivElement | null>(null);
@@ -946,13 +931,6 @@ export default function LogoOriginSequence() {
           className="font-montserrat text-base font-light tracking-[0.08em] text-ivory-dim md:text-3xl"
         />
       </div>
-
-      {/* TEMP diagnostic banner — see the comment on the diag state above. */}
-      {diag && (
-        <div className="fixed inset-x-0 top-0 z-[999] break-words bg-red-600 px-2 py-1 text-[10px] leading-tight text-white">
-          {diag}
-        </div>
-      )}
     </section>
   );
 }
