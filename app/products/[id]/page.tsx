@@ -9,7 +9,8 @@ import StockBadge from "@/components/products/StockBadge";
 import ProductCard from "@/components/products/ProductCard";
 import FavoriteButton from "@/components/products/FavoriteButton";
 import ProductReviews from "@/components/products/ProductReviews";
-import { listApprovedReviews } from "@/lib/data/reviews.server";
+import TrackRecentlyViewed from "@/components/products/TrackRecentlyViewed";
+import { listApprovedReviews, getRatingSummaries } from "@/lib/data/reviews.server";
 import { hasCompletedPurchase } from "@/lib/data/orders.server";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 
@@ -45,11 +46,13 @@ export default async function ProductDetailPage({
 
   const related = getRelatedProducts(product.category, product.id, 3);
   const reviews = listApprovedReviews(product.id);
+  const ratings = getRatingSummaries();
   const user = await getCurrentUser();
   const canReview = !!user && hasCompletedPurchase(user.email, product.id);
 
   return (
     <div className="bg-ink pt-10 pb-28 md:pt-14">
+      <TrackRecentlyViewed productId={product.id} />
       <div className="page-gutter">
         <nav aria-label="Breadcrumb" className="text-xs uppercase tracking-[0.15em] text-ivory-dim">
           <Link href="/products" className="transition-colors hover:text-gold">
@@ -130,7 +133,7 @@ export default async function ProductDetailPage({
             <h2 className="font-display text-2xl text-ivory">You may also like</h2>
             <div className="mt-10 grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((item) => (
-                <ProductCard key={item.id} product={item} />
+                <ProductCard key={item.id} product={item} rating={ratings[item.id]} />
               ))}
             </div>
           </div>

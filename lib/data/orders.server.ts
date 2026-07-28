@@ -43,18 +43,33 @@ export function createOrder(params: {
   customer: OrderCustomer;
   paymentMethod: PaymentMethod;
   paymentProofPath: string | null;
+  /** The signed-in account placing this order, if any — see the field comment on Order.userId in lib/types.ts. */
+  userId?: string;
+  /** Already-validated-and-applied Boli redemption receipt (see app/actions/checkout.ts) — omit for orders that redeemed nothing. */
+  boliRedeemed?: number;
+  boliDiscountAmount?: number;
+  /**
+   * Pre-generated id, when the caller needs to know the order id before the
+   * order itself is durably created — checkout.ts does this so it can pass
+   * the same id to the Boli ledger's redemption idempotency key
+   * (`redeem:{orderId}`) BEFORE the order row exists. Falls back to the
+   * usual auto-generated id when omitted.
+   */
+  id?: string;
 }): Order {
   const all = readAll();
   const now = new Date().toISOString();
   const order: Order = {
-    id: `ord-${Date.now().toString(36)}`,
+    id: params.id ?? `ord-${Date.now().toString(36)}`,
     orderNumber: nextOrderNumber(all),
     items: params.items,
+    ...(params.userId ? { userId: params.userId } : {}),
     subtotal: params.subtotal,
     currency: params.currency,
     customer: params.customer,
     paymentMethod: params.paymentMethod,
     paymentProofPath: params.paymentProofPath,
+    ...(params.boliRedeemed ? { boliRedeemed: params.boliRedeemed, boliDiscountAmount: params.boliDiscountAmount } : {}),
     // Cash orders have no transfer to verify — they're confirmed on the spot
     // and settle on delivery. Transfers wait for the proof to be checked.
     status: params.paymentMethod === "cash" ? "Confirmed" : "Pending Verification",

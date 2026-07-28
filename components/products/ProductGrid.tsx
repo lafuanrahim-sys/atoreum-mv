@@ -37,7 +37,13 @@ function sortProducts(products: Product[], sort: SortOption): Product[] {
   }
 }
 
-export default function ProductGrid({ products }: { products: Product[] }) {
+export default function ProductGrid({
+  products,
+  ratings,
+}: {
+  products: Product[];
+  ratings?: Record<string, { average: number; count: number }>;
+}) {
   const categories = ["All", ...orderCategoriesByRoutine(CATEGORIES)];
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -188,7 +194,7 @@ export default function ProductGrid({ products }: { products: Product[] }) {
         className="mt-12 grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-4"
       >
         {paged.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard key={product.id} product={product} rating={ratings?.[product.id]} />
         ))}
       </div>
 

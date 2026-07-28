@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/CartContext";
 import { submitOrder } from "@/app/actions/checkout";
+import { MAX_REDEMPTION_SUBTOTAL_FRACTION, MIN_REDEMPTION_BOLI, REDEMPTION_BOLI_PER_MVR } from "@/lib/boli/config";
 import type { StoreSettings } from "@/lib/data/settings.server";
 import type { PaymentMethod } from "@/lib/types";
+
+export type BoliEligibility = { available: number; eligible: boolean; ineligibleReason: string | null } | null;
 
 function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
@@ -46,13 +49,29 @@ const STEPS: { key: Step; label: string }[] = [
   { key: "payment", label: "Payment" },
 ];
 
-export default function CheckoutClient({ bankDetails }: { bankDetails: StoreSettings }) {
+export default function CheckoutClient({
+  bankDetails,
+  boli,
+  defaultContact,
+}: {
+  bankDetails: StoreSettings;
+  /** Signed-in user's Boli redemption eligibility, resolved server-side — null for guests. This only drives whether the widget is shown; the actual redemption is re-validated server-side regardless (see app/actions/checkout.ts). */
+  boli: BoliEligibility;
+  /** Signed-in user's name/email, prefilled so it naturally matches the account instead of relying on the customer retyping it correctly — null for guests. Still just a starting point; the account link itself comes from the session server-side (app/actions/checkout.ts), not from this value matching. */
+  defaultContact: { name: string; email: string } | null;
+}) {
   const { lines, subtotal, currency, clearCart } = useCart();
   const router = useRouter();
 
   const [step, setStep] = useState<Step>("shipping");
-  const [contact, setContact] = useState({ name: "", email: "", phone: "", address: "" });
+  const [contact, setContact] = useState({
+    name: defaultContact?.name ?? "",
+    email: defaultContact?.email ?? "",
+    phone: "",
+    address: "",
+  });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("transfer");
+  const [boliInput, setBoliInput] = useState("");
   // Held in React state rather than left in the <input type="file"> DOM node:
   // React 19 resets uncontrolled form fields after a server action returns,
   // which silently wiped the chosen file whenever submission failed — the
@@ -78,6 +97,18 @@ export default function CheckoutClient({ bankDetails }: { bankDetails: StoreSett
       ),
     [lines]
   );
+
+  // Live preview only — the server re-validates every part of this against
+  // the real Boli balance and re-computes the cap itself (spec §6.4, "never
+  // trust the client"). Safe to import config here since lib/boli/config.ts
+  // is pure data with no runtime imports.
+  const maxByCapBoli = Math.floor(subtotal * MAX_REDEMPTION_SUBTOTAL_FRACTION * REDEMPTION_BOLI_PER_MVR);
+  const maxRedeemableBoli = boli ? Math.min(boli.available, maxByCapBoli) : 0;
+  const boliRequested = Math.max(0, Math.floor(Number(boliInput) || 0));
+  const boliApplied = Math.min(boliRequested, maxRedeemableBoli);
+  const boliMeetsMinimum = boliApplied >= MIN_REDEMPTION_BOLI;
+  const boliDiscountMvr = boliMeetsMinimum ? boliApplied / REDEMPTION_BOLI_PER_MVR : 0;
+  const total = Math.max(0, subtotal - boliDiscountMvr);
 
   if (lines.length === 0) {
     return (
@@ -152,6 +183,8 @@ export default function CheckoutClient({ bankDetails }: { bankDetails: StoreSett
           <input type="hidden" name="phone" value={contact.phone} />
           <input type="hidden" name="address" value={contact.address} />
           <input type="hidden" name="paymentMethod" value={paymentMethod} />
+          {/* Omitted entirely (not just zero) unless the amount clears the minimum — an absent field reads server-side as "no redemption requested" rather than a rejected tiny one. */}
+          {boliMeetsMinimum && <input type="hidden" name="boliRedeem" value={boliApplied} />}
 
           {step === "shipping" && (
             <div className="flex flex-col gap-5">
@@ -209,6 +242,25 @@ export default function CheckoutClient({ bankDetails }: { bankDetails: StoreSett
                 <span className="text-ivory tabular-nums">{formatPrice(subtotal, currency ?? "MVR")}</span>
               </div>
 
+              <BoliRedeemWidget
+                boli={boli}
+                subtotal={subtotal}
+                currency={currency ?? "MVR"}
+                maxRedeemableBoli={maxRedeemableBoli}
+                input={boliInput}
+                onInputChange={setBoliInput}
+                applied={boliApplied}
+                meetsMinimum={boliMeetsMinimum}
+                discountMvr={boliDiscountMvr}
+              />
+
+              {boliMeetsMinimum && (
+                <div className="mt-4 flex justify-between text-base">
+                  <span className="text-ivory">Total after Boli</span>
+                  <span className="text-gold tabular-nums">{formatPrice(total, currency ?? "MVR")}</span>
+                </div>
+              )}
+
               <div className="mt-8 border-t border-line pt-6 text-sm text-ivory-dim">
                 <p className="uppercase tracking-[0.15em] text-ivory">Deliver to</p>
                 <p className="mt-2">{contact.name}</p>
@@ -248,7 +300,7 @@ export default function CheckoutClient({ bankDetails }: { bankDetails: StoreSett
               onBack={() => setStep("review")}
               submitting={submitting}
               error={error}
-              total={subtotal}
+              total={total}
               currency={currency ?? "MVR"}
             />
           )}
@@ -290,6 +342,96 @@ function Field({
         />
       )}
     </label>
+  );
+}
+
+/**
+ * Redemption widget shown in the Review step. Purely a live preview and
+ * convenience UI — every number here is re-derived and re-validated
+ * server-side in app/actions/checkout.ts / lib/boli/ledger.server.ts
+ * regardless of what this component sends.
+ */
+function BoliRedeemWidget({
+  boli,
+  currency,
+  maxRedeemableBoli,
+  input,
+  onInputChange,
+  applied,
+  meetsMinimum,
+  discountMvr,
+}: {
+  boli: BoliEligibility;
+  subtotal: number;
+  currency: string;
+  maxRedeemableBoli: number;
+  input: string;
+  onInputChange: (v: string) => void;
+  applied: number;
+  meetsMinimum: boolean;
+  discountMvr: number;
+}) {
+  if (!boli) return null; // guest checkout — Boli is account-only
+
+  if (!boli.eligible) {
+    return (
+      <p className="mt-6 text-xs text-ivory-dim">
+        {boli.ineligibleReason ?? "Boli redemption isn't available on this account yet."}
+      </p>
+    );
+  }
+
+  const requestedButBelowMinimum = input.trim() !== "" && Number(input) > 0 && !meetsMinimum;
+
+  return (
+    <div className="mt-6 border border-line p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-xs uppercase tracking-[0.15em] text-gold">Redeem Boli</p>
+        <p className="text-xs text-ivory-dim">{boli.available.toLocaleString()} Boli available</p>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={maxRedeemableBoli}
+          step={1}
+          value={input}
+          onChange={(e) => onInputChange(e.target.value)}
+          placeholder="0"
+          aria-label="Boli to redeem"
+          className="w-32 border border-line bg-transparent px-3 py-2 text-sm text-ivory focus:border-gold focus:outline-none"
+        />
+        <button
+          type="button"
+          onClick={() => onInputChange(String(maxRedeemableBoli))}
+          className="text-xs uppercase tracking-[0.15em] text-gold underline underline-offset-4"
+        >
+          Use max ({maxRedeemableBoli.toLocaleString()})
+        </button>
+      </div>
+
+      <p className="mt-2 text-xs text-ivory-dim">
+        Minimum {MIN_REDEMPTION_BOLI.toLocaleString()} Boli · up to {Math.round(MAX_REDEMPTION_SUBTOTAL_FRACTION * 100)}% of
+        this order&apos;s subtotal
+      </p>
+
+      {requestedButBelowMinimum && (
+        <p className="mt-2 text-xs text-red-400">
+          Enter at least {MIN_REDEMPTION_BOLI.toLocaleString()} Boli, or clear the field.
+        </p>
+      )}
+
+      {meetsMinimum && (
+        <p className="mt-3 flex items-center gap-1.5 text-sm text-gold">
+          <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
+            <path d="M3 8.5l3.2 3.2L13 4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {applied.toLocaleString()} Boli applied — {formatPrice(discountMvr, currency)} off
+        </p>
+      )}
+    </div>
   );
 }
 

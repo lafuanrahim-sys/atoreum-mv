@@ -4,23 +4,16 @@ import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { getAllOrders } from "@/lib/data/orders.server";
 import { getAllProducts } from "@/lib/data/products.server";
 import { listUsers } from "@/lib/data/users.server";
+import OrderStatusBadge from "@/components/dashboard/OrderStatusBadge";
 
-function formatPrice(price: number, currency: string) {
-  return `${currency} ${price.toLocaleString("en-US")}`;
+function formatNumber(n: number) {
+  return n.toLocaleString("en-US");
 }
-
-const STATUS_STYLES: Record<string, string> = {
-  "Pending Verification": "text-gold",
-  Confirmed: "text-sand",
-  Shipped: "text-ivory-dim",
-  Completed: "text-emerald-600 font-semibold",
-  Cancelled: "text-red-400",
-};
 
 /** Tiny inline sparkline from a numeric series (last N days). */
 function Sparkline({ values, className }: { values: number[]; className?: string }) {
-  const w = 120;
-  const h = 32;
+  const w = 96;
+  const h = 28;
   const max = Math.max(...values, 1);
   const points = values
     .map((v, i) => `${(i / Math.max(values.length - 1, 1)) * w},${h - 2 - (v / max) * (h - 6)}`)
@@ -45,6 +38,46 @@ function dailySeries(dates: string[], amounts: number[], days: number): number[]
   return buckets;
 }
 
+/** Percent change of the trailing half of a series vs. the leading half — null when there's no baseline to compare against. */
+function trailingChange(series: number[]): number | null {
+  const half = Math.floor(series.length / 2);
+  const prior = series.slice(0, half).reduce((a, b) => a + b, 0);
+  const recent = series.slice(half).reduce((a, b) => a + b, 0);
+  if (prior === 0) return recent > 0 ? null : 0;
+  return ((recent - prior) / prior) * 100;
+}
+
+function DeltaPill({ value }: { value: number | null }) {
+  if (value === null) {
+    return <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-sand">New</span>;
+  }
+  if (value === 0) return null;
+  const up = value > 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 font-mono text-[11px] tabular-nums ${up ? "text-gold-deep" : "text-red-400"}`}
+    >
+      <svg viewBox="0 0 10 10" aria-hidden="true" className={`h-2.5 w-2.5 ${up ? "" : "rotate-180"}`}>
+        <path d="M5 1.5l3.5 5h-7z" fill="currentColor" />
+      </svg>
+      {Math.round(Math.abs(value))}%
+      <span className="sr-only">{up ? "increase" : "decrease"} vs. the prior 7 days</span>
+    </span>
+  );
+}
+
+// The store only operates in the Maldives — reading the hour in Malé's own
+// timezone (rather than the server's) keeps the greeting honest regardless
+// of where this is deployed.
+function timeOfDay(): "morning" | "afternoon" | "evening" {
+  const h = Number(
+    new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Indian/Maldives" }).format(new Date())
+  );
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
+}
+
 export default async function DashboardHomePage() {
   const user = await getCurrentUser();
   const orders = getAllOrders();
@@ -66,6 +99,8 @@ export default async function DashboardHomePage() {
     activeOrders.map(() => 1),
     14
   );
+  const revenueDelta = trailingChange(revenueSeries);
+  const orderDelta = trailingChange(orderSeries);
 
   // Best sellers: total quantity per product across non-cancelled orders.
   const soldByProduct = new Map<string, { name: string; image: string | null; qty: number }>();
@@ -76,207 +111,235 @@ export default async function DashboardHomePage() {
       soldByProduct.set(item.productId, entry);
     }
   }
-  const bestSellers = [...soldByProduct.entries()]
-    .sort((a, b) => b[1].qty - a[1].qty)
-    .slice(0, 4);
+  const bestSellers = [...soldByProduct.entries()].sort((a, b) => b[1].qty - a[1].qty).slice(0, 4);
+  const maxSold = bestSellers[0]?.[1].qty ?? 1;
 
   const stockCounts = {
     in: products.filter((p) => p.stockStatus === "in-stock").length,
     low: products.filter((p) => p.stockStatus === "low-stock").length,
     out: products.filter((p) => p.stockStatus === "out-of-stock").length,
   };
-  const attentionProducts = products.filter((p) => p.stockStatus !== "in-stock");
+  const stockTotal = Math.max(products.length, 1);
+  const attentionAll = products.filter((p) => p.stockStatus !== "in-stock");
+  const attentionShown = attentionAll.slice(0, 8);
 
-  const stats = [
-    {
-      label: "Total Revenue",
-      value: formatPrice(totalRevenue, currency),
-      series: revenueSeries,
-      note: `${activeOrders.length} paid-or-pending orders`,
-    },
-    {
-      label: "Total Orders",
-      value: String(orders.length),
-      series: orderSeries,
-      note: `${pendingCount} awaiting verification`,
-    },
-    {
-      label: "Customers",
-      value: String(customers.length),
-      series: null,
-      note: "registered accounts",
-    },
-  ];
+  const period = timeOfDay();
+  const greeting = period === "morning" ? "Good morning" : period === "afternoon" ? "Good afternoon" : "Good evening";
+  const dateline = new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Indian/Maldives",
+  }).format(new Date());
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl text-ivory md:text-3xl">
-            Hello, {user?.name.split(" ")[0]} 👋
+      {/* Masthead */}
+      <header className="border-b-2 border-ivory pb-6">
+        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-sand">
+          {dateline} · Store Briefing
+        </p>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-6">
+          <h1 className="font-display text-4xl leading-tight text-ivory md:text-5xl">
+            {greeting}, <span className="italic text-gold-deep">{user?.name.split(" ")[0]}</span>.
           </h1>
-          <p className="mt-1 text-sm text-ivory-dim">
-            Here&apos;s what&apos;s happening with your store today.
-          </p>
+          <div className="flex gap-3">
+            <Link
+              href="/dashboard/products/new"
+              className="bg-gold-deep px-5 py-2.5 text-xs uppercase tracking-[0.15em] text-ink transition-colors hover:bg-gold-deep/90"
+            >
+              + Add Product
+            </Link>
+            <Link
+              href="/dashboard/preorders"
+              className="border border-line px-5 py-2.5 text-xs uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:border-gold-deep hover:text-gold-deep"
+            >
+              Pre-Orders ({pendingCount})
+            </Link>
+          </div>
         </div>
-        <div className="flex gap-3">
-          <Link
-            href="/dashboard/products/new"
-            className="bg-gold-deep px-5 py-2.5 text-xs uppercase tracking-[0.15em] text-ink transition-colors hover:bg-gold-deep/90"
-          >
-            + Add Product
-          </Link>
-          <Link
-            href="/dashboard/preorders"
-            className="border border-line px-5 py-2.5 text-xs uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:border-gold hover:text-gold"
-          >
-            Pre-Orders ({pendingCount})
-          </Link>
+        <p className="mt-2 text-sm text-ivory-dim">Here&apos;s the state of Atoreum this {period}.</p>
+      </header>
+
+      {/* Headline figures — one dominant number, two supporting, hairline-divided rather than boxed. */}
+      <div className="mt-10 flex flex-col gap-8 border-b border-line pb-10 sm:flex-row sm:divide-x sm:divide-line">
+        <div className="sm:pr-10">
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Total Revenue</p>
+          <div className="mt-3 flex flex-wrap items-baseline gap-3">
+            <span className="flex items-baseline gap-1.5">
+              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ivory-dim">{currency}</span>
+              <span className="font-mono text-5xl font-medium text-ivory tabular-nums md:text-6xl">
+                {formatNumber(totalRevenue)}
+              </span>
+            </span>
+            <DeltaPill value={revenueDelta} />
+          </div>
+          <div className="mt-4 flex items-center gap-4">
+            <Sparkline values={revenueSeries} className="h-7 w-24 text-gold-deep" />
+            <p className="text-xs text-ivory-dim">{activeOrders.length} paid-or-pending orders</p>
+          </div>
+        </div>
+
+        <div className="sm:px-10">
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Orders</p>
+          <div className="mt-3 flex flex-wrap items-baseline gap-3">
+            <span className="font-mono text-3xl font-medium text-ivory tabular-nums">{formatNumber(orders.length)}</span>
+            <DeltaPill value={orderDelta} />
+          </div>
+          <p className="mt-4 text-xs text-ivory-dim">{pendingCount} awaiting verification</p>
+        </div>
+
+        <div className="sm:pl-10">
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Customers</p>
+          <p className="mt-3 font-mono text-3xl font-medium text-ivory tabular-nums">{formatNumber(customers.length)}</p>
+          <p className="mt-4 text-xs text-ivory-dim">registered accounts</p>
         </div>
       </div>
 
-      {/* Stat cards */}
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {stats.map((stat) => (
-          <div key={stat.label} className="rounded-lg border border-line bg-ink p-6">
-            <p className="text-xs uppercase tracking-[0.15em] text-ivory-dim">{stat.label}</p>
-            <p className="mt-2 font-display text-3xl text-ivory tabular-nums">{stat.value}</p>
-            <div className="mt-3 flex items-end justify-between gap-4">
-              <p className="text-[11px] text-ivory-dim">{stat.note}</p>
-              {stat.series && <Sparkline values={stat.series} className="h-8 w-28 text-gold" />}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-8 grid gap-8 xl:grid-cols-3">
-        {/* Recent orders */}
-        <div className="xl:col-span-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs uppercase tracking-[0.2em] text-ivory">Recent Orders</h2>
-            <Link href="/dashboard/orders" className="text-xs text-gold hover:underline">
-              View all orders
+      {/* Editorial two-column body: a single hairline rule separates the columns instead of boxed cards. */}
+      <div className="mt-12 flex flex-col gap-12 lg:flex-row lg:gap-0">
+        <div className="lg:flex-1 lg:pr-10">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-display text-xl italic text-ivory">Recent Orders</h2>
+            <Link href="/dashboard/orders" className="font-mono text-[11px] uppercase tracking-[0.15em] text-gold-deep hover:underline">
+              View all →
             </Link>
           </div>
-          <div className="mt-4 overflow-x-auto rounded-lg border border-line bg-ink">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ivory-dim">
-                  <th className="px-5 py-3">Order</th>
-                  <th className="px-5 py-3">Customer</th>
-                  <th className="px-5 py-3">Date</th>
-                  <th className="px-5 py-3">Amount</th>
-                  <th className="px-5 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.slice(0, 6).map((o) => (
-                  <tr key={o.id} className="border-b border-line/50 last:border-b-0">
-                    <td className="px-5 py-3">
-                      <Link href={`/dashboard/orders/${o.id}`} className="text-gold hover:underline">
-                        {o.orderNumber}
-                      </Link>
-                    </td>
-                    <td className="px-5 py-3 text-ivory">{o.customer.name}</td>
-                    <td className="px-5 py-3 text-ivory-dim">
-                      {new Date(o.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-5 py-3 text-ivory-dim tabular-nums">
-                      {formatPrice(o.subtotal, o.currency)}
-                    </td>
-                    <td className={`px-5 py-3 text-xs uppercase tracking-wide ${STATUS_STYLES[o.status] ?? "text-ivory-dim"}`}>
-                      {o.status}
-                    </td>
-                  </tr>
-                ))}
-                {orders.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-5 py-6 text-sm text-ivory-dim">
-                      No orders yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
 
-          {/* Best sellers */}
-          <div className="mt-8">
-            <h2 className="text-xs uppercase tracking-[0.2em] text-ivory">Best Selling Products</h2>
-            <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
-              {bestSellers.map(([productId, entry], i) => (
-                <Link
-                  key={productId}
-                  href={`/products/${productId}`}
-                  className="group rounded-lg border border-line bg-ink p-3 transition-colors hover:border-gold"
-                >
-                  <div className="relative aspect-square overflow-hidden rounded-md bg-photo-well">
-                    {entry.image && (
-                      <div className="absolute inset-2">
-                        <Image src={entry.image} alt={entry.name} fill className="object-contain" />
-                      </div>
-                    )}
-                    <span className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-ink/80 text-[10px] text-ivory">
-                      {i + 1}
-                    </span>
-                  </div>
-                  <p className="mt-3 truncate text-xs text-ivory">{entry.name}</p>
-                  <p className="mt-1 text-[11px] text-ivory-dim">{entry.qty} sold</p>
-                </Link>
-              ))}
-              {bestSellers.length === 0 && (
-                <p className="col-span-full text-sm text-ivory-dim">No sales yet.</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Stock health */}
-        <div>
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs uppercase tracking-[0.2em] text-ivory">Stock Health</h2>
-            <Link href="/dashboard/products" className="text-xs text-gold hover:underline">
-              Manage products
-            </Link>
-          </div>
-          <div className="mt-4 rounded-lg border border-line bg-ink p-6">
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div>
-                <p className="font-display text-2xl text-sand tabular-nums">{stockCounts.in}</p>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-ivory-dim">In stock</p>
-              </div>
-              <div>
-                <p className="font-display text-2xl text-gold tabular-nums">{stockCounts.low}</p>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-ivory-dim">Low</p>
-              </div>
-              <div>
-                <p className="font-display text-2xl text-red-400 tabular-nums">{stockCounts.out}</p>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-ivory-dim">Out</p>
-              </div>
-            </div>
-
-            {attentionProducts.length > 0 && (
-              <ul className="mt-6 flex flex-col gap-3 border-t border-line pt-5">
-                {attentionProducts.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between gap-3 text-sm">
-                    <Link
-                      href={`/dashboard/products/${p.id}/edit`}
-                      className="truncate text-ivory-dim transition-colors hover:text-gold"
-                    >
-                      {p.name}
+          <div className="mt-5 overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b-2 border-ivory text-left">
+                <th className="pb-2 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Order</th>
+                <th className="pb-2 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Customer</th>
+                <th className="hidden pb-2 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim sm:table-cell">
+                  Date
+                </th>
+                <th className="pb-2 pr-4 text-right font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">
+                  Amount
+                </th>
+                <th className="pb-2 text-right font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.slice(0, 6).map((o) => (
+                <tr key={o.id} className="border-b border-line last:border-b-0">
+                  <td className="py-3 pr-4">
+                    <Link href={`/dashboard/orders/${o.id}`} className="font-mono text-ivory transition-colors hover:text-gold-deep">
+                      {o.orderNumber}
                     </Link>
-                    <span
-                      className={`shrink-0 text-[10px] uppercase tracking-[0.12em] ${
-                        p.stockStatus === "low-stock" ? "text-gold" : "text-red-400"
-                      }`}
+                  </td>
+                  <td className="py-3 pr-4 text-ivory-dim">{o.customer.name}</td>
+                  <td className="hidden py-3 pr-4 text-ivory-dim sm:table-cell">
+                    {new Date(o.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="py-3 pr-4 text-right font-mono tabular-nums text-ivory">
+                    {currency} {formatNumber(o.subtotal)}
+                  </td>
+                  <td className="py-3 text-right">
+                    <OrderStatusBadge status={o.status} />
+                  </td>
+                </tr>
+              ))}
+              {orders.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-6 text-sm text-ivory-dim">
+                    No orders yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          </div>
+
+          {/* Best sellers — ranked leaderboard, bar length maps to relative units sold. */}
+          <div className="mt-12">
+            <h2 className="font-display text-xl italic text-ivory">Best Selling</h2>
+            {bestSellers.length === 0 ? (
+              <p className="mt-4 text-sm text-ivory-dim">No sales yet.</p>
+            ) : (
+              <ul className="mt-5 flex flex-col gap-4">
+                {bestSellers.map(([productId, entry], i) => (
+                  <li key={productId} className="flex items-center gap-4">
+                    <span className="w-6 shrink-0 font-mono text-sm text-sand">{String(i + 1).padStart(2, "0")}</span>
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden bg-photo-well">
+                      {entry.image && (
+                        <div className="absolute inset-1.5">
+                          <Image src={entry.image} alt="" fill className="object-contain" />
+                        </div>
+                      )}
+                    </div>
+                    <Link
+                      href={`/products/${productId}`}
+                      className="min-w-0 flex-1 truncate text-sm text-ivory transition-colors hover:text-gold-deep"
                     >
-                      {p.stockStatus === "low-stock" ? "Low" : "Out"}
+                      {entry.name}
+                    </Link>
+                    <div className="hidden h-1 w-28 shrink-0 bg-line sm:block" aria-hidden="true">
+                      <div className="h-full bg-gold-deep" style={{ width: `${(entry.qty / maxSold) * 100}%` }} />
+                    </div>
+                    <span className="w-16 shrink-0 text-right font-mono text-xs tabular-nums text-ivory-dim">
+                      {entry.qty} sold
                     </span>
                   </li>
                 ))}
               </ul>
             )}
           </div>
+        </div>
+
+        <div className="hidden w-px shrink-0 bg-line lg:block" aria-hidden="true" />
+
+        {/* Stock signal */}
+        <div className="lg:w-80 lg:shrink-0 lg:pl-10">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-display text-xl italic text-ivory">Stock Signal</h2>
+            <Link href="/dashboard/products" className="font-mono text-[11px] uppercase tracking-[0.15em] text-gold-deep hover:underline">
+              Manage →
+            </Link>
+          </div>
+
+          <div className="mt-5 flex h-1.5 overflow-hidden bg-line" role="img" aria-label={`${stockCounts.in} in stock, ${stockCounts.low} low, ${stockCounts.out} out of stock`}>
+            <div className="h-full bg-gold-deep" style={{ width: `${(stockCounts.in / stockTotal) * 100}%` }} />
+            <div className="h-full bg-sand" style={{ width: `${(stockCounts.low / stockTotal) * 100}%` }} />
+            <div className="h-full bg-red-400" style={{ width: `${(stockCounts.out / stockTotal) * 100}%` }} />
+          </div>
+          <div className="mt-3 flex flex-wrap justify-between gap-x-4 gap-y-1 font-mono text-[10px] uppercase tracking-[0.15em]">
+            <span className="text-gold-deep">{stockCounts.in} In Stock</span>
+            <span className="text-sand">{stockCounts.low} Low</span>
+            <span className="text-red-400">{stockCounts.out} Out</span>
+          </div>
+
+          {attentionAll.length > 0 && (
+            <ul className="mt-8 flex flex-col gap-3 border-t border-line pt-6">
+              {attentionShown.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-3">
+                  <Link
+                    href={`/dashboard/products/${p.id}/edit`}
+                    className="truncate text-sm text-ivory-dim transition-colors hover:text-gold-deep"
+                  >
+                    {p.name}
+                  </Link>
+                  <span
+                    className={`shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] ${p.stockStatus === "low-stock" ? "text-sand" : "text-red-400"}`}
+                  >
+                    {p.stockStatus === "low-stock" ? "Low" : "Out"}
+                  </span>
+                </li>
+              ))}
+              {attentionAll.length > attentionShown.length && (
+                <li>
+                  <Link
+                    href="/dashboard/products"
+                    className="font-mono text-[11px] uppercase tracking-[0.15em] text-gold-deep hover:underline"
+                  >
+                    +{attentionAll.length - attentionShown.length} more →
+                  </Link>
+                </li>
+              )}
+            </ul>
+          )}
         </div>
       </div>
     </div>

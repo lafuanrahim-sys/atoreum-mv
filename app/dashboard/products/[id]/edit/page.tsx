@@ -3,6 +3,7 @@ import { getProductById } from "@/lib/data/products.server";
 import { listBrands } from "@/lib/data/brands.server";
 import { updateProductAction } from "@/app/actions/products";
 import ProductForm from "@/components/admin/ProductForm";
+import PageHeader from "@/components/dashboard/PageHeader";
 
 export default async function EditProductPage({
   params,
@@ -17,8 +18,8 @@ export default async function EditProductPage({
 
   return (
     <div>
-      <h1 className="font-display text-2xl text-ivory">Edit Product</h1>
-      <div className="mt-6">
+      <PageHeader eyebrow="Inventory" title="Edit Product" description={product.name} />
+      <div className="mt-10">
         <ProductForm product={product} action={boundAction} brands={listBrands()} />
       </div>
     </div>

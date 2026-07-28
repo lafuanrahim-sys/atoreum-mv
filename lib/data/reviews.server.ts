@@ -49,6 +49,23 @@ export function listApprovedReviews(productId: string): Review[] {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+/** Average rating + count per product, from approved reviews only — powers the star rating shown on product cards. */
+export function getRatingSummaries(): Record<string, { average: number; count: number }> {
+  const approved = readAll().filter((r) => r.status === "approved");
+  const summaries: Record<string, { average: number; count: number }> = {};
+  for (const review of approved) {
+    const entry = summaries[review.productId] ?? { average: 0, count: 0 };
+    entry.average = (entry.average * entry.count + review.rating) / (entry.count + 1);
+    entry.count += 1;
+    summaries[review.productId] = entry;
+  }
+  return summaries;
+}
+
+export function getRatingSummary(productId: string): { average: number; count: number } | null {
+  return getRatingSummaries()[productId] ?? null;
+}
+
 export function createReview(params: {
   productId: string;
   userId: string;

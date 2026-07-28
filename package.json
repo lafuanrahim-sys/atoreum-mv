@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "boli:seed": "tsx scripts/boli-seed.ts",
+    "boli:verify-balances": "tsx scripts/boli-verify-balances.ts",
+    "boli:verify-chain": "tsx scripts/boli-verify-chain.ts"
   },
   "dependencies": {
     "@barba/core": "^2.10.3",
@@ -14,17 +18,22 @@
     "gsap": "^3.15.0",
     "lenis": "^1.3.25",
     "next": "16.2.10",
+    "pg": "^8.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.1",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

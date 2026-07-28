@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import Logo from "@/components/ui/Logo";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import ProfileButton from "@/components/layout/ProfileButton";
+import BoliChip from "@/components/layout/BoliChip";
 import CartButton from "@/components/cart/CartButton";
 
 const NAV_LINKS = [
@@ -78,6 +79,7 @@ export default function Header() {
           })}
           <ThemeToggle />
           <ProfileButton />
+          <BoliChip />
           <CartButton />
         </nav>
 
@@ -92,6 +94,7 @@ export default function Header() {
 
         <div className="flex items-center gap-4 lg:hidden">
           <ProfileButton />
+          <BoliChip />
           <CartButton />
           <button
             aria-label="Toggle menu"

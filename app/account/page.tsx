@@ -7,6 +7,12 @@ import { getAllProducts } from "@/lib/data/products.server";
 import { logoutAction } from "@/app/actions/auth";
 import ProfileForms from "@/components/account/ProfileForms";
 import ProductCard from "@/components/products/ProductCard";
+import BoliSection, { type PendingBoliOrder } from "@/components/account/BoliSection";
+import BoliDiveGame from "@/components/boli/BoliDiveGame";
+import { dismissDiveIntroAction, replayDiveTestAction } from "@/app/actions/boliDive";
+import { isAdminRole } from "@/lib/auth/userSession";
+import { getBalance, listLedger, getExpiringSoon, estimatePurchaseEarn } from "@/lib/boli/ledger.server";
+import { EXPIRY_WARNING_WINDOW_DAYS, UNLIMITED_DIVE_PLAYS_FOR_ADMINS } from "@/lib/boli/config";
 
 export const metadata: Metadata = {
   title: "My Account — Atoreum MV",
@@ -28,22 +34,80 @@ const STATUS_STYLES: Record<string, string> = {
 const TABS = [
   { key: "orders", label: "My Orders" },
   { key: "favorites", label: "Favorites" },
+  { key: "boli", label: "Boli" },
   { key: "profile", label: "Profile" },
 ] as const;
+
+const BOLI_PAGE_SIZE = 20;
 
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; profile?: string; password?: string }>;
+  searchParams: Promise<{ tab?: string; profile?: string; password?: string; boliPage?: string; boliView?: string }>;
 }) {
-  const { tab = "orders", profile = "", password = "" } = await searchParams;
+  const { tab = "orders", profile = "", password = "", boliPage: boliPageRaw = "1", boliView = "my" } = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/login?from=%2Faccount");
 
+  // userId (set at checkout from the session) is the authoritative link —
+  // it survives the shipping-form email differing from the account's login
+  // email. Falls back to email match for orders placed before userId
+  // existed, or by a guest checkout later claimed by this account's email.
   const myOrders = getAllOrders().filter(
-    (o) => o.customer.email.toLowerCase() === user.email.toLowerCase()
+    (o) => o.userId === user.id || o.customer.email.toLowerCase() === user.email.toLowerCase()
   );
   const favoriteProducts = getAllProducts().filter((p) => user.favorites.includes(p.id));
+
+  // Fetched only when the Boli tab is active (or an error is hit) — no
+  // point calling out to Supabase on every account-page load. Boli not
+  // being provisioned yet must never break the rest of the account page.
+  let boliData: {
+    displayBalance: number;
+    lifetimeEarned: number;
+    tier: "faru" | "vilu" | "kandu" | "thari";
+    underReview: boolean;
+    pendingOrders: PendingBoliOrder[];
+    expiringSoon: number;
+    ledger: Awaited<ReturnType<typeof listLedger>>["entries"];
+    page: number;
+    hasMore: boolean;
+  } | null = null;
+  let boliError = false;
+
+  if (tab === "boli" && boliView !== "dive") {
+    try {
+      const page = Math.max(1, Number(boliPageRaw) || 1);
+      const snapshot = await getBalance(user.id);
+      const [{ entries, hasMore }, expiringSoon] = await Promise.all([
+        listLedger(user.id, { limit: BOLI_PAGE_SIZE, offset: (page - 1) * BOLI_PAGE_SIZE }),
+        getExpiringSoon(user.id, EXPIRY_WARNING_WINDOW_DAYS),
+      ]);
+      const pendingOrders: PendingBoliOrder[] = myOrders
+        .filter((o) => o.status !== "Completed" && o.status !== "Cancelled")
+        .map((o) => ({
+          orderId: o.id,
+          orderNumber: o.orderNumber,
+          estimatedBoli: estimatePurchaseEarn(o.subtotal, o.boliDiscountAmount ?? 0, snapshot.tier),
+          placedAt: o.createdAt,
+        }))
+        .filter((o) => o.estimatedBoli > 0);
+
+      boliData = {
+        displayBalance: Number(snapshot.displayBalance),
+        lifetimeEarned: Number(snapshot.lifetimeEarned),
+        tier: snapshot.tier,
+        underReview: snapshot.trueBalance < 0,
+        pendingOrders,
+        expiringSoon: Number(expiringSoon),
+        ledger: entries,
+        page,
+        hasMore,
+      };
+    } catch (err) {
+      console.error("[boli] account page lookup failed:", err);
+      boliError = true;
+    }
+  }
 
   return (
     <div className="page-gutter bg-ink pt-10 pb-28 md:pt-14">
@@ -166,6 +230,44 @@ export default async function AccountPage({
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {tab === "boli" && (
+            <div>
+              <nav className="mb-8 flex gap-6 text-xs uppercase tracking-[0.2em]">
+                <Link
+                  href="/account?tab=boli&boliView=my"
+                  aria-current={boliView !== "dive" ? "page" : undefined}
+                  className={boliView !== "dive" ? "text-gold" : "text-ivory-dim hover:text-gold"}
+                >
+                  My Boli
+                </Link>
+                <Link
+                  href="/account?tab=boli&boliView=dive"
+                  aria-current={boliView === "dive" ? "page" : undefined}
+                  className={boliView === "dive" ? "text-gold" : "text-ivory-dim hover:text-gold"}
+                >
+                  Boli Dive
+                </Link>
+              </nav>
+
+              {boliView === "dive" ? (
+                <BoliDiveGame
+                  dismissIntroAction={dismissDiveIntroAction}
+                  canReplayForTesting={UNLIMITED_DIVE_PLAYS_FOR_ADMINS && isAdminRole(user.role)}
+                  replayAction={replayDiveTestAction}
+                />
+              ) : (
+                <>
+                  {boliError && (
+                    <p className="text-sm text-ivory-dim">
+                      Boli isn&apos;t available right now — please check back shortly.
+                    </p>
+                  )}
+                  {boliData && <BoliSection {...boliData} />}
+                </>
               )}
             </div>
           )}

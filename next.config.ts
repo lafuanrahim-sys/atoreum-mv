@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    qualities: [75, 80],
+  },
   experimental: {
     serverActions: {
       // Checkout accepts payment-proof uploads up to 8MB (see

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useCart } from "@/lib/cart/CartContext";
 import StockBadge from "@/components/products/StockBadge";
 import FavoriteButton from "@/components/products/FavoriteButton";
+import StarRating from "@/components/ui/StarRating";
 
 // The handful of supplier photos that are full-bleed lifestyle shots (a
 // styled scene behind the bottle) rather than a cutout on a plain/transparent
@@ -26,12 +27,24 @@ const BACKGROUNDED_PRODUCT_IDS = new Set([
   "ton-002",
 ]);
 
-export default function ProductCard({ product }: { product: Product }) {
+// "New" until 30 days after the product was added — long enough to matter,
+// short enough that the badge keeps meaning something.
+const NEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+export default function ProductCard({
+  product,
+  rating,
+}: {
+  product: Product;
+  /** Approved-review summary, if any — omit or pass null when there are no reviews yet. */
+  rating?: { average: number; count: number } | null;
+}) {
   const { addItem } = useCart();
   const [justAdded, setJustAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const outOfStock = product.stockStatus === "out-of-stock";
   const thumbnail = product.images[0] ?? null;
+  const isNew = Date.now() - new Date(product.createdAt).getTime() < NEW_WINDOW_MS;
 
   useEffect(() => {
     return () => {
@@ -41,11 +54,11 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <article data-reveal className="group flex flex-col">
-      <Link href={`/products/${product.id}`} className="block">
-        <div
-          data-card-frame
-          className="relative aspect-[4/5] overflow-hidden bg-photo-well rounded-sm shadow-sm transition-transform duration-500 motion-safe:group-hover:scale-[1.01]"
-        >
+      <div
+        data-card-frame
+        className="relative aspect-[4/5] overflow-hidden bg-photo-well rounded-sm shadow-sm transition-transform duration-500 motion-safe:group-hover:scale-[1.01]"
+      >
+        <Link href={`/products/${product.id}`} className="absolute inset-0 block" aria-label={product.name}>
           {thumbnail ? (
             <div data-card-media className="absolute inset-0">
               {BACKGROUNDED_PRODUCT_IDS.has(product.id) && (
@@ -82,27 +95,36 @@ export default function ProductCard({ product }: { product: Product }) {
           ) : (
             <div
               data-card-media
-              className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-moss/30 via-ink-2 to-ink"
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-moss/30 via-ink-2 to-ink"
             >
-              <span className="font-display text-6xl text-ivory-dim/20">
-                {product.brand.charAt(0)}
-              </span>
+              <svg viewBox="0 0 40 40" aria-hidden="true" className="h-9 w-9 text-ivory-dim/30">
+                <rect x="6" y="10" width="28" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                <circle cx="14" cy="17" r="2.4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M6 27l8-7 6 5 6-6 8 8" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+              </svg>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-ivory-dim/50">Photo coming soon</span>
             </div>
           )}
+        </Link>
 
-          <div className="absolute top-4 left-4 border border-photo-well-line bg-photo-well/70 px-2.5 py-1 text-[10px] font-medium tracking-[0.18em] text-photo-well-fg uppercase backdrop-blur-sm">
-            {product.category}
-          </div>
-
-          {product.stockStatus !== "in-stock" && (
-            <div className="absolute top-4 right-4">
-              <StockBadge status={product.stockStatus} onWell />
-            </div>
-          )}
-
-          <FavoriteButton productId={product.id} className="absolute bottom-3 right-3" />
+        <div className="absolute top-4 left-4 border border-photo-well-line bg-photo-well/70 px-2.5 py-1 text-[10px] font-medium tracking-[0.18em] text-photo-well-fg uppercase backdrop-blur-sm">
+          {product.category}
         </div>
-      </Link>
+
+        {product.stockStatus !== "in-stock" ? (
+          <div className="absolute top-4 right-4">
+            <StockBadge status={product.stockStatus} onWell />
+          </div>
+        ) : (
+          (isNew || product.featured) && (
+            <div className="absolute top-4 right-4 border border-gold/60 bg-ink/80 px-2.5 py-1 text-[10px] font-medium tracking-[0.18em] text-gold uppercase backdrop-blur-sm">
+              {isNew ? "New" : "Bestseller"}
+            </div>
+          )
+        )}
+
+        <FavoriteButton productId={product.id} className="absolute bottom-3 right-3" />
+      </div>
 
       <div data-card-text className="mt-5 flex flex-1 flex-col">
         <p className="text-[11px] tracking-[0.2em] text-sand uppercase">
@@ -118,6 +140,14 @@ export default function ProductCard({ product }: { product: Product }) {
             )}
           </h3>
         </Link>
+
+        {rating && rating.count > 0 && (
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <StarRating rating={rating.average} size={12} />
+            <span className="text-[11px] text-ivory-dim">({rating.count})</span>
+          </div>
+        )}
+
         <p className="mt-2 text-sm leading-relaxed text-ivory-dim">
           {product.description}
         </p>

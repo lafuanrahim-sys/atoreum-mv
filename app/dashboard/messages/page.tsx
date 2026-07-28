@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { listMessages } from "@/lib/data/messages.server";
 import { deleteMessageAction, setMessageStatusAction } from "@/app/actions/messages";
+import AdminActionButton from "@/components/dashboard/AdminActionButton";
+import PageHeader from "@/components/dashboard/PageHeader";
 
 /**
  * Contact-form inbox: submissions from /contact land here as "unread".
@@ -22,33 +24,48 @@ export default async function DashboardMessagesPage({
 
   return (
     <div className="max-w-4xl">
-      <h1 className="font-display text-2xl text-ivory">Messages ({inbox.length})</h1>
-      <p className="mt-1 text-sm text-ivory-dim">
-        Notes and suggestions sent from the contact page
-        {unread > 0 ? ` — ${unread} unread.` : "."}
-      </p>
+      <PageHeader
+        eyebrow="Inbox"
+        title="Messages"
+        count={inbox.length}
+        description={unread > 0 ? `Notes and suggestions sent from the contact page — ${unread} unread.` : "Notes and suggestions sent from the contact page."}
+      />
 
-      <div className="mt-6 flex gap-1 border-b border-line text-xs uppercase tracking-[0.15em]">
-        {[
-          { key: "inbox", label: `Inbox (${inbox.length})`, href: "/dashboard/messages" },
-          {
-            key: "archived",
-            label: `Archived (${archived.length})`,
-            href: "/dashboard/messages?view=archived",
-          },
-        ].map((t) => (
-          <Link
-            key={t.key}
-            href={t.href}
-            className={`px-4 py-2 transition-colors ${
-              (t.key === "archived") === showArchived
-                ? "border-b-2 border-gold text-gold"
-                : "text-ivory-dim hover:text-gold"
-            }`}
-          >
-            {t.label}
-          </Link>
-        ))}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-line">
+        <div className="flex gap-6 font-mono text-[11px] uppercase tracking-[0.15em]">
+          {[
+            { key: "inbox", label: `Inbox (${inbox.length})`, href: "/dashboard/messages" },
+            {
+              key: "archived",
+              label: `Archived (${archived.length})`,
+              href: "/dashboard/messages?view=archived",
+            },
+          ].map((t) => (
+            <Link
+              key={t.key}
+              href={t.href}
+              className={`border-b-2 py-2.5 transition-colors ${
+                (t.key === "archived") === showArchived
+                  ? "border-gold-deep italic text-gold-deep"
+                  : "border-transparent text-ivory-dim hover:text-ivory"
+              }`}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </div>
+        {!showArchived && messages.length > 1 && (
+          <AdminActionButton
+            action={async () => {
+              "use server";
+              await Promise.all(messages.map((m) => setMessageStatusAction(m.id, "archived")));
+            }}
+            label={`Archive all (${messages.length})`}
+            pendingLabel="Archiving…"
+            toastMessage={`${messages.length} messages archived.`}
+            className="mb-2"
+          />
+        )}
       </div>
 
       {messages.length === 0 ? (
@@ -56,73 +73,60 @@ export default async function DashboardMessagesPage({
           {showArchived ? "No archived messages." : "No messages yet."}
         </p>
       ) : (
-        <ul className="mt-8 flex flex-col gap-4">
+        <ul className="mt-2 flex flex-col">
           {messages.map((m) => (
-            <li
-              key={m.id}
-              className={`rounded-lg border bg-ink p-5 ${
-                m.status === "unread" ? "border-gold/50" : "border-line"
-              }`}
-            >
+            <li key={m.id} className="border-b border-line py-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-3 text-sm">
                   {m.status === "unread" && (
                     <span
-                      className="h-2 w-2 rounded-full bg-gold"
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold-deep"
                       role="status"
                       aria-label="Unread"
                     />
                   )}
-                  <span className="text-ivory">{m.name}</span>
-                  <a href={`tel:${m.phone.replace(/\s+/g, "")}`} className="text-gold hover:underline tabular-nums">
+                  <span className="font-display italic text-ivory">{m.name}</span>
+                  <a href={`tel:${m.phone.replace(/\s+/g, "")}`} className="font-mono text-gold-deep hover:underline tabular-nums">
                     {m.phone}
                   </a>
-                  <span className="text-xs text-ivory-dim">
+                  <span className="font-mono text-xs text-ivory-dim">
                     {new Date(m.createdAt).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
                   {!showArchived && (
-                    <form
+                    <AdminActionButton
                       action={async () => {
                         "use server";
                         await setMessageStatusAction(m.id, m.status === "unread" ? "read" : "unread");
                       }}
-                    >
-                      <button
-                        type="submit"
-                        className="text-[11px] uppercase tracking-[0.12em] text-ivory-dim transition-colors hover:text-gold"
-                      >
-                        {m.status === "unread" ? "Mark read" : "Mark unread"}
-                      </button>
-                    </form>
+                      label={m.status === "unread" ? "Mark read" : "Mark unread"}
+                      pendingLabel="Updating…"
+                      toastMessage={m.status === "unread" ? "Marked as read." : "Marked as unread."}
+                    />
                   )}
-                  <form
+                  <AdminActionButton
                     action={async () => {
                       "use server";
                       await setMessageStatusAction(m.id, showArchived ? "read" : "archived");
                     }}
-                  >
-                    <button
-                      type="submit"
-                      className="text-[11px] uppercase tracking-[0.12em] text-ivory-dim transition-colors hover:text-gold"
-                    >
-                      {showArchived ? "Unarchive" : "Archive"}
-                    </button>
-                  </form>
-                  <form
+                    label={showArchived ? "Unarchive" : "Archive"}
+                    pendingLabel="Updating…"
+                    toastMessage={showArchived ? "Message moved back to inbox." : "Message archived."}
+                  />
+                  <AdminActionButton
                     action={async () => {
                       "use server";
                       await deleteMessageAction(m.id);
                     }}
-                  >
-                    <button
-                      type="submit"
-                      className="text-[11px] uppercase tracking-[0.12em] text-ivory-dim transition-colors hover:text-red-400"
-                    >
-                      Delete
-                    </button>
-                  </form>
+                    label="Delete"
+                    pendingLabel="Deleting…"
+                    variant="danger"
+                    toastMessage="Message deleted."
+                    confirmTitle="Delete this message?"
+                    confirmMessage="This message will be permanently removed."
+                    confirmLabel="Delete"
+                  />
                 </div>
               </div>
               <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-ivory-dim">

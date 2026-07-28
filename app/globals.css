@@ -139,6 +139,7 @@
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-montserrat: var(--font-montserrat);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 * {

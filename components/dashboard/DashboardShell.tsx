@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import DashboardNav from "@/components/dashboard/DashboardNav";
 import Logo from "@/components/ui/Logo";
+import ToastProvider from "@/components/dashboard/ToastProvider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -33,26 +34,41 @@ export default function DashboardShell({
 
   const sidebarContent = (
     <>
-      <Link href="/products" className="flex items-center gap-3 px-2">
-        <span className="block h-9 w-9">
+      <Link href="/products" className="flex items-center gap-3 px-4 pb-5">
+        <span className="block h-8 w-8 shrink-0">
           <Logo />
         </span>
-        <span className="font-display text-sm uppercase tracking-[0.2em] text-ivory">
-          Atoreum <span className="text-gold">MV</span>
+        <span className="min-w-0">
+          <span className="block font-display text-sm italic leading-tight text-ivory">Atoreum MV</span>
+          <span className="block font-mono text-[9px] uppercase tracking-[0.3em] text-sand">Admin</span>
         </span>
       </Link>
 
-      <div className="mt-8 flex-1">
+      <form action="/dashboard/search" method="get" className="relative border-y border-line px-4 py-3">
+        <svg viewBox="0 0 20 20" aria-hidden="true" className="pointer-events-none absolute left-6 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ivory-dim">
+          <circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M13 13l4.5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+        <input
+          type="search"
+          name="q"
+          placeholder="Search the ledger…"
+          onClick={() => setDrawerOpen(false)}
+          className="w-full bg-transparent py-1 pl-6 pr-1 font-mono text-xs text-ivory placeholder:text-ivory-dim/70 focus:outline-none"
+        />
+      </form>
+
+      <div className="flex-1 overflow-y-auto py-2">
         <DashboardNav unreadMessages={unreadMessages} onNavigate={() => setDrawerOpen(false)} />
       </div>
 
-      <div className="border-t border-line pt-4">
-        <form action={toggleThemeAction} className="px-2">
+      <div className="border-t border-line px-4 pt-4">
+        <form action={toggleThemeAction}>
           <button
             type="submit"
-            className="flex w-full items-center gap-2 rounded-md py-1.5 text-[11px] uppercase tracking-[0.12em] text-ivory-dim transition-colors hover:text-gold"
+            className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim transition-colors hover:text-gold-deep"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-3.5 w-3.5">
               {isDark ? (
                 <>
                   <circle cx="12" cy="12" r="4" />
@@ -66,18 +82,18 @@ export default function DashboardShell({
           </button>
         </form>
 
-        <p className="mt-2 truncate px-2 text-xs text-ivory">{user.name}</p>
-        <p className="px-2 text-[10px] uppercase tracking-[0.15em] text-ivory-dim">
+        <p className="mt-4 truncate font-display italic text-ivory">{user.name}</p>
+        <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-sand">
           {user.role === "superadmin" ? "Super Admin" : "Store Manager"}
         </p>
-        <div className="mt-3 flex items-center justify-between px-2">
-          <Link href="/" className="text-[11px] text-ivory-dim transition-colors hover:text-gold">
+        <div className="mt-3 flex items-center justify-between pb-4">
+          <Link href="/" className="font-mono text-[10px] uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:text-gold-deep">
             ← View store
           </Link>
           <form action={logoutAction}>
             <button
               type="submit"
-              className="text-[11px] uppercase tracking-[0.1em] text-ivory-dim transition-colors hover:text-gold"
+              className="font-mono text-[10px] uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:text-gold-deep"
             >
               Log out
             </button>
@@ -88,9 +104,10 @@ export default function DashboardShell({
   );
 
   return (
+    <ToastProvider>
     <div className="flex min-h-screen bg-ink-2">
       {/* Wide screens: always-on fixed column. */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-line bg-ink px-4 py-6 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-line bg-ink pt-6 lg:flex">
         {sidebarContent}
       </aside>
 
@@ -100,8 +117,9 @@ export default function DashboardShell({
           <span className="block h-8 w-8">
             <Logo />
           </span>
-          <span className="font-display text-xs uppercase tracking-[0.2em] text-ivory">
-            Atoreum <span className="text-gold">MV</span>
+          <span>
+            <span className="block font-display text-sm italic leading-tight text-ivory">Atoreum MV</span>
+            <span className="block font-mono text-[8px] uppercase tracking-[0.3em] text-sand">Admin</span>
           </span>
         </Link>
         <button
@@ -139,7 +157,7 @@ export default function DashboardShell({
       />
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-line bg-ink px-4 py-6 shadow-2xl transition-transform duration-300 lg:hidden",
+          "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-line bg-ink pt-6 shadow-2xl transition-transform duration-300 lg:hidden",
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         )}
         inert={!drawerOpen}
@@ -147,7 +165,8 @@ export default function DashboardShell({
         {sidebarContent}
       </aside>
 
-      <main className="min-h-screen flex-1 px-4 pt-20 pb-8 sm:px-6 lg:ml-60 lg:px-8 lg:pt-8">{children}</main>
+      <main className="min-h-screen flex-1 px-4 pt-20 pb-8 sm:px-6 lg:ml-64 lg:px-10 lg:pt-10">{children}</main>
     </div>
+    </ToastProvider>
   );
 }

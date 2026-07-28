@@ -5,6 +5,8 @@ import path from "path";
 import crypto from "crypto";
 import { createOrder } from "@/lib/data/orders.server";
 import { notifyNewOrder } from "@/lib/notify";
+import { getCurrentUser } from "@/lib/auth/currentUser.server";
+import { parseBoliAmount, redeemForOrder } from "@/lib/boli/ledger.server";
 import type { OrderItem, PaymentMethod } from "@/lib/types";
 
 export type CheckoutResult =
@@ -72,13 +74,58 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
     paymentProofPath = `/uploads/payment-proofs/${safeName}`;
   }
 
+  // Resolved once, unconditionally — not just when redeeming Boli. Account
+  // linkage must never depend on the shipping-form email matching the
+  // login email (they're allowed to differ, e.g. ordering for someone
+  // else): a signed-in checkout is always attributed to the session's
+  // account id, regardless of what contact email was typed.
+  const currentUser = await getCurrentUser();
+
+  // Boli redemption is opt-in and account-only: the checkout form only
+  // renders the widget for a signed-in user, but a guest could still post
+  // the field, so this is re-validated server-side regardless of what the
+  // client sent (spec §6.4 — never trust the client).
+  const boliRedeemRaw = formData.get("boliRedeem");
+  let boliRedeemedAmount: number | undefined;
+  let boliDiscountMvr: number | undefined;
+  // Generated up front (rather than left to createOrder's own default) so
+  // the same id can be handed to the Boli ledger's redemption idempotency
+  // key (`redeem:{orderId}`) before the order row itself exists — see
+  // lib/data/orders.server.ts createOrder() for why this is a param.
+  const orderId = `ord-${Date.now().toString(36)}-${crypto.randomBytes(3).toString("hex")}`;
+
+  if (boliRedeemRaw) {
+    const amount = parseBoliAmount(boliRedeemRaw);
+    if (amount === null) {
+      return { ok: false, error: "That Boli amount isn't valid." };
+    }
+    if (!currentUser) {
+      return { ok: false, error: "Sign in to redeem Boli." };
+    }
+    const result = await redeemForOrder({
+      userId: currentUser.id,
+      orderId,
+      boliAmount: amount,
+      orderSubtotalMvr: subtotal,
+    });
+    if (!result.ok) {
+      return { ok: false, error: result.error };
+    }
+    boliRedeemedAmount = Number(amount);
+    boliDiscountMvr = result.mvrValue;
+  }
+
   const order = createOrder({
+    id: orderId,
     items,
     subtotal,
     currency,
     customer: { name, email, phone, address },
     paymentMethod,
     paymentProofPath,
+    userId: currentUser?.id,
+    boliRedeemed: boliRedeemedAmount,
+    boliDiscountAmount: boliDiscountMvr,
   });
 
   notifyNewOrder(order);

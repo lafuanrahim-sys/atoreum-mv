@@ -2,19 +2,12 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getOrderById } from "@/lib/data/orders.server";
 import { changeOrderStatus } from "@/app/actions/orders";
-import type { OrderStatus } from "@/lib/types";
+import AdminActionButton from "@/components/dashboard/AdminActionButton";
+import OrderStatusForm from "@/components/dashboard/OrderStatusForm";
 
 function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
 }
-
-const STATUSES: OrderStatus[] = [
-  "Pending Verification",
-  "Confirmed",
-  "Shipped",
-  "Completed",
-  "Cancelled",
-];
 
 export default async function DashboardOrderDetailPage({
   params,
@@ -30,129 +23,115 @@ export default async function DashboardOrderDetailPage({
 
   return (
     <div className="max-w-3xl">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      {/* Invoice masthead */}
+      <div className="flex flex-wrap items-start justify-between gap-6 border-b-2 border-ivory pb-6">
         <div>
-          <h1 className="font-display text-2xl text-ivory">{order.orderNumber}</h1>
-          <p className="mt-1 text-xs text-ivory-dim">
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-sand">Order Record</p>
+          <h1 className="mt-3 font-display text-3xl italic text-ivory md:text-4xl">{order.orderNumber}</h1>
+          <p className="mt-2 font-mono text-xs text-ivory-dim">
             Placed {new Date(order.createdAt).toLocaleString()}
           </p>
         </div>
 
         {order.status === "Completed" ? (
-          <p className="flex items-center gap-2 border-2 border-emerald-600 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">
-            ✓ Order Completed
+          <p className="flex items-center gap-2 border-2 border-emerald-600 px-5 py-3 font-mono text-xs uppercase tracking-[0.2em] text-emerald-600">
+            <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
+              <path d="M3 8.5l3.2 3.2L13 4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Completed
           </p>
         ) : (
           order.status !== "Cancelled" && (
-            <form
+            <AdminActionButton
               action={async () => {
                 "use server";
                 await changeOrderStatus(order.id, "Completed");
               }}
-            >
-              <button
-                type="submit"
-                className="bg-emerald-600 px-8 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-white shadow-lg transition-colors hover:bg-emerald-500"
-              >
-                ✓ Mark as Completed
-              </button>
-            </form>
+              label="Mark as Completed"
+              pendingLabel="Updating…"
+              variant="success"
+              className="px-6 py-3 text-xs shadow-lg"
+              toastMessage={`${order.orderNumber} marked as completed.`}
+              icon={
+                <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
+                  <path d="M3 8.5l3.2 3.2L13 4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              }
+            />
           )
         )}
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-8">
+      <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
         <div>
-          <h2 className="text-xs uppercase tracking-wide text-ivory-dim">Customer</h2>
-          <p className="mt-2 text-sm text-ivory">{order.customer.name}</p>
-          <p className="text-sm text-ivory-dim">{order.customer.email}</p>
+          <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Bill To</h2>
+          <p className="mt-3 font-display italic text-ivory">{order.customer.name}</p>
+          <p className="mt-1 text-sm text-ivory-dim">{order.customer.email}</p>
           <p className="text-sm text-ivory-dim">{order.customer.phone}</p>
           <p className="mt-2 text-sm text-ivory-dim">{order.customer.address}</p>
         </div>
 
         <div>
-          <h2 className="text-xs uppercase tracking-wide text-ivory-dim">Status</h2>
-          <form
-            action={async (formData: FormData) => {
-              "use server";
-              await changeOrderStatus(order.id, formData.get("status") as OrderStatus);
-            }}
-            className="mt-2 flex gap-3"
-          >
-            <select
-              name="status"
-              defaultValue={order.status}
-              className="border border-line bg-transparent px-3 py-2 text-sm text-ivory"
-            >
-              {STATUSES.map((s) => (
-                <option key={s} value={s} className="bg-ink-2">
-                  {s}
-                </option>
-              ))}
-            </select>
-            <button
-              type="submit"
-              className="bg-gold-deep px-4 py-2 text-xs uppercase tracking-wide text-ink hover:bg-gold-deep/90"
-            >
-              Update
-            </button>
-          </form>
+          <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Status</h2>
+          <OrderStatusForm orderId={order.id} currentStatus={order.status} changeStatus={changeOrderStatus} />
         </div>
       </div>
 
-      <div className="mt-8">
-        <h2 className="text-xs uppercase tracking-wide text-ivory-dim">Items</h2>
-        <ul className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
+      <div className="mt-10">
+        <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Items</h2>
+        <ul className="mt-4 flex flex-col border-t border-line">
           {order.items.map((item) => (
-            <li key={item.productId} className="flex justify-between text-sm">
+            <li key={item.productId} className="flex items-baseline justify-between gap-4 border-b border-line py-3 text-sm">
               <span className="text-ivory">
-                {item.name} <span className="text-ivory-dim">× {item.quantity}</span>
+                {item.name} <span className="font-mono text-ivory-dim">× {item.quantity}</span>
               </span>
-              <span className="text-ivory-dim tabular-nums">
+              <span className="shrink-0 font-mono tabular-nums text-ivory-dim">
                 {formatPrice(item.price * item.quantity, item.currency)}
               </span>
             </li>
           ))}
         </ul>
-        <div className="mt-3 flex justify-between border-t border-line pt-3 text-base">
-          <span className="text-ivory">Total</span>
-          <span className="text-ivory tabular-nums">{formatPrice(order.subtotal, order.currency)}</span>
+        <div className="mt-3 flex items-baseline justify-between border-t-2 border-ivory pt-3">
+          <span className="font-display italic text-ivory">Total</span>
+          <span className="font-mono text-xl tabular-nums text-ivory">{formatPrice(order.subtotal, order.currency)}</span>
         </div>
       </div>
 
-      <div className="mt-8">
-        <h2 className="text-xs uppercase tracking-wide text-ivory-dim">Payment</h2>
-        <p className="mt-2 text-sm text-ivory">
-          {paymentMethod === "cash" ? "Cash on delivery" : "Bank transfer"}
-        </p>
-      </div>
-
-      <div className="mt-8">
-        <h2 className="text-xs uppercase tracking-wide text-ivory-dim">Payment Proof</h2>
-        {order.paymentProofPath ? (
-          isProofImage ? (
-            <a href={order.paymentProofPath} target="_blank" rel="noopener noreferrer">
-              <div className="relative mt-3 h-64 w-64 overflow-hidden border border-line">
-                <Image src={order.paymentProofPath} alt="Payment proof" fill className="object-contain" />
-              </div>
-            </a>
-          ) : (
-            <a
-              href={order.paymentProofPath}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-block text-gold hover:underline"
-            >
-              View uploaded PDF
-            </a>
-          )
-        ) : (
-          <p className="mt-3 text-sm text-ivory-dim">
-            {paymentMethod === "cash"
-              ? "Not applicable — payment is collected in cash on delivery."
-              : "No proof uploaded yet."}
+      <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2">
+        <div>
+          <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Payment</h2>
+          <p className="mt-3 text-sm text-ivory">
+            {paymentMethod === "cash" ? "Cash on delivery" : "Bank transfer"}
           </p>
-        )}
+        </div>
+
+        <div>
+          <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Payment Proof</h2>
+          {order.paymentProofPath ? (
+            isProofImage ? (
+              <a href={order.paymentProofPath} target="_blank" rel="noopener noreferrer">
+                <div className="relative mt-3 h-48 w-48 overflow-hidden border border-line">
+                  <Image src={order.paymentProofPath} alt="Payment proof" fill className="object-contain" />
+                </div>
+              </a>
+            ) : (
+              <a
+                href={order.paymentProofPath}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-block font-mono text-sm text-gold-deep hover:underline"
+              >
+                View uploaded PDF
+              </a>
+            )
+          ) : (
+            <p className="mt-3 text-sm text-ivory-dim">
+              {paymentMethod === "cash"
+                ? "Not applicable — payment is collected in cash on delivery."
+                : "No proof uploaded yet."}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

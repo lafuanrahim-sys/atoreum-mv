@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter, Montserrat, Pinyon_Script } from "next/font/google";
+import { Playfair_Display, Inter, Montserrat, Pinyon_Script, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/ui/SmoothScroll";
 import Header from "@/components/layout/Header";
@@ -40,6 +40,16 @@ const pinyonScript = Pinyon_Script({
   display: "swap",
 });
 
+// JetBrains Mono — tabular figures for the admin dashboard's ledger/report
+// typography (revenue, order counts, prices). Reserved for the dashboard;
+// the storefront keeps its serif/sans pairing untouched.
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Atoreum MV — Lebelage launch in the Maldives",
   description:
@@ -53,7 +63,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${playfair.variable} ${inter.variable} ${montserrat.variable} ${pinyonScript.variable} antialiased`}>
+      <body className={`${playfair.variable} ${inter.variable} ${montserrat.variable} ${pinyonScript.variable} ${jetbrainsMono.variable} antialiased`}>
         <a href="#main" className="skip-link">
           Skip to content
         </a>
