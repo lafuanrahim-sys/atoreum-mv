@@ -889,8 +889,20 @@ export default function LogoOriginSequence() {
             from out-of-flow absolute children, it would collapse to 0. h-40
             comfortably fits the longer of the two lines at the mobile font
             size. From md up this reverts to the exact original narrow
-            side-column treatment. */}
-        <div className="relative z-10 flex h-40 w-full shrink-0 items-center justify-center px-4 text-center md:h-36 md:w-36 md:items-center md:justify-start md:px-0 md:text-left lg:h-48 lg:w-48 xl:h-64 xl:w-64 2xl:h-80 2xl:w-80">
+            side-column treatment.
+
+            Below md this box is ALSO pulled out of motionRoot's centering
+            flex flow via `absolute` — it used to sit in-flow as a sibling of
+            the stage+CTA group, which meant motionRoot's `justify-center`
+            was centering the *combined* height of both, so this box's
+            reserved h-40 (present even when both caption lines are opacity-0
+            between scenes) pushed the actually-visible stage up above true
+            screen center. Anchored to the bottom of motionRoot instead,
+            comfortably clear of the centered stage above it at every scroll
+            position (the stage's own max height is well under half the
+            section height). From md up this returns to a normal in-flow
+            flex sibling, unchanged from the original side-column design. */}
+        <div className="absolute inset-x-0 bottom-6 z-10 flex h-40 w-full shrink-0 items-center justify-center px-4 text-center md:relative md:inset-auto md:bottom-auto md:h-36 md:w-36 md:items-center md:justify-start md:px-0 md:text-left lg:h-48 lg:w-48 xl:h-64 xl:w-64 2xl:h-80 2xl:w-80">
           <div ref={flowerTextContainerRef} className="pointer-events-none absolute inset-0 flex items-center justify-center md:justify-start">
             <TypedLine text={FLOWER_TEXT} lineRef={flowerTextLineRef} className={CAPTION_TEXT_CLASS} />
           </div>
