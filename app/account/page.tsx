@@ -53,10 +53,11 @@ export default async function AccountPage({
   // it survives the shipping-form email differing from the account's login
   // email. Falls back to email match for orders placed before userId
   // existed, or by a guest checkout later claimed by this account's email.
-  const myOrders = getAllOrders().filter(
+  const [allOrders, allProducts] = await Promise.all([getAllOrders(), getAllProducts()]);
+  const myOrders = allOrders.filter(
     (o) => o.userId === user.id || o.customer.email.toLowerCase() === user.email.toLowerCase()
   );
-  const favoriteProducts = getAllProducts().filter((p) => user.favorites.includes(p.id));
+  const favoriteProducts = allProducts.filter((p) => user.favorites.includes(p.id));
 
   // Fetched only when the Boli tab is active (or an error is hit) — no
   // point calling out to Supabase on every account-page load. Boli not

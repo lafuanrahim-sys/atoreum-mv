@@ -27,14 +27,14 @@ async function runBoliHook(orderId: string, previousStatus: OrderStatus, nextSta
   if (previousStatus === nextStatus) return; // no real transition — nothing to do
 
   try {
-    const order = getOrderById(orderId);
+    const order = await getOrderById(orderId);
     if (!order) return;
 
     // userId (set at checkout from the session) is authoritative — it
     // survives the shipping-form email differing from the account's login
     // email. Falls back to email match for orders placed before userId
     // existed.
-    const user = (order.userId ? getUserById(order.userId) : null) ?? getUserByEmail(order.customer.email);
+    const user = (order.userId ? await getUserById(order.userId) : null) ?? (await getUserByEmail(order.customer.email));
     if (!user) return; // guest checkout, no account — Boli is account-only
 
     if (nextStatus === "Completed" && previousStatus !== "Completed") {
@@ -62,8 +62,8 @@ export async function changeOrderStatus(orderId: string, status: OrderStatus) {
   const user = await getCurrentUser();
   if (!user || !isAdminRole(user.role)) redirect("/login");
 
-  const previous = getOrderById(orderId);
-  updateOrderStatus(orderId, status);
+  const previous = await getOrderById(orderId);
+  await updateOrderStatus(orderId, status);
   if (previous) await runBoliHook(orderId, previous.status, status);
 
   revalidatePath("/dashboard/orders");

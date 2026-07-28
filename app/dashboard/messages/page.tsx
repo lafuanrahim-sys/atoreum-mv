@@ -16,7 +16,7 @@ export default async function DashboardMessagesPage({
   const { view = "inbox" } = await searchParams;
   const showArchived = view === "archived";
 
-  const all = listMessages();
+  const all = await listMessages();
   const inbox = all.filter((m) => m.status !== "archived");
   const archived = all.filter((m) => m.status === "archived");
   const messages = showArchived ? archived : inbox;

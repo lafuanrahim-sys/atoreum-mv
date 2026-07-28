@@ -24,7 +24,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const product = getProductById(id);
+  const product = await getProductById(id);
   if (!product) return { title: "Product not found — Atoreum MV" };
   return {
     title: `${product.name} — Atoreum MV`,
@@ -41,14 +41,16 @@ export default async function ProductDetailPage({
 }) {
   const { id } = await params;
   const { review: reviewFlag } = await searchParams;
-  const product = getProductById(id);
+  const product = await getProductById(id);
   if (!product) notFound();
 
-  const related = getRelatedProducts(product.category, product.id, 3);
-  const reviews = listApprovedReviews(product.id);
-  const ratings = getRatingSummaries();
-  const user = await getCurrentUser();
-  const canReview = !!user && hasCompletedPurchase(user.email, product.id);
+  const [related, reviews, ratings, user] = await Promise.all([
+    getRelatedProducts(product.category, product.id, 3),
+    listApprovedReviews(product.id),
+    getRatingSummaries(),
+    getCurrentUser(),
+  ]);
+  const canReview = !!user && (await hasCompletedPurchase(user.email, product.id));
 
   return (
     <div className="bg-ink pt-10 pb-28 md:pt-14">

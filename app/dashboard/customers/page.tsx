@@ -27,8 +27,7 @@ export default async function DashboardCustomersPage({
   const { page: pageParam = "1", sort = "joined-desc" } = await searchParams;
   const me = await getCurrentUser();
   const isSuperAdmin = me?.role === "superadmin";
-  const users = listUsers();
-  const orders = getAllOrders();
+  const [users, orders] = await Promise.all([listUsers(), getAllOrders()]);
 
   const statsFor = (email: string) => {
     const theirs = orders.filter(

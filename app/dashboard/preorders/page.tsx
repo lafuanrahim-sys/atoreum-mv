@@ -11,8 +11,8 @@ function formatPrice(price: number, currency: string) {
  * They're reserved but not yet confirmed sales, so they get their own queue
  * separate from the full order list.
  */
-export default function DashboardPreOrdersPage() {
-  const preorders = getAllOrders().filter((o) => o.status === "Pending Verification");
+export default async function DashboardPreOrdersPage() {
+  const preorders = (await getAllOrders()).filter((o) => o.status === "Pending Verification");
 
   return (
     <div>

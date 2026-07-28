@@ -13,9 +13,8 @@ export const metadata: Metadata = {
     "Discover Atoreum MV's curated Lebelage launch collection for the Maldives.",
 };
 
-export default function ProductsPage() {
-  const products = getAllProducts();
-  const ratings = getRatingSummaries();
+export default async function ProductsPage() {
+  const [products, ratings] = await Promise.all([getAllProducts(), getRatingSummaries()]);
 
   return (
     <div className="bg-ink">

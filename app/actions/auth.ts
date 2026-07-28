@@ -1,35 +1,29 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import {
-  USER_SESSION_COOKIE,
-  USER_SESSION_MAX_AGE_SECONDS,
-  createUserSessionToken,
-  isAdminRole,
-  type UserRole,
-} from "@/lib/auth/userSession";
+import { USER_SESSION_COOKIE, isAdminRole, type UserRole } from "@/lib/auth/userSession";
 import {
   changeUserPassword,
   createUser,
   deleteUser,
+  issueVerificationToken,
   setUserRole,
   toggleUserFavorite,
   updateUserName,
   verifyCredentials,
 } from "@/lib/data/users.server";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
+import { setSessionCookie } from "@/lib/auth/setSessionCookie.server";
+import { sendVerificationEmail } from "@/lib/email";
 
-async function setSessionCookie(userId: string, role: UserRole) {
-  const cookieStore = await cookies();
-  cookieStore.set(USER_SESSION_COOKIE, await createUserSessionToken(userId, role), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: USER_SESSION_MAX_AGE_SECONDS,
-  });
+/** Origin to build absolute links (verification emails) against — derived from the request rather than a hardcoded env var, so it's correct in dev, staging, and prod without config. */
+async function getBaseUrl(): Promise<string> {
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "production" ? "https" : "http");
+  return `${proto}://${host}`;
 }
 
 function loginRedirect(params: Record<string, string>): never {
@@ -47,9 +41,12 @@ export async function loginAction(formData: FormData): Promise<void> {
   const password = String(formData.get("password") ?? "");
   const from = String(formData.get("from") ?? "");
 
-  const user = verifyCredentials(email, password);
+  const user = await verifyCredentials(email, password);
   if (!user) {
     loginRedirect({ error: "credentials", mode: "login", ...(from ? { from } : {}) });
+  }
+  if (!user.emailVerified) {
+    loginRedirect({ error: "unverified", mode: "login", email: user.email, ...(from ? { from } : {}) });
   }
 
   await setSessionCookie(user.id, user.role);
@@ -77,14 +74,47 @@ export async function registerAction(formData: FormData): Promise<void> {
     loginRedirect({ error: "password", mode: "register", ...(from ? { from } : {}) });
   }
 
-  const result = createUser({ name, email, password });
+  const result = await createUser({ name, email, password });
   if ("error" in result) {
     loginRedirect({ error: "exists", mode: "register", ...(from ? { from } : {}) });
   }
 
-  await setSessionCookie(result.id, result.role);
-  const safeFrom = from.startsWith("/") && !from.startsWith("//") && !from.startsWith("/dashboard") ? from : null;
-  redirect(safeFrom ?? "/account");
+  // Signed up, not signed in yet — the account can't log in until the
+  // verification link is clicked (see loginAction's emailVerified check),
+  // so there's no session to start here.
+  const verifyUrl = `${await getBaseUrl()}/api/verify-email?token=${result.verificationToken}`;
+  const sendResult = await sendVerificationEmail({
+    to: result.user.email,
+    name: result.user.name,
+    verifyUrl,
+  });
+  if ("error" in sendResult) console.error("Verification email failed to send:", sendResult.error);
+
+  loginRedirect({
+    mode: "login",
+    // Account exists either way — a flaky send shouldn't strand the
+    // signup, they can request a new link from the sign-in screen.
+    notice: "error" in sendResult ? "verify-send-failed" : "verify-sent",
+    email: result.user.email,
+    ...(from ? { from } : {}),
+  });
+}
+
+/** Re-sends the verification email for an account that hasn't clicked its link yet (original lost or expired). */
+export async function resendVerificationAction(formData: FormData): Promise<void> {
+  const email = String(formData.get("email") ?? "");
+  const from = String(formData.get("from") ?? "");
+
+  const result = await issueVerificationToken(email);
+  if (!("error" in result)) {
+    const verifyUrl = `${await getBaseUrl()}/api/verify-email?token=${result.verificationToken}`;
+    const sendResult = await sendVerificationEmail({ to: result.user.email, name: result.user.name, verifyUrl });
+    if ("error" in sendResult) console.error("Verification email failed to send:", sendResult.error);
+  }
+  // Same response whether the account doesn't exist, is already verified,
+  // or the resend just went out — no reason to hand out account-existence
+  // info from a public form.
+  loginRedirect({ mode: "login", notice: "verify-sent", email, ...(from ? { from } : {}) });
 }
 
 export async function logoutAction(): Promise<void> {
@@ -102,7 +132,7 @@ export async function updateProfileAction(formData: FormData): Promise<void> {
   const withParam = (param: string) => `${back}${back.includes("?") ? "&" : "?"}${param}`;
   if (!name) redirect(withParam("profile=invalid"));
 
-  updateUserName(user.id, name);
+  await updateUserName(user.id, name);
   revalidatePath("/account");
   revalidatePath("/dashboard/profile");
   redirect(withParam("profile=saved"));
@@ -119,7 +149,7 @@ export async function changePasswordAction(formData: FormData): Promise<void> {
 
   if (next.length < 8) redirect(withParam("password=short"));
 
-  const result = changeUserPassword(user.id, current, next);
+  const result = await changeUserPassword(user.id, current, next);
   if ("error" in result) redirect(withParam("password=wrong"));
 
   redirect(withParam("password=changed"));
@@ -130,7 +160,7 @@ export async function toggleFavoriteAction(productId: string): Promise<string[] 
   const user = await getCurrentUser();
   if (!user) return { error: "not-logged-in" };
 
-  const favorites = toggleUserFavorite(user.id, productId);
+  const favorites = await toggleUserFavorite(user.id, productId);
   revalidatePath("/account");
   return favorites ?? { error: "not-found" };
 }
@@ -145,7 +175,7 @@ export async function assignRoleAction(userId: string, role: "customer" | "admin
   if (!actor || actor.role !== "superadmin") redirect("/login");
   if (actor.id === userId) return;
 
-  setUserRole(userId, role);
+  await setUserRole(userId, role);
   revalidatePath("/dashboard/customers");
 }
 
@@ -155,7 +185,7 @@ export async function deleteUserAction(userId: string): Promise<void> {
   if (!actor || actor.role !== "superadmin") redirect("/login");
   if (actor.id === userId) return;
 
-  deleteUser(userId);
+  await deleteUser(userId);
   revalidatePath("/dashboard/customers");
   revalidatePath("/dashboard");
 }

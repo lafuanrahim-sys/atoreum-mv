@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/products";
+import { useSession } from "@/lib/auth/SessionContext";
 
 const STORAGE_KEY = "atoreum_recently_viewed";
 
@@ -17,11 +18,27 @@ function formatPrice(price: number, currency: string) {
  * nature (localStorage), so this always starts empty on the server and
  * fills in after mount; the resulting pop-in is expected for a
  * per-visitor personalization strip like this.
+ *
+ * Signed-out visitors get it reset rather than shown: the history is tied
+ * to the account (see TrackRecentlyViewed), so once the session resolves
+ * to logged-out — including someone who just signed out on this same
+ * device — any leftover entries are stale/not theirs and get cleared.
  */
 export default function RecentlyViewedStrip({ products }: { products: Product[] }) {
   const [items, setItems] = useState<Product[]>([]);
+  const { loggedIn } = useSession();
 
   useEffect(() => {
+    if (loggedIn === null) return; // session still resolving — wait rather than flash/clear early
+    if (!loggedIn) {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // Private-browsing / storage-disabled — nothing to reset.
+      }
+      setItems([]);
+      return;
+    }
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       const ids: string[] = raw ? JSON.parse(raw) : [];
@@ -30,7 +47,7 @@ export default function RecentlyViewedStrip({ products }: { products: Product[] 
     } catch {
       // Private-browsing / storage-disabled — just skip the strip.
     }
-  }, [products]);
+  }, [products, loggedIn]);
 
   if (items.length === 0) return null;
 

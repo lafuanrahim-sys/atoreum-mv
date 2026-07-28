@@ -32,7 +32,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <DashboardShell
         user={{ name: user.name, role: user.role }}
         isDark={isDark}
-        unreadMessages={countUnreadMessages()}
+        unreadMessages={await countUnreadMessages()}
         toggleThemeAction={toggleDashboardThemeAction}
         logoutAction={logoutAction}
       >

@@ -79,10 +79,13 @@ function timeOfDay(): "morning" | "afternoon" | "evening" {
 }
 
 export default async function DashboardHomePage() {
-  const user = await getCurrentUser();
-  const orders = getAllOrders();
-  const products = getAllProducts();
-  const customers = listUsers().filter((u) => u.role === "customer");
+  const [user, orders, products, allUsers] = await Promise.all([
+    getCurrentUser(),
+    getAllOrders(),
+    getAllProducts(),
+    listUsers(),
+  ]);
+  const customers = allUsers.filter((u) => u.role === "customer");
 
   const activeOrders = orders.filter((o) => o.status !== "Cancelled");
   const totalRevenue = activeOrders.reduce((sum, o) => sum + o.subtotal, 0);

@@ -18,7 +18,7 @@ export default async function DashboardProductsPage({
   searchParams: Promise<{ q?: string; category?: string; page?: string }>;
 }) {
   const { q = "", category = "", page: pageParam = "1" } = await searchParams;
-  const all = getAllProducts();
+  const all = await getAllProducts();
 
   const filtered = all.filter((p) => {
     const matchesQuery = q ? p.name.toLowerCase().includes(q.toLowerCase()) : true;

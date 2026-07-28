@@ -71,3 +71,7 @@ next-env.d.ts
 # logs, screenshots) — not project source.
 .dev-server.log
 .playwright-mcp/
+
+.vercel
+.env*
+!.env.example

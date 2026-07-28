@@ -1,42 +1,73 @@
-import fs from "fs";
-import path from "path";
+import { pool } from "@/lib/db";
 import type { Order, OrderCustomer, OrderItem, OrderStatus, PaymentMethod } from "@/lib/types";
 
 /**
- * File-based order store — same approach and same limitation as
- * lib/data/products.server.ts (JSON-on-disk, not safe for serverless
- * deployment as-is). Orders additionally contain customer PII, so treat this
- * file (and any real DB it's replaced with) as sensitive: it must never be
- * served from a public route or committed with real customer data.
+ * Postgres-backed order store (see lib/data/schema.sql) — replaces the
+ * original JSON-on-disk version, which didn't persist on Vercel's
+ * read-only/ephemeral serverless filesystem. Same exported functions as
+ * before, so every caller elsewhere in the app is unchanged (beyond now
+ * needing `await`, since every query here is inherently async).
  */
 
-const DATA_PATH = path.join(process.cwd(), "data", "orders.json");
+type OrderRow = {
+  id: string;
+  order_number: string;
+  items: OrderItem[];
+  user_id: string | null;
+  subtotal: string;
+  currency: string;
+  customer: OrderCustomer;
+  payment_method: string | null;
+  payment_proof_path: string | null;
+  status: string;
+  boli_redeemed: string | null;
+  boli_discount_amount: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
-function readAll(): Order[] {
-  const raw = fs.readFileSync(DATA_PATH, "utf-8");
-  return JSON.parse(raw) as Order[];
+function rowToOrder(row: OrderRow): Order {
+  return {
+    id: row.id,
+    orderNumber: row.order_number,
+    items: row.items,
+    ...(row.user_id ? { userId: row.user_id } : {}),
+    subtotal: Number(row.subtotal),
+    currency: row.currency as Order["currency"],
+    customer: row.customer,
+    ...(row.payment_method ? { paymentMethod: row.payment_method as PaymentMethod } : {}),
+    paymentProofPath: row.payment_proof_path,
+    status: row.status as OrderStatus,
+    ...(row.boli_redeemed !== null
+      ? { boliRedeemed: Number(row.boli_redeemed), boliDiscountAmount: Number(row.boli_discount_amount) }
+      : {}),
+    createdAt: new Date(row.created_at).toISOString(),
+    updatedAt: new Date(row.updated_at).toISOString(),
+  };
 }
 
-function writeAll(orders: Order[]) {
-  fs.writeFileSync(DATA_PATH, JSON.stringify(orders, null, 2) + "\n", "utf-8");
+export async function getAllOrders(): Promise<Order[]> {
+  const { rows } = await pool().query<OrderRow>("select * from orders order by created_at desc");
+  return rows.map(rowToOrder);
 }
 
-export function getAllOrders(): Order[] {
-  return readAll().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export async function getOrderById(id: string): Promise<Order | null> {
+  const { rows } = await pool().query<OrderRow>("select * from orders where id = $1", [id]);
+  return rows[0] ? rowToOrder(rows[0]) : null;
 }
 
-export function getOrderById(id: string): Order | null {
-  return readAll().find((o) => o.id === id) ?? null;
-}
-
-function nextOrderNumber(existing: Order[]): string {
+async function nextOrderNumber(): Promise<string> {
   const today = new Date();
   const datePart = today.toISOString().slice(0, 10).replace(/-/g, "");
-  const todayCount = existing.filter((o) => o.orderNumber.includes(datePart)).length;
+  const { rows } = await pool().query<{ count: string }>(
+    "select count(*)::text as count from orders where order_number like $1",
+    [`%${datePart}%`]
+  );
+  const todayCount = Number(rows[0]?.count ?? 0);
   return `ATM-${datePart}-${String(todayCount + 1).padStart(4, "0")}`;
 }
 
-export function createOrder(params: {
+export async function createOrder(params: {
   items: OrderItem[];
   subtotal: number;
   currency: Order["currency"];
@@ -56,51 +87,58 @@ export function createOrder(params: {
    * usual auto-generated id when omitted.
    */
   id?: string;
-}): Order {
-  const all = readAll();
-  const now = new Date().toISOString();
-  const order: Order = {
-    id: params.id ?? `ord-${Date.now().toString(36)}`,
-    orderNumber: nextOrderNumber(all),
-    items: params.items,
-    ...(params.userId ? { userId: params.userId } : {}),
-    subtotal: params.subtotal,
-    currency: params.currency,
-    customer: params.customer,
-    paymentMethod: params.paymentMethod,
-    paymentProofPath: params.paymentProofPath,
-    ...(params.boliRedeemed ? { boliRedeemed: params.boliRedeemed, boliDiscountAmount: params.boliDiscountAmount } : {}),
-    // Cash orders have no transfer to verify — they're confirmed on the spot
-    // and settle on delivery. Transfers wait for the proof to be checked.
-    status: params.paymentMethod === "cash" ? "Confirmed" : "Pending Verification",
-    createdAt: now,
-    updatedAt: now,
-  };
-  all.push(order);
-  writeAll(all);
-  return order;
+}): Promise<Order> {
+  const id = params.id ?? `ord-${Date.now().toString(36)}`;
+  const orderNumber = await nextOrderNumber();
+  // Cash orders have no transfer to verify — they're confirmed on the spot
+  // and settle on delivery. Transfers wait for the proof to be checked.
+  const status: OrderStatus = params.paymentMethod === "cash" ? "Confirmed" : "Pending Verification";
+
+  const { rows } = await pool().query<OrderRow>(
+    `insert into orders
+      (id, order_number, items, user_id, subtotal, currency, customer, payment_method, payment_proof_path, status, boli_redeemed, boli_discount_amount)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+     returning *`,
+    [
+      id,
+      orderNumber,
+      JSON.stringify(params.items),
+      params.userId ?? null,
+      params.subtotal,
+      params.currency,
+      JSON.stringify(params.customer),
+      params.paymentMethod,
+      params.paymentProofPath,
+      status,
+      params.boliRedeemed ?? null,
+      params.boliRedeemed ? (params.boliDiscountAmount ?? null) : null,
+    ]
+  );
+  return rowToOrder(rows[0]);
 }
 
 /**
  * True when this email has a COMPLETED order containing the product —
  * the bar a customer must clear before they may review it.
  */
-export function hasCompletedPurchase(email: string, productId: string): boolean {
+export async function hasCompletedPurchase(email: string, productId: string): Promise<boolean> {
   const normalized = email.trim().toLowerCase();
-  return readAll().some(
-    (o) =>
-      o.status === "Completed" &&
-      o.customer.email.toLowerCase() === normalized &&
-      o.items.some((i) => i.productId === productId)
+  const { rows } = await pool().query<{ exists: boolean }>(
+    `select exists(
+       select 1 from orders
+       where status = 'Completed'
+         and lower(customer ->> 'email') = $1
+         and items @> jsonb_build_array(jsonb_build_object('productId', $2::text))
+     ) as exists`,
+    [normalized, productId]
   );
+  return rows[0]?.exists ?? false;
 }
 
-export function updateOrderStatus(id: string, status: OrderStatus): Order | null {
-  const all = readAll();
-  const index = all.findIndex((o) => o.id === id);
-  if (index === -1) return null;
-
-  all[index] = { ...all[index], status, updatedAt: new Date().toISOString() };
-  writeAll(all);
-  return all[index];
+export async function updateOrderStatus(id: string, status: OrderStatus): Promise<Order | null> {
+  const { rows } = await pool().query<OrderRow>(
+    "update orders set status = $2, updated_at = now() where id = $1 returning *",
+    [id, status]
+  );
+  return rows[0] ? rowToOrder(rows[0]) : null;
 }

@@ -10,13 +10,13 @@ import PageHeader from "@/components/dashboard/PageHeader";
  * Review moderation: customer reviews land here as "pending" and only show
  * on the storefront once approved.
  */
-export default function DashboardReviewsPage() {
-  const reviews = listAllReviews();
+export default async function DashboardReviewsPage() {
+  const reviews = await listAllReviews();
   const pending = reviews.filter((r) => r.status === "pending");
   const approved = reviews.filter((r) => r.status === "approved");
 
-  const Row = ({ review }: { review: (typeof reviews)[number] }) => {
-    const product = getProductById(review.productId);
+  const Row = async ({ review }: { review: (typeof reviews)[number] }) => {
+    const product = await getProductById(review.productId);
     return (
       <li className="border-b border-line py-6 first:pt-0">
         <div className="flex flex-wrap items-center justify-between gap-3">

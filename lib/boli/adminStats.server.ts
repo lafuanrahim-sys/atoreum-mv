@@ -154,16 +154,18 @@ export async function getTopGameEarners(limit = 20): Promise<TopGameEarner[]> {
     [limit]
   );
 
-  return rows.map((row) => {
-    const user = getUserById(row.user_id);
-    return {
-      userId: row.user_id,
-      name: user?.name ?? "Unknown",
-      email: user?.email ?? row.user_id,
-      gameBoli: Number(row.game_boli),
-      deviceCollisionCount: Number(row.collision_count),
-    };
-  });
+  return Promise.all(
+    rows.map(async (row) => {
+      const user = await getUserById(row.user_id);
+      return {
+        userId: row.user_id,
+        name: user?.name ?? "Unknown",
+        email: user?.email ?? row.user_id,
+        gameBoli: Number(row.game_boli),
+        deviceCollisionCount: Number(row.collision_count),
+      };
+    })
+  );
 }
 
 export type FraudFlagRow = {
@@ -187,19 +189,21 @@ export async function getOpenFraudFlags(): Promise<FraudFlagRow[]> {
     created_at: string;
   }>(`select id, user_id, flag_type, detail, status, created_at from boli_fraud_flags where status = 'open' order by created_at desc`);
 
-  return rows.map((row) => {
-    const user = getUserById(row.user_id);
-    return {
-      id: row.id,
-      userId: row.user_id,
-      userName: user?.name ?? "Unknown",
-      userEmail: user?.email ?? row.user_id,
-      flagType: row.flag_type,
-      detail: row.detail,
-      status: row.status,
-      createdAt: row.created_at,
-    };
-  });
+  return Promise.all(
+    rows.map(async (row) => {
+      const user = await getUserById(row.user_id);
+      return {
+        id: row.id,
+        userId: row.user_id,
+        userName: user?.name ?? "Unknown",
+        userEmail: user?.email ?? row.user_id,
+        flagType: row.flag_type,
+        detail: row.detail,
+        status: row.status,
+        createdAt: row.created_at,
+      };
+    })
+  );
 }
 
 export type BoliAlert = { severity: "warning" | "critical"; message: string };

@@ -17,16 +17,22 @@ export default async function DashboardSearchPage({
 }) {
   const { q = "" } = await searchParams;
   const query = q.trim().toLowerCase();
-  const isSuperAdmin = (await getCurrentUser())?.role === "superadmin";
+  const [currentUser, allProducts, allOrders, allUsers] = await Promise.all([
+    getCurrentUser(),
+    query ? getAllProducts() : Promise.resolve([]),
+    query ? getAllOrders() : Promise.resolve([]),
+    query ? listUsers() : Promise.resolve([]),
+  ]);
+  const isSuperAdmin = currentUser?.role === "superadmin";
 
   const products = query
-    ? getAllProducts()
+    ? allProducts
         .filter((p) => p.name.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query))
         .slice(0, 20)
     : [];
 
   const orders = query
-    ? getAllOrders()
+    ? allOrders
         .filter(
           (o) =>
             o.orderNumber.toLowerCase().includes(query) ||
@@ -37,7 +43,7 @@ export default async function DashboardSearchPage({
     : [];
 
   const customers = query
-    ? listUsers()
+    ? allUsers
         .filter((u) => u.name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query))
         .slice(0, 20)
     : [];

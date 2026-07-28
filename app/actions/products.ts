@@ -1,6 +1,5 @@
 "use server";
 
-import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
@@ -12,6 +11,7 @@ import {
 } from "@/lib/data/products.server";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { isAdminRole } from "@/lib/auth/userSession";
+import { uploadPublicFile, PRODUCT_IMAGES_BUCKET } from "@/lib/storage";
 import type { Category, ProductInput, StockStatus } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
 
@@ -21,7 +21,6 @@ async function requireAdmin() {
   if (!user || !isAdminRole(user.role)) redirect("/login");
 }
 
-const IMAGE_DIR = path.join(process.cwd(), "public", "images", "products");
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
 
@@ -29,7 +28,6 @@ async function saveUploadedImages(formData: FormData): Promise<string[]> {
   const files = formData.getAll("images").filter((f): f is File => f instanceof File && f.size > 0);
   if (files.length === 0) return [];
 
-  await fs.mkdir(IMAGE_DIR, { recursive: true });
   const paths: string[] = [];
 
   for (const file of files) {
@@ -42,8 +40,13 @@ async function saveUploadedImages(formData: FormData): Promise<string[]> {
     const ext = path.extname(file.name) || "";
     const safeName = `${Date.now()}-${crypto.randomUUID()}${ext}`;
     const bytes = Buffer.from(await file.arrayBuffer());
-    await fs.writeFile(path.join(IMAGE_DIR, safeName), bytes);
-    paths.push(`/images/products/${safeName}`);
+    const url = await uploadPublicFile({
+      bucket: PRODUCT_IMAGES_BUCKET,
+      path: safeName,
+      bytes,
+      contentType: file.type,
+    });
+    paths.push(url);
   }
 
   return paths;

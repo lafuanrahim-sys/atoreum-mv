@@ -42,7 +42,7 @@ export default async function CheckoutPage() {
 
   return (
     <CheckoutClient
-      bankDetails={getSettings()}
+      bankDetails={await getSettings()}
       boli={boli}
       defaultContact={user ? { name: user.name, email: user.email } : null}
     />

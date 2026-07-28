@@ -11,16 +11,17 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const product = getProductById(id);
+  const product = await getProductById(id);
   if (!product) notFound();
 
   const boundAction = updateProductAction.bind(null, id);
+  const brands = await listBrands();
 
   return (
     <div>
       <PageHeader eyebrow="Inventory" title="Edit Product" description={product.name} />
       <div className="mt-10">
-        <ProductForm product={product} action={boundAction} brands={listBrands()} />
+        <ProductForm product={product} action={boundAction} brands={brands} />
       </div>
     </div>
   );

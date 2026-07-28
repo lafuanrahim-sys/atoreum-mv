@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -20,6 +21,19 @@ declare global {
  * scroll-linked animation).
  */
 export default function SmoothScroll({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  // Next's own "scroll to top on navigation" fights Lenis for the same
+  // reason any native scrollTo does (see the comment below): Lenis's RAF
+  // loop still has last page's scroll as its target and silently restores
+  // it on the very next tick, so a Link click could land mid-page instead
+  // of at the top. Re-target Lenis itself on every route change — keyed on
+  // pathname only, not search params, so in-page filter/query updates
+  // (e.g. ProductGrid) don't get yanked back to the top.
+  useEffect(() => {
+    window.__lenis?.scrollTo(0, { immediate: true });
+  }, [pathname]);
+
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,

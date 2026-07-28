@@ -1,19 +1,18 @@
 "use server";
 
-import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { createOrder } from "@/lib/data/orders.server";
 import { notifyNewOrder } from "@/lib/notify";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { parseBoliAmount, redeemForOrder } from "@/lib/boli/ledger.server";
+import { uploadPublicFile, PAYMENT_PROOFS_BUCKET } from "@/lib/storage";
 import type { OrderItem, PaymentMethod } from "@/lib/types";
 
 export type CheckoutResult =
   | { ok: true; orderId: string }
   | { ok: false; error: string };
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "payment-proofs");
 const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8MB
 // HEIC/HEIF included for iPhone camera photos; some browsers report an empty
 // MIME type for them, so the extension check below is the real gate.
@@ -66,12 +65,15 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
       return { ok: false, error: "Payment proof must be a JPG, PNG, WEBP, HEIC, or PDF." };
     }
 
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
     const ext = path.extname(proofFile.name) || "";
     const safeName = `${Date.now()}-${crypto.randomUUID()}${ext}`;
     const bytes = Buffer.from(await proofFile.arrayBuffer());
-    await fs.writeFile(path.join(UPLOAD_DIR, safeName), bytes);
-    paymentProofPath = `/uploads/payment-proofs/${safeName}`;
+    paymentProofPath = await uploadPublicFile({
+      bucket: PAYMENT_PROOFS_BUCKET,
+      path: safeName,
+      bytes,
+      contentType: proofFile.type || "application/octet-stream",
+    });
   }
 
   // Resolved once, unconditionally — not just when redeeming Boli. Account
@@ -115,7 +117,7 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
     boliDiscountMvr = result.mvrValue;
   }
 
-  const order = createOrder({
+  const order = await createOrder({
     id: orderId,
     items,
     subtotal,

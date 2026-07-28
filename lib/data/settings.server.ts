@@ -1,17 +1,15 @@
-import fs from "fs";
-import path from "path";
+import { pool } from "@/lib/db";
 
 /**
- * Store settings — currently the bank-transfer details shown at checkout,
- * editable from Dashboard → Settings (previously hardcoded via env vars in
- * lib/bankDetails.ts, which now only supplies the first-run seed).
+ * Postgres-backed store settings (see lib/data/schema.sql, the
+ * `store_settings` singleton table) — replaces the original JSON-on-disk
+ * version, which didn't persist on Vercel's read-only/ephemeral serverless
+ * filesystem. Same exported functions as before (now async).
  *
- * Same Supabase-swappable pattern as the other stores: JSON-on-disk,
- * server-only, auto-seeded, all access through the exported functions so a
- * later migration touches only this file.
+ * Currently just the bank-transfer details shown at checkout, editable from
+ * Dashboard → Settings (previously hardcoded via env vars in
+ * lib/bankDetails.ts, which now only supplies the first-run seed).
  */
-
-const DATA_PATH = path.join(process.cwd(), "data", "settings.json");
 
 export type StoreSettings = {
   bankName: string;
@@ -20,6 +18,22 @@ export type StoreSettings = {
   swift: string;
 };
 
+type SettingsRow = {
+  bank_name: string;
+  account_name: string;
+  account_number: string;
+  swift: string;
+};
+
+function rowToSettings(row: SettingsRow): StoreSettings {
+  return {
+    bankName: row.bank_name,
+    accountName: row.account_name,
+    accountNumber: row.account_number,
+    swift: row.swift,
+  };
+}
+
 const SEED_SETTINGS: StoreSettings = {
   bankName: process.env.NEXT_PUBLIC_BANK_NAME || "Bank of Maldives (placeholder)",
   accountName: process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME || "Atoreum MV Pvt Ltd (placeholder)",
@@ -27,14 +41,23 @@ const SEED_SETTINGS: StoreSettings = {
   swift: process.env.NEXT_PUBLIC_BANK_SWIFT || "MALBMVMV (placeholder)",
 };
 
-export function getSettings(): StoreSettings {
-  if (!fs.existsSync(DATA_PATH)) {
-    saveSettings(SEED_SETTINGS);
-  }
-  const raw = fs.readFileSync(DATA_PATH, "utf-8");
-  return { ...SEED_SETTINGS, ...(JSON.parse(raw) as Partial<StoreSettings>) };
+export async function getSettings(): Promise<StoreSettings> {
+  const { rows } = await pool().query<SettingsRow>("select * from store_settings where id = true");
+  if (rows[0]) return rowToSettings(rows[0]);
+  await saveSettings(SEED_SETTINGS);
+  return SEED_SETTINGS;
 }
 
-export function saveSettings(settings: StoreSettings) {
-  fs.writeFileSync(DATA_PATH, JSON.stringify(settings, null, 2) + "\n", "utf-8");
+export async function saveSettings(settings: StoreSettings): Promise<void> {
+  await pool().query(
+    `insert into store_settings (id, bank_name, account_name, account_number, swift, updated_at)
+     values (true, $1, $2, $3, $4, now())
+     on conflict (id) do update set
+       bank_name = excluded.bank_name,
+       account_name = excluded.account_name,
+       account_number = excluded.account_number,
+       swift = excluded.swift,
+       updated_at = now()`,
+    [settings.bankName, settings.accountName, settings.accountNumber, settings.swift]
+  );
 }

@@ -20,8 +20,7 @@ export default async function DashboardSettingsPage({
   searchParams: Promise<{ settings?: string; brand?: string }>;
 }) {
   const { settings: settingsFlag = "", brand: brandFlag = "" } = await searchParams;
-  const settings = getSettings();
-  const brands = listBrands();
+  const [settings, brands] = await Promise.all([getSettings(), listBrands()]);
 
   return (
     <div className="max-w-4xl">

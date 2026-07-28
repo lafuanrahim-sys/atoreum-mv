@@ -19,13 +19,13 @@ import { PURCHASE_EARN_PER_MVR } from "../lib/boli/config";
  * Run with `npm run boli:seed`.
  */
 async function main() {
-  const orders = getAllOrders().filter((o) => o.status === "Completed");
+  const orders = (await getAllOrders()).filter((o) => o.status === "Completed");
   let credited = 0;
   let skippedNoAccount = 0;
   let skippedZero = 0;
 
   for (const order of orders) {
-    const user = (order.userId ? getUserById(order.userId) : null) ?? getUserByEmail(order.customer.email);
+    const user = (order.userId ? await getUserById(order.userId) : null) ?? (await getUserByEmail(order.customer.email));
     if (!user) {
       skippedNoAccount++;
       continue;

@@ -44,7 +44,7 @@ export async function toggleDashboardThemeAction(): Promise<void> {
 export async function addBrandAction(formData: FormData): Promise<void> {
   await requireAdmin();
   const name = String(formData.get("name") ?? "");
-  const result = addBrand(name);
+  const result = await addBrand(name);
   revalidatePath("/dashboard/settings");
   if ("error" in result) {
     redirect(`/dashboard/settings?brand=exists`);
@@ -54,7 +54,7 @@ export async function addBrandAction(formData: FormData): Promise<void> {
 
 export async function removeBrandAction(name: string): Promise<void> {
   await requireAdmin();
-  removeBrand(name);
+  await removeBrand(name);
   revalidatePath("/dashboard/settings");
 }
 
@@ -62,7 +62,7 @@ export async function removeBrandAction(name: string): Promise<void> {
 
 export async function updateSettingsAction(formData: FormData): Promise<void> {
   await requireAdmin();
-  saveSettings({
+  await saveSettings({
     bankName: String(formData.get("bankName") ?? "").trim(),
     accountName: String(formData.get("accountName") ?? "").trim(),
     accountNumber: String(formData.get("accountNumber") ?? "").trim(),
@@ -85,7 +85,7 @@ export async function submitReviewAction(formData: FormData): Promise<void> {
   const productId = String(formData.get("productId") ?? "");
   if (!user) redirect(`/login?from=${encodeURIComponent(`/products/${productId}`)}`);
 
-  if (!hasCompletedPurchase(user.email, productId)) {
+  if (!(await hasCompletedPurchase(user.email, productId))) {
     redirect(`/products/${productId}?review=not-purchased`);
   }
 
@@ -95,7 +95,7 @@ export async function submitReviewAction(formData: FormData): Promise<void> {
     redirect(`/products/${productId}?review=invalid`);
   }
 
-  createReview({
+  await createReview({
     productId,
     userId: user.id,
     userName: user.name,
@@ -109,13 +109,13 @@ export async function submitReviewAction(formData: FormData): Promise<void> {
 
 export async function approveReviewAction(id: string): Promise<void> {
   await requireAdmin();
-  const review = setReviewStatus(id, "approved");
+  const review = await setReviewStatus(id, "approved");
   revalidatePath("/dashboard/reviews");
   if (review) revalidatePath(`/products/${review.productId}`);
 }
 
 export async function deleteReviewAction(id: string): Promise<void> {
   await requireAdmin();
-  deleteReview(id);
+  await deleteReview(id);
   revalidatePath("/dashboard/reviews");
 }

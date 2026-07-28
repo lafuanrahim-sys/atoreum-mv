@@ -15,7 +15,7 @@ export default async function DashboardOrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const order = getOrderById(id);
+  const order = await getOrderById(id);
   if (!order) notFound();
 
   const isProofImage = order.paymentProofPath && !order.paymentProofPath.endsWith(".pdf");

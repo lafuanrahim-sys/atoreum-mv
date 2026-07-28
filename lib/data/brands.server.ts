@@ -1,18 +1,14 @@
-import fs from "fs";
-import path from "path";
+import { pool } from "@/lib/db";
 
 /**
- * File-based brand list — the set of brands the product form's dropdown
- * offers, manageable from Dashboard → Settings.
+ * Postgres-backed brand list (see lib/data/schema.sql) — replaces the
+ * original JSON-on-disk version, which didn't persist on Vercel's
+ * read-only/ephemeral serverless filesystem. Same exported functions as
+ * before (now async).
  *
- * Same pattern as the other stores (products/orders/users): JSON-on-disk,
- * server-only, auto-seeded on first read, and deliberately contained to
- * this one module so swapping the backing store for Supabase later means
- * reimplementing ONLY the exported functions below (e.g. `supabase
- * .from("brands").select()`), with no changes anywhere else in the app.
+ * The set of brands the product form's dropdown offers, manageable from
+ * Dashboard → Settings.
  */
-
-const DATA_PATH = path.join(process.cwd(), "data", "brands.json");
 
 const SEED_BRANDS = [
   "Lebelage",
@@ -25,36 +21,37 @@ const SEED_BRANDS = [
   "Skin 1004",
 ];
 
-function readAll(): string[] {
-  if (!fs.existsSync(DATA_PATH)) {
-    writeAll(SEED_BRANDS);
+async function ensureSeeded(): Promise<void> {
+  const { rows } = await pool().query<{ count: string }>("select count(*)::text as count from brands");
+  if (Number(rows[0]?.count ?? 0) > 0) return;
+  for (const name of SEED_BRANDS) {
+    await pool().query("insert into brands (name) values ($1) on conflict (name) do nothing", [name]);
   }
-  const raw = fs.readFileSync(DATA_PATH, "utf-8");
-  return JSON.parse(raw) as string[];
 }
 
-function writeAll(brands: string[]) {
-  fs.writeFileSync(DATA_PATH, JSON.stringify(brands, null, 2) + "\n", "utf-8");
+export async function listBrands(): Promise<string[]> {
+  await ensureSeeded();
+  const { rows } = await pool().query<{ name: string }>("select name from brands order by name asc");
+  return rows.map((r) => r.name);
 }
 
-export function listBrands(): string[] {
-  return readAll();
-}
-
-export function addBrand(name: string): string[] | { error: string } {
+export async function addBrand(name: string): Promise<string[] | { error: string }> {
+  await ensureSeeded();
   const trimmed = name.trim();
   if (!trimmed) return { error: "Brand name is required." };
-  const all = readAll();
-  if (all.some((b) => b.toLowerCase() === trimmed.toLowerCase())) {
-    return { error: "That brand already exists." };
-  }
-  const next = [...all, trimmed];
-  writeAll(next);
-  return next;
+  // Case-insensitive check (matches the original JSON-store behavior) — the
+  // `name` primary key alone is case-sensitive, so "COSRX" and "cosrx"
+  // wouldn't collide on the constraint alone.
+  const { rows } = await pool().query<{ exists: boolean }>(
+    "select exists(select 1 from brands where lower(name) = lower($1)) as exists",
+    [trimmed]
+  );
+  if (rows[0]?.exists) return { error: "That brand already exists." };
+  await pool().query("insert into brands (name) values ($1)", [trimmed]);
+  return listBrands();
 }
 
-export function removeBrand(name: string): string[] {
-  const next = readAll().filter((b) => b !== name);
-  writeAll(next);
-  return next;
+export async function removeBrand(name: string): Promise<string[]> {
+  await pool().query("delete from brands where name = $1", [name]);
+  return listBrands();
 }

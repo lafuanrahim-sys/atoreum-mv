@@ -28,7 +28,7 @@ export default async function DashboardOrdersPage({
   searchParams: Promise<{ status?: string; sort?: string; page?: string }>;
 }) {
   const { status = "", sort = "date-desc", page: pageParam = "1" } = await searchParams;
-  const all = getAllOrders();
+  const all = await getAllOrders();
 
   const filtered = status ? all.filter((o) => o.status === status) : all;
 

@@ -24,7 +24,7 @@ export async function submitMessageAction(formData: FormData): Promise<void> {
     redirect("/contact?error=1");
   }
 
-  createMessage({ name, phone, message });
+  await createMessage({ name, phone, message });
   revalidatePath("/dashboard/messages");
   revalidatePath("/dashboard");
   redirect("/contact?sent=1");
@@ -37,12 +37,12 @@ async function requireAdmin() {
 
 export async function setMessageStatusAction(id: string, status: MessageStatus): Promise<void> {
   await requireAdmin();
-  setMessageStatus(id, status);
+  await setMessageStatus(id, status);
   revalidatePath("/dashboard/messages");
 }
 
 export async function deleteMessageAction(id: string): Promise<void> {
   await requireAdmin();
-  deleteMessage(id);
+  await deleteMessage(id);
   revalidatePath("/dashboard/messages");
 }

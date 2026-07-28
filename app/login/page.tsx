@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { loginAction, registerAction } from "@/app/actions/auth";
+import { loginAction, registerAction, resendVerificationAction } from "@/app/actions/auth";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { isAdminRole } from "@/lib/auth/userSession";
 
@@ -15,6 +15,13 @@ const ERROR_MESSAGES: Record<string, string> = {
   invalid: "Please enter your name and a valid email address.",
   password: "Password must be at least 8 characters.",
   exists: "An account with this email already exists. Try signing in instead.",
+  unverified: "Please verify your email before signing in — check your inbox for the link.",
+  "verify-failed": "That verification link is invalid or has expired. Request a new one below.",
+};
+
+const NOTICE_MESSAGES: Record<string, string> = {
+  "verify-sent": "Check your inbox — we've sent a verification link.",
+  "verify-send-failed": "Your account was created, but the verification email couldn't be sent. Try resending it below.",
 };
 
 /**
@@ -24,9 +31,9 @@ const ERROR_MESSAGES: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mode?: string; error?: string; from?: string }>;
+  searchParams: Promise<{ mode?: string; error?: string; notice?: string; email?: string; from?: string }>;
 }) {
-  const { mode = "login", error = "", from = "" } = await searchParams;
+  const { mode = "login", error = "", notice = "", email = "", from = "" } = await searchParams;
   const isRegister = mode === "register";
 
   // Already signed in? Straight to the right home.
@@ -34,6 +41,8 @@ export default async function LoginPage({
   if (user) redirect(isAdminRole(user.role) ? "/dashboard" : "/account");
 
   const errorMessage = ERROR_MESSAGES[error];
+  const noticeMessage = NOTICE_MESSAGES[notice];
+  const needsResend = error === "unverified" || error === "verify-failed";
   const modeHref = (m: string) =>
     `/login?mode=${m}${from ? `&from=${encodeURIComponent(from)}` : ""}`;
 
@@ -77,6 +86,22 @@ export default async function LoginPage({
           </p>
         )}
 
+        {noticeMessage && (
+          <p role="status" className="mt-6 text-sm text-emerald-400">
+            {noticeMessage}
+          </p>
+        )}
+
+        {needsResend && (
+          <form action={resendVerificationAction} className="mt-3">
+            <input type="hidden" name="from" value={from} />
+            <input type="hidden" name="email" value={email} />
+            <button type="submit" className="text-xs uppercase tracking-[0.2em] text-gold hover:underline">
+              Resend verification email{email ? ` to ${email}` : ""}
+            </button>
+          </form>
+        )}
+
         <form action={isRegister ? registerAction : loginAction} className="mt-6 flex flex-col gap-5">
           <input type="hidden" name="from" value={from} />
 
@@ -96,6 +121,7 @@ export default async function LoginPage({
           <label className="flex flex-col gap-2">
             <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">Email</span>
             <input
+              defaultValue={email}
               type="email"
               name="email"
               required
