@@ -741,7 +741,7 @@ export default function LogoOriginSequence() {
           width, gets the real scene below instead. */}
       <div ref={fallbackRef} className="flex h-full w-full flex-col items-center justify-center gap-8 px-6 text-center">
         <div className="max-w-xl space-y-3">
-          <p className="font-script text-3xl text-ivory md:text-5xl">{TITLE_LINE_1}</p>
+          <p className="font-display italic text-3xl text-ivory md:text-5xl">{TITLE_LINE_1}</p>
           <div className="mx-auto h-px w-10 bg-gold/60" />
           <p className="font-montserrat text-base font-light tracking-wide text-ivory-dim md:text-lg">{TITLE_LINE_2}</p>
         </div>
@@ -1054,16 +1054,15 @@ export default function LogoOriginSequence() {
           section starts that far below the true viewport top, so centering
           within the section alone reads visibly low — this pulls the title
           back up to the optical middle of the screen. Line 1 is a plain
-          paragraph (not TypedLine): it's fully pre-revealed anyway, and a
-          connected script rendered as per-character inline-blocks would
-          break its letter joins. */}
+          paragraph (not TypedLine): it's fully pre-revealed anyway, so it
+          doesn't need the per-character reveal machinery. */}
       <div
         ref={titleContainerRef}
         className="pointer-events-none absolute inset-0 z-20 hidden flex-col items-center justify-center gap-6 px-6 pb-24 text-center md:pb-28"
       >
         <p
           ref={titleLine1Ref}
-          className="max-w-5xl font-script text-4xl leading-[1.15] text-ivory md:text-8xl"
+          className="max-w-5xl font-display italic text-4xl leading-[1.15] text-ivory md:text-8xl"
         >
           {TITLE_LINE_1}
         </p>
