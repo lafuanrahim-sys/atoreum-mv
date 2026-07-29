@@ -924,10 +924,24 @@ export default function LogoOriginSequence() {
           />
         </div>
 
+        {/* Below md this is pulled out of the wrapper's flex flow for the
+            same reason the caption box below is (see its own comment): it's
+            opacity-0 until Scene 7, but as a normal flex sibling its
+            reserved height + the gap above it still counted toward the
+            wrapper's total height, which motionRoot's justify-center then
+            centers as a whole -- pushing the actually-visible stage well
+            above true screen center (measured ~30px high on a 390x844
+            viewport; on shorter phones this ate enough of the header's
+            clearance to visibly cut the map scene's top edge). Anchored
+            near the bottom of motionRoot instead, same spot the caption
+            uses -- they're never visible at the same time, so sharing that
+            position is fine, and once the real logo resolves in Scene 7
+            this still reads as "below it". From md up this reverts to the
+            original in-flow placement, unchanged. */}
         <Link
           ref={ctaRef}
           href="/products"
-          className="pointer-events-none rounded-full bg-gold-deep px-6 py-2.5 text-xs tracking-[0.2em] uppercase text-ink opacity-0 transition-colors duration-300 hover:bg-gold-deep/90"
+          className="pointer-events-none absolute inset-x-0 bottom-6 z-10 mx-auto w-fit rounded-full bg-gold-deep px-6 py-2.5 text-xs tracking-[0.2em] uppercase text-ink opacity-0 transition-colors duration-300 hover:bg-gold-deep/90 md:static md:inset-auto md:z-auto md:mx-0 md:w-auto"
         >
           Go to Collections
         </Link>
