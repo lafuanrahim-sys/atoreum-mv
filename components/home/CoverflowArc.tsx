@@ -240,7 +240,7 @@ export default function CoverflowArc() {
   return (
     <section
       ref={sectionRef as React.RefObject<HTMLElement>}
-      className="coverflow-section relative flex h-[100svh] w-full flex-col items-center justify-center overflow-hidden bg-ink px-6 pt-24 pb-16 md:pt-28"
+      className="coverflow-section relative flex w-full flex-col items-center justify-center overflow-hidden bg-ink px-6 pt-24 pb-16 md:h-[100svh] md:pt-28"
     >
       <div className="coverflow-header relative z-10 mb-14 text-center md:mb-20">
         <p className="text-xs tracking-[0.3em] text-gold uppercase">The Edit</p>
