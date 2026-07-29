@@ -845,24 +845,36 @@ export default function LogoOriginSequence() {
                   three have been read. Solid fill (not a hollow ring) so the
                   dot reads as "this is the filled/highlighted atoll", matching
                   the labelBeat's own mapEl opacity bump to 1 at the same beat. */}
+              {/* x1/y1/x2/y2, cx/cy, and x/y below are real 0 defaults, not
+                  omitted -- placeCallout() (in the effect below) sets all of
+                  these via gsap.set(el, {attr:{...}}), and GSAP's context
+                  revert (on effect cleanup, e.g. when Next.js discards a
+                  prefetched/pre-rendered instance of this route) restores
+                  each attr to whatever it records as the pre-tween value.
+                  With no JSX default, that recorded value is "no attribute
+                  at all", and GSAP's revert writes that back as an empty
+                  string -- which the SVG attribute parser rejects (Chrome
+                  logs "Unexpected end of attribute. Expected length, ''").
+                  A real numeric default gives revert something valid to
+                  restore to instead. */}
               <g ref={lhavCalloutRef}>
-                <line ref={lhavLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} opacity={0} />
-                <circle ref={lhavDotRef} r={3} fill="var(--ivory)" opacity={0} />
-                <text ref={lhavLabelRef} opacity={0} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
+                <line ref={lhavLeaderRef} x1={0} y1={0} x2={0} y2={0} stroke="var(--ivory)" strokeWidth={0.75} opacity={0} />
+                <circle ref={lhavDotRef} cx={0} cy={0} r={3} fill="var(--ivory)" opacity={0} />
+                <text ref={lhavLabelRef} x={0} y={0} opacity={0} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
                   LHAVIYANI ATOLL
                 </text>
               </g>
               <g ref={kaafuCalloutRef}>
-                <line ref={kaafuLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} opacity={0} />
-                <circle ref={kaafuDotRef} r={3} fill="var(--ivory)" opacity={0} />
-                <text ref={kaafuLabelRef} opacity={0} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
+                <line ref={kaafuLeaderRef} x1={0} y1={0} x2={0} y2={0} stroke="var(--ivory)" strokeWidth={0.75} opacity={0} />
+                <circle ref={kaafuDotRef} cx={0} cy={0} r={3} fill="var(--ivory)" opacity={0} />
+                <text ref={kaafuLabelRef} x={0} y={0} opacity={0} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
                   KAAFU ATOLL
                 </text>
               </g>
               <g ref={huvCalloutRef}>
-                <line ref={huvLeaderRef} stroke="var(--ivory)" strokeWidth={0.75} opacity={0} />
-                <circle ref={huvDotRef} r={3} fill="var(--ivory)" opacity={0} />
-                <text ref={huvLabelRef} opacity={0} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
+                <line ref={huvLeaderRef} x1={0} y1={0} x2={0} y2={0} stroke="var(--ivory)" strokeWidth={0.75} opacity={0} />
+                <circle ref={huvDotRef} cx={0} cy={0} r={3} fill="var(--ivory)" opacity={0} />
+                <text ref={huvLabelRef} x={0} y={0} opacity={0} dominantBaseline="middle" fontSize={9.5} letterSpacing={3.5} fill="var(--ivory)" style={{ fontFamily: "var(--font-sans), sans-serif" }}>
                   GAAFU DHAALU ATOLL
                 </text>
               </g>
