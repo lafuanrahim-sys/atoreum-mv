@@ -5,9 +5,9 @@
  * icon) inlined so it can join the CSS animation rather than sitting as a
  * static <Image>. Rendered as two SVGs sharing the source file's original
  * 763.49-unit coordinate space, each cropped to its own region via
- * viewBox (no path data touched) and stacked text-over-icon -- the
- * reverse of the source file's own icon-over-text order. On mount the
- * whole thing fades and scales in once (maintenance-reveal); once settled
+ * viewBox (no path data touched) and stacked icon-over-text, matching
+ * the source file's own order. On mount the whole thing fades and
+ * scales in once (maintenance-reveal); once settled
  * the icon breathes gently forever while a soft glow and two staggered
  * rings expand outward behind it like ripples on water (see the
  * maintenance-* keyframes in app/globals.css). Pure CSS -- no JS needed
@@ -18,6 +18,57 @@
 export default function MaintenanceLogo() {
   return (
     <div className="maintenance-reveal mx-auto flex w-64 flex-col items-center gap-3 sm:w-80 md:w-[22rem]">
+      <div className="relative w-[70%]">
+        <span
+          aria-hidden="true"
+          className="maintenance-glow pointer-events-none absolute inset-0 rounded-full bg-gold/40 blur-xl"
+        />
+        <span
+          aria-hidden="true"
+          className="maintenance-ripple pointer-events-none absolute inset-0 rounded-full border border-gold/40"
+        />
+        <span
+          aria-hidden="true"
+          className="maintenance-ripple maintenance-ripple-delay pointer-events-none absolute inset-0 rounded-full border border-gold/40"
+        />
+        <svg
+          viewBox="165 49 434 434"
+          aria-hidden="true"
+          className="maintenance-icon-breathe relative h-full w-full"
+        >
+          <g fill="#6c7770">
+            <path d="M434.08,250.95c-84.15,23.25-163.77,76.97-260.18,23.84-.06.04-.13.06.13.25,41.65,31.29,101,34.80,167.47,18.48,52.07-11.57,103.51-33.97,162.25-34.42,29.33-.23,48.83,7.36,57.19,11.31,8.04,3.79,22.56,12.92,24.97,17.63-16.09-37.86-76.86-58.07-151.84-37.09Z" />
+            <path d="M585.92,288.04c.08.18.16.37.24.55-.06-.18-.14-.36-.24-.55Z" />
+          </g>
+
+          <g fill="none" stroke="#8eaba5" strokeWidth={8} strokeMiterlimit={10}>
+            <path d="M422.19,356.53c1.91-14.11,8.79-20.06,26.20-20.29,8.60-.11,15.50-1.71,22.85-6.81,21.19-14.70,41.43-5.04,45.19,20.72.70,4.77.81,9.47,2.92,14.14,7.59,16.73,3.19,28.45-13.29,37.28-16.49,8.83-33.67,5.92-42.38-7.53-3.69-5.69-6.37-12.03-9.95-17.80-3.76-6.04-7.86-10.55-16.61-7.08-12.06,4.80-16.70.43-14.93-12.62Z" />
+            <path d="M354.63,418.56c-2.99,8.83-9.39,14.35-18.56,12.45-18.93-3.91-38.32-6.99-52.40-22.94-7.57-8.57-8.38-9.01,4.13-16.83,8.97-5.61,19.27-8.65,27.98-15.25,6.44-4.88,12.15-.18,14.96,6.40,4.13,9.65,8.98,18.03,19.67,22.14,6.01,2.31,5.89,8.30,4.22,14.03Z" />
+            <path d="M406.74,437.44c-3.89-.32-7.79-.55-11.66-1.03-9.27-1.16-14.09-6.63-13.38-15.84.80-10.43,8.91-8.40,15.54-7.87,7.86.64,15.45,2.79,21.97,7.32,3.86,2.68,8.71,5.67,6.92,11.60-1.77,5.85-7.13,5.83-12.07,5.94-2.44.05-4.88-.09-7.32-.12Z" />
+            <path d="M235.83,356.09c-.17-6.63,3.15-11.04,8.91-13.82,5.23-2.52,10.34-3.31,14.42,2.00,3.10,4.03,6.84,7.05,11.95,7.70,6.64.85,13.32,1.38,10.35,11.07-2.93,9.55-9.29,16.32-18.86,18.19-5.63,1.10-26.19-19.59-26.78-25.13Z" />
+          </g>
+
+          <g fill="#e9baa6">
+            <path d="M235,204.39c.79-.64,10.38-8.08,22.42-4.40,13.02,3.98,16.57,16.63,16.71,17.22-.86.64-10.87,8.29-22.99,4.26-12.37-4.12-15.89-16.13-16.15-17.08Z" />
+            <path d="M251.34,255.11c-.36-.95-4.48-12.37,2.74-22.68,7.81-11.15,20.93-10.62,21.55-10.57.35,1.01,4.53,12.90-3.05,23.18-7.74,10.50-20.25,10.12-21.23,10.08Z" />
+            <path d="M304.74,255.25c-1.01.05-13.15.44-20.72-9.61-8.19-10.87-3.63-23.19-3.40-23.76,1.07-.02,13.67-.32,21.10,10.07,7.59,10.60,3.37,22.39,3.02,23.31Z" />
+            <path d="M321.32,204.59c-.27.98-3.64,12.64-15.55,16.74-12.87,4.43-23.18-3.71-23.65-4.11.32-1.03,3.92-13.10,16.09-16.96,12.43-3.94,22.33,3.71,23.10,4.33Z" />
+            <path d="M278.25,173.14c.85.56,10.90,7.37,11.11,19.96.24,13.61-10.69,20.90-11.22,21.22-.88-.62-11.24-7.78-11.15-20.55.09-13.04,10.43-20.09,11.25-20.63Z" />
+          </g>
+
+          <circle
+            fill="none"
+            stroke="#6c7770"
+            strokeWidth={4}
+            strokeMiterlimit={10}
+            cx="381.75"
+            cy="265.21"
+            r="211.06"
+            transform="translate(-75.72 347.62) rotate(-45)"
+          />
+        </svg>
+      </div>
+
       <svg
         viewBox="70 515 625 220"
         role="img"
@@ -81,57 +132,6 @@ export default function MaintenanceLogo() {
           <line x1="301.21" y1="655.76" x2="195.39" y2="655.76" />
         </g>
       </svg>
-
-      <div className="relative w-[70%]">
-        <span
-          aria-hidden="true"
-          className="maintenance-glow pointer-events-none absolute inset-0 rounded-full bg-gold/40 blur-xl"
-        />
-        <span
-          aria-hidden="true"
-          className="maintenance-ripple pointer-events-none absolute inset-0 rounded-full border border-gold/40"
-        />
-        <span
-          aria-hidden="true"
-          className="maintenance-ripple maintenance-ripple-delay pointer-events-none absolute inset-0 rounded-full border border-gold/40"
-        />
-        <svg
-          viewBox="165 49 434 434"
-          aria-hidden="true"
-          className="maintenance-icon-breathe relative h-full w-full"
-        >
-          <g fill="#6c7770">
-            <path d="M434.08,250.95c-84.15,23.25-163.77,76.97-260.18,23.84-.06.04-.13.06.13.25,41.65,31.29,101,34.80,167.47,18.48,52.07-11.57,103.51-33.97,162.25-34.42,29.33-.23,48.83,7.36,57.19,11.31,8.04,3.79,22.56,12.92,24.97,17.63-16.09-37.86-76.86-58.07-151.84-37.09Z" />
-            <path d="M585.92,288.04c.08.18.16.37.24.55-.06-.18-.14-.36-.24-.55Z" />
-          </g>
-
-          <g fill="none" stroke="#8eaba5" strokeWidth={8} strokeMiterlimit={10}>
-            <path d="M422.19,356.53c1.91-14.11,8.79-20.06,26.20-20.29,8.60-.11,15.50-1.71,22.85-6.81,21.19-14.70,41.43-5.04,45.19,20.72.70,4.77.81,9.47,2.92,14.14,7.59,16.73,3.19,28.45-13.29,37.28-16.49,8.83-33.67,5.92-42.38-7.53-3.69-5.69-6.37-12.03-9.95-17.80-3.76-6.04-7.86-10.55-16.61-7.08-12.06,4.80-16.70.43-14.93-12.62Z" />
-            <path d="M354.63,418.56c-2.99,8.83-9.39,14.35-18.56,12.45-18.93-3.91-38.32-6.99-52.40-22.94-7.57-8.57-8.38-9.01,4.13-16.83,8.97-5.61,19.27-8.65,27.98-15.25,6.44-4.88,12.15-.18,14.96,6.40,4.13,9.65,8.98,18.03,19.67,22.14,6.01,2.31,5.89,8.30,4.22,14.03Z" />
-            <path d="M406.74,437.44c-3.89-.32-7.79-.55-11.66-1.03-9.27-1.16-14.09-6.63-13.38-15.84.80-10.43,8.91-8.40,15.54-7.87,7.86.64,15.45,2.79,21.97,7.32,3.86,2.68,8.71,5.67,6.92,11.60-1.77,5.85-7.13,5.83-12.07,5.94-2.44.05-4.88-.09-7.32-.12Z" />
-            <path d="M235.83,356.09c-.17-6.63,3.15-11.04,8.91-13.82,5.23-2.52,10.34-3.31,14.42,2.00,3.10,4.03,6.84,7.05,11.95,7.70,6.64.85,13.32,1.38,10.35,11.07-2.93,9.55-9.29,16.32-18.86,18.19-5.63,1.10-26.19-19.59-26.78-25.13Z" />
-          </g>
-
-          <g fill="#e9baa6">
-            <path d="M235,204.39c.79-.64,10.38-8.08,22.42-4.40,13.02,3.98,16.57,16.63,16.71,17.22-.86.64-10.87,8.29-22.99,4.26-12.37-4.12-15.89-16.13-16.15-17.08Z" />
-            <path d="M251.34,255.11c-.36-.95-4.48-12.37,2.74-22.68,7.81-11.15,20.93-10.62,21.55-10.57.35,1.01,4.53,12.90-3.05,23.18-7.74,10.50-20.25,10.12-21.23,10.08Z" />
-            <path d="M304.74,255.25c-1.01.05-13.15.44-20.72-9.61-8.19-10.87-3.63-23.19-3.40-23.76,1.07-.02,13.67-.32,21.10,10.07,7.59,10.60,3.37,22.39,3.02,23.31Z" />
-            <path d="M321.32,204.59c-.27.98-3.64,12.64-15.55,16.74-12.87,4.43-23.18-3.71-23.65-4.11.32-1.03,3.92-13.10,16.09-16.96,12.43-3.94,22.33,3.71,23.10,4.33Z" />
-            <path d="M278.25,173.14c.85.56,10.90,7.37,11.11,19.96.24,13.61-10.69,20.90-11.22,21.22-.88-.62-11.24-7.78-11.15-20.55.09-13.04,10.43-20.09,11.25-20.63Z" />
-          </g>
-
-          <circle
-            fill="none"
-            stroke="#6c7770"
-            strokeWidth={4}
-            strokeMiterlimit={10}
-            cx="381.75"
-            cy="265.21"
-            r="211.06"
-            transform="translate(-75.72 347.62) rotate(-45)"
-          />
-        </svg>
-      </div>
     </div>
   );
 }
