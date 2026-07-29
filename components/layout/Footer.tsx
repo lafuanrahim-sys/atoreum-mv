@@ -36,12 +36,6 @@ export default function Footer() {
               <Link href="/products" className="text-sm text-ivory-dim transition-colors hover:text-gold">
                 Full Collection
               </Link>
-              <Link href="/products" className="text-sm text-ivory-dim transition-colors hover:text-gold">
-                Skincare
-              </Link>
-              <Link href="/products" className="text-sm text-ivory-dim transition-colors hover:text-gold">
-                Fragrance
-              </Link>
             </div>
           </div>
 
@@ -54,7 +48,6 @@ export default function Footer() {
               <Link href="/contact" className="text-sm text-ivory-dim transition-colors hover:text-gold">
                 Contact
               </Link>
-              <span className="text-sm text-ivory-dim/50">Concierge</span>
             </div>
           </div>
 
