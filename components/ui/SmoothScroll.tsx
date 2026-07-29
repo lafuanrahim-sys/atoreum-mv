@@ -49,15 +49,22 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
 
     lenis.on("scroll", ScrollTrigger.update);
 
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000);
-    });
+    // Named + stored, not an inline arrow at both call sites -- gsap.ticker
+    // .remove() only recognizes the exact function reference passed to
+    // .add(), not a different function with identical code. The previous
+    // version passed a fresh arrow function to .remove(), which silently
+    // failed to find/remove anything: dead cleanup code that would leak a
+    // duplicate RAF-driving callback (still calling .raf() on an already-
+    // .destroy()'d lenis instance) on every remount. Harmless today since
+    // this mounts once for the whole session, but wrong regardless.
+    const tick = (time: number) => lenis.raf(time * 1000);
+    gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
 
     return () => {
       lenis.destroy();
       window.__lenis = undefined;
-      gsap.ticker.remove((time) => lenis.raf(time * 1000));
+      gsap.ticker.remove(tick);
     };
   }, []);
 
