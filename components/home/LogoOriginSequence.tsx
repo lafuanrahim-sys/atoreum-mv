@@ -158,6 +158,7 @@ export default function LogoOriginSequence() {
   const typesetRef = useRef<SVGGElement | null>(null);
   const resolvedRef = useRef<HTMLImageElement | null>(null);
   const ctaRef = useRef<HTMLAnchorElement | null>(null);
+  const captionBoxRef = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
@@ -200,6 +201,8 @@ export default function LogoOriginSequence() {
         const typeset = typesetRef.current;
         const resolved = resolvedRef.current;
         const cta = ctaRef.current;
+        const stage = stageRef.current;
+        const captionBox = captionBoxRef.current;
 
         const titleContainer = titleContainerRef.current;
         const titleLine1 = titleLine1Ref.current;
@@ -216,7 +219,7 @@ export default function LogoOriginSequence() {
           !lhavDot || !kaafuDot || !huvDot ||
           !lhavLabel || !kaafuLabel || !huvLabel ||
           !blobLhav || !blobKaafu1 || !blobKaafu2 || !blobHuvadhoo || !seal || !sealGlow || !waveGroup ||
-          !waveClipRect || !typeset || !resolved || !cta || petals.length !== 5 ||
+          !waveClipRect || !typeset || !resolved || !cta || !stage || !captionBox || petals.length !== 5 ||
           !titleContainer || !titleLine1 || !titleLine2 ||
           !flowerTextContainer || !flowerTextLine ||
           !waveTextContainer || !waveTextLine
@@ -389,6 +392,38 @@ export default function LogoOriginSequence() {
           return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
         }, mapBBoxes[0]);
         const mapVB = frameSquare(mapBBoxUnion, 45);
+
+        // Mobile-only: the CTA and the flower/wave captions are absolutely
+        // positioned (see their own comments in the JSX) so their reserved
+        // height doesn't get counted into motionRoot's centering of the
+        // stage above them -- but a *static* anchor point (e.g. a fixed
+        // distance from motionRoot's bottom edge) has no way to know how
+        // tall the stage actually rendered at this viewport, and on a
+        // phone where the stage is on the larger side, a static anchor put
+        // both of them well inside the stage's own box -- confirmed via a
+        // real screenshot: the "Mugunghwa" caption line rendered directly
+        // on top of the atoll/blob artwork, and the CTA sat behind the
+        // (invisible but still pointer-events'd) caption box, unreachable.
+        // Below, `top` is set to the stage's own real measured bottom edge
+        // plus a fixed gap -- guarantees zero overlap with the stage at any
+        // viewport size -- then clamped so the box's *own* bottom edge
+        // never runs past the section's bottom (~the viewport, since the
+        // section is h-100svh) either: on a short phone, "right below the
+        // stage" can itself be close enough to the fold that the caption's
+        // fixed h-40 reserved height would otherwise poke off-screen.
+        // Desktop is untouched: the CTA and captions revert to normal
+        // static/relative flow there (md:static / md:relative in their own
+        // classNames), so this only ever applies below that breakpoint.
+        if (isMobile) {
+          const gap = 20;
+          const bottomMargin = 12;
+          const stageBottom = stage.offsetTop + stage.offsetHeight;
+          const motionRootTop = motionRoot.getBoundingClientRect().top;
+          const sectionBottom = section.getBoundingClientRect().bottom;
+          const maxTop = sectionBottom - bottomMargin - captionBox.offsetHeight - motionRootTop;
+          const top = Math.min(stageBottom + gap, maxTop);
+          gsap.set([cta, captionBox], { top });
+        }
 
         const waveBBox = waveGroup.getBBox();
         gsap.set(waveClipRect, {
@@ -769,21 +804,17 @@ export default function LogoOriginSequence() {
             tighter constraint. From md up this is back to the original
             vw/vh-based side-column sizing.
 
-            translate-y-[100px] below: a plain visual offset, not margin --
-            margin here would grow this flex-col wrapper's own height, which
-            motionRoot's justify-center then re-centers, absorbing roughly
-            half the requested shift instead of moving the stage down by the
-            full amount. transform doesn't affect layout/centering at all,
-            so this is an exact, predictable 100px on top of wherever
-            centering would otherwise put it. 100, not the 250 first tried,
-            because 250 pushed the stage's own bottom edge past the
-            viewport's bottom on both a standard 390x844 phone (~12px) and,
-            worse, a shorter 375x667 one (~90px) -- traded a cut-off top for
-            a cut-off bottom. 100px stays comfortably clear of that on both
-            (max safe headroom measured at ~160px on the shorter one).
-            Mobile-only; md:translate-y-0 reverts to the original untouched
-            desktop position. */}
-        <div ref={stageRef} className="logo-origin-stage relative aspect-square w-full max-h-[52vh] shrink-0 translate-y-[100px] md:w-[min(40vw,62vh)] md:max-h-none md:translate-y-0">
+            No transform-based nudge here (an earlier version tried
+            translate-y-[250px], then [100px]) -- transform doesn't affect
+            layout, so anything anchored to *this* box's normal layout
+            position (the CTA/caption below, both absolutely positioned
+            against motionRoot) would drift out of sync with wherever the
+            transform visually moved it, which is exactly what caused them
+            to overlap the stage. This box's only job now is to be
+            correctly centered by motionRoot on its own real dimensions;
+            the CTA/caption read those dimensions directly (see the
+            isMobile block in the effect above) instead of guessing. */}
+        <div ref={stageRef} className="logo-origin-stage relative aspect-square w-full max-h-[52vh] shrink-0 md:w-[min(40vw,62vh)] md:max-h-none">
           <svg
             ref={svgRef}
             viewBox={`0 0 ${CANVAS} ${CANVAS}`}
@@ -939,24 +970,23 @@ export default function LogoOriginSequence() {
           />
         </div>
 
-        {/* Below md this is pulled out of the wrapper's flex flow for the
-            same reason the caption box below is (see its own comment): it's
+        {/* Below md this is pulled out of the wrapper's flex flow: it's
             opacity-0 until Scene 7, but as a normal flex sibling its
             reserved height + the gap above it still counted toward the
             wrapper's total height, which motionRoot's justify-center then
             centers as a whole -- pushing the actually-visible stage well
-            above true screen center (measured ~30px high on a 390x844
-            viewport; on shorter phones this ate enough of the header's
-            clearance to visibly cut the map scene's top edge). Anchored
-            near the bottom of motionRoot instead, same spot the caption
-            uses -- they're never visible at the same time, so sharing that
-            position is fine, and once the real logo resolves in Scene 7
-            this still reads as "below it". From md up this reverts to the
-            original in-flow placement, unchanged. */}
+            above true screen center. `top` is not set here -- the effect
+            above computes it from the stage's real measured bottom edge
+            (isMobile block) and applies it via gsap.set, since a static
+            value has no way to know how tall the stage actually rendered
+            at a given viewport and (confirmed via a real screenshot) ended
+            up sitting UNDER the stage's own artwork rather than below it.
+            From md up this reverts to the original in-flow placement,
+            unchanged. */}
         <Link
           ref={ctaRef}
           href="/products"
-          className="pointer-events-none absolute inset-x-0 bottom-6 z-10 mx-auto w-fit rounded-full bg-gold-deep px-6 py-2.5 text-xs tracking-[0.2em] uppercase text-ink opacity-0 transition-colors duration-300 hover:bg-gold-deep/90 md:static md:inset-auto md:z-auto md:mx-0 md:w-auto"
+          className="pointer-events-none absolute inset-x-0 z-10 mx-auto w-fit rounded-full bg-gold-deep px-6 py-2.5 text-xs tracking-[0.2em] uppercase text-ink opacity-0 transition-colors duration-300 hover:bg-gold-deep/90 md:static md:inset-auto md:z-auto md:mx-0 md:w-auto"
         >
           Go to Collections
         </Link>
@@ -965,7 +995,7 @@ export default function LogoOriginSequence() {
         {/* Below md this is a fixed-height box (not auto) because its two
             children are position:absolute overlays (flower/wave text
             crossfade in place) — an auto-height parent can't size itself
-            from out-of-flow absolute children, it would collapse to 0. h-40
+            from out-of-flow absolute children, it would collapse to 0. h-28
             comfortably fits the longer of the two lines at the mobile font
             size. From md up this reverts to the exact original narrow
             side-column treatment.
@@ -976,21 +1006,28 @@ export default function LogoOriginSequence() {
             was centering the *combined* height of both, so this box's
             reserved h-40 (present even when both caption lines are opacity-0
             between scenes) pushed the actually-visible stage up above true
-            screen center. Anchored to the bottom of motionRoot instead,
-            comfortably clear of the centered stage above it at every scroll
-            position (the stage's own max height is well under half the
-            section height). From md up this returns to a normal in-flow
-            flex sibling, unchanged from the original side-column design.
+            screen center. `top` is not set here for the same reason it
+            isn't on the CTA above -- the effect computes it from the
+            stage's real measured bottom edge (isMobile block) and applies
+            it via gsap.set, since a static bottom-anchor had no way to know
+            how tall the stage actually rendered and (confirmed via a real
+            screenshot) ended up sitting well inside the stage's own artwork
+            rather than below it -- the "Mugunghwa" caption line rendering
+            directly on top of the atoll/blob shapes. From md up this
+            returns to a normal in-flow flex sibling, unchanged from the
+            original side-column design.
 
             pointer-events-none on this outer box, not just its two text
-            children -- this box shares the CTA button's exact rect
-            (absolute inset-x-0 bottom-6 z-10, see the CTA's own comment
-            above) and sits after it in the DOM, so without this it silently
-            intercepted every tap meant for the button underneath even while
-            fully invisible, which is why "Go to Collections" didn't respond
-            on mobile. Its two children were already pointer-events-none
+            children -- this box shares the CTA button's rect and sits
+            after it in the DOM, so without this it silently intercepted
+            every tap meant for the button underneath even while fully
+            invisible, which is why "Go to Collections" didn't respond on
+            mobile. Its two children were already pointer-events-none
             themselves; this just closes the gap on the box they sit in. */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-6 z-10 flex h-40 w-full shrink-0 items-center justify-center px-4 text-center md:relative md:inset-auto md:bottom-auto md:h-36 md:w-36 md:items-center md:justify-start md:px-0 md:text-left lg:h-48 lg:w-48 xl:h-64 xl:w-64 2xl:h-80 2xl:w-80">
+        <div
+          ref={captionBoxRef}
+          className="pointer-events-none absolute inset-x-0 z-10 flex h-28 w-full shrink-0 items-center justify-center px-4 text-center md:relative md:inset-auto md:h-36 md:w-36 md:items-center md:justify-start md:px-0 md:text-left lg:h-48 lg:w-48 xl:h-64 xl:w-64 2xl:h-80 2xl:w-80"
+        >
           <div ref={flowerTextContainerRef} className="pointer-events-none absolute inset-0 flex items-center justify-center md:justify-start">
             <TypedLine text={FLOWER_TEXT} lineRef={flowerTextLineRef} className={CAPTION_TEXT_CLASS} />
           </div>
