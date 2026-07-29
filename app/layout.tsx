@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter, Montserrat, Pinyon_Script, JetBrains_Mono } from "next/font/google";
+import { Playfair_Display, Inter, Montserrat, Cinzel_Decorative, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/ui/SmoothScroll";
 import PageTransition from "@/components/ui/PageTransition";
@@ -33,9 +33,9 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
-// Pinyon Script — formal copperplate calligraphy, reserved for the origin
-// story's opening title card only.
-const pinyonScript = Pinyon_Script({
+// Cinzel Decorative — ornate carved-serif display face, reserved for the
+// origin story's opening title card only.
+const cinzelDecorative = Cinzel_Decorative({
   variable: "--font-script",
   subsets: ["latin"],
   weight: "400",
@@ -65,7 +65,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${playfair.variable} ${inter.variable} ${montserrat.variable} ${pinyonScript.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className={`${playfair.variable} ${inter.variable} ${montserrat.variable} ${cinzelDecorative.variable} ${jetbrainsMono.variable} antialiased`}>
         <a href="#main" className="skip-link">
           Skip to content
         </a>

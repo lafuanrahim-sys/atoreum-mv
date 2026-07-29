@@ -32,7 +32,7 @@ gsap.registerPlugin(ScrollTrigger);
 // desktop-simulated mobile width. This is GSAP's own documented fix.
 ScrollTrigger.config({ ignoreMobileResize: true });
 
-const TITLE_LINE_1 = "How Atoreum was made.";
+const TITLE_LINE_1 = "The Atoreum Story";
 const TITLE_LINE_2 = "Three origins, one name. Korea's beauty, carried home to the Maldives.";
 const FLOWER_TEXT = "The Mugunghwa — South Korea's national flower — represents where Atoreum's journey began.";
 const WAVE_TEXT = "A wave connecting two oceans — Korea to the Maldives.";
@@ -491,7 +491,7 @@ export default function LogoOriginSequence() {
         // Overlay title: shown only in this desktop motion mode (the static
         // fallback carries its own title). Line 1 is a plain, always-visible
         // paragraph, so the very first painted frame — before any scroll —
-        // already reads "How Atoreum was made." at full size.
+        // already reads "The Atoreum Story" at full size.
         gsap.set(titleContainer, { display: "flex", opacity: 1 });
         gsap.set(flowerTextContainer, { opacity: 0 });
         gsap.set(waveTextContainer, { opacity: 0 });
@@ -741,7 +741,7 @@ export default function LogoOriginSequence() {
           width, gets the real scene below instead. */}
       <div ref={fallbackRef} className="flex h-full w-full flex-col items-center justify-center gap-8 px-6 text-center">
         <div className="max-w-xl space-y-3">
-          <p className="font-display italic text-3xl text-ivory md:text-5xl">{TITLE_LINE_1}</p>
+          <p className="font-script text-2xl tracking-wide text-ivory md:text-4xl">{TITLE_LINE_1}</p>
           <div className="mx-auto h-px w-10 bg-gold/60" />
           <p className="font-montserrat text-base font-light tracking-wide text-ivory-dim md:text-lg">{TITLE_LINE_2}</p>
         </div>
@@ -1062,7 +1062,7 @@ export default function LogoOriginSequence() {
       >
         <p
           ref={titleLine1Ref}
-          className="max-w-5xl font-display italic text-4xl leading-[1.15] text-ivory md:text-8xl"
+          className="max-w-5xl font-script text-3xl tracking-wide leading-[1.3] text-ivory md:text-6xl"
         >
           {TITLE_LINE_1}
         </p>
