@@ -32,9 +32,11 @@ export default function Header() {
   }, []);
 
   // The admin dashboard brings its own shell (sidebar + identity), so the
-  // storefront chrome stays out of it entirely. After the hooks — early
+  // storefront chrome stays out of it entirely. The maintenance page is
+  // deliberately chrome-free too — nothing on it should link back into the
+  // (intentionally offline) rest of the site. After the hooks — early
   // returns must never sit between hook calls.
-  if (pathname.startsWith("/dashboard")) return null;
+  if (pathname.startsWith("/dashboard") || pathname === "/maintenance") return null;
 
   // The Collection page's hero sits on a fixed, real photo (not a themed
   // bg-ink section) that never flips with light/dark mode, so at the top of

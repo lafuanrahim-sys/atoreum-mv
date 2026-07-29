@@ -7,9 +7,10 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 export default function Footer() {
   const pathname = usePathname();
   const ref = useScrollReveal<HTMLElement>({ start: "top 92%" });
-  // Hidden on the homepage (by design) and inside the admin dashboard,
-  // which has its own shell.
-  if (pathname === "/" || pathname.startsWith("/dashboard")) return null;
+  // Hidden on the homepage (by design), inside the admin dashboard (which
+  // has its own shell), and on the maintenance page (deliberately
+  // chrome-free -- nothing on it should link back into the site).
+  if (pathname === "/" || pathname.startsWith("/dashboard") || pathname === "/maintenance") return null;
 
   return (
     <footer ref={ref} className="page-gutter border-t border-line bg-ink py-16">

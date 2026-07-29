@@ -9,11 +9,52 @@ import { USER_SESSION_COOKIE, isAdminRole, verifyUserSessionToken } from "@/lib/
  *   old bookmarks keep working but no separate admin URL exists anymore.
  * See lib/auth/userSession.ts for the caveats on this auth approach.
  *
- * Also forwards the current pathname as a request header on every
- * page request (not just the three prefixes above) — app/layout.tsx reads
- * it to decide whether to gate a route behind maintenance mode, since a
- * Server Component layout has no other way to know the request path.
+ * Also enforces site-wide maintenance mode (Dashboard -> Settings). This
+ * has to live here rather than in app/layout.tsx: a shared layout like the
+ * root one only re-executes its Server Component body on a fresh page
+ * load, not on every subsequent client-side <Link> navigation (Next.js
+ * keeps it mounted across route changes within the same layout scope) — an
+ * earlier version gated in the layout instead, which meant loading the
+ * exempt /login page once and then clicking any nav link silently skipped
+ * the check for every page after that. Middleware runs on every request,
+ * including the RSC fetch a client-side navigation makes, so it can't be
+ * bypassed that way.
  */
+
+const MAINTENANCE_EXEMPT_PREFIXES = ["/login", "/dashboard", "/maintenance"];
+
+// Maintenance mode lives in Postgres (store_settings), but this file runs
+// on the Edge runtime (see lib/auth/userSession.ts's own comment: no Node
+// `crypto`/`fs`, so no raw `pg` connection either) — fetched from a small
+// Node-runtime Route Handler instead, and cached in-memory per Edge
+// instance for a few seconds so this doesn't add a network hop to every
+// single request. Same eventual-consistency tradeoff already documented on
+// the settings page: a toggle can take a few seconds to take effect.
+let cachedMaintenanceMode = false;
+let cacheExpiresAt = 0;
+
+async function getMaintenanceMode(origin: string): Promise<boolean> {
+  const now = Date.now();
+  if (now < cacheExpiresAt) return cachedMaintenanceMode;
+  try {
+    const res = await fetch(new URL("/api/internal/maintenance-status", origin), {
+      // Edge fetch cache, distinct from the in-memory one above — belt and
+      // suspenders against a stampede if many requests land at once right
+      // as the in-memory cache expires.
+      next: { revalidate: 5 },
+    });
+    const data = (await res.json()) as { maintenanceMode: boolean };
+    cachedMaintenanceMode = data.maintenanceMode;
+  } catch {
+    // Fail open on the check itself failing (e.g. the DB is briefly
+    // unreachable) -- a broken maintenance check shouldn't take the whole
+    // site down on top of whatever's already wrong.
+    cachedMaintenanceMode = false;
+  }
+  cacheExpiresAt = now + 5_000;
+  return cachedMaintenanceMode;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -48,17 +89,21 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-pathname", pathname);
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  const exempt = MAINTENANCE_EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  if (!exempt && !isAdminRole(session?.role) && (await getMaintenanceMode(request.nextUrl.origin))) {
+    // Rewrite, not redirect — the visitor's URL bar keeps showing whatever
+    // page they actually asked for, matching the app/layout.tsx-based
+    // version's original behavior.
+    return NextResponse.rewrite(new URL("/maintenance", request.url));
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
     // Everything except API routes, Next's own internals, and static
-    // assets (identified by a file extension) -- those don't render
-    // through app/layout.tsx, so they have no need for the pathname
-    // header and no reason to pay this middleware's cost.
+    // assets (identified by a file extension).
     "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?|ttf|map)$).*)",
   ],
 };
