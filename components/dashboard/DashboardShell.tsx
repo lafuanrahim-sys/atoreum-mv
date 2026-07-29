@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import DashboardNav from "@/components/dashboard/DashboardNav";
 import Logo from "@/components/ui/Logo";
@@ -33,6 +33,24 @@ export default function DashboardShell({
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // <body>'s own background (globals.css) is otherwise pinned to the
+  // storefront's light/dark tokens, not the admin palette this whole shell
+  // renders with (dashboard-theme, scoped to the wrapping div in
+  // app/dashboard/layout.tsx) -- invisible on desktop since admin content
+  // always fills the viewport, but mobile's rubber-band overscroll bounce
+  // briefly scrolls past that div's edge and reveals real <body> background
+  // underneath, flashing the storefront's theme behind the admin's. Mirror
+  // the same two classes onto <body> directly so that gap matches too; undo
+  // on unmount so the storefront gets its own tokens back once you navigate
+  // away from /dashboard.
+  useEffect(() => {
+    document.body.classList.add("dashboard-theme");
+    document.body.classList.toggle("dashboard-dark", isDark);
+    return () => {
+      document.body.classList.remove("dashboard-theme", "dashboard-dark");
+    };
+  }, [isDark]);
+
   const sidebarContent = (
     <>
       <Link href="/products" className="flex items-center gap-3 px-4 pb-5">
@@ -40,7 +58,7 @@ export default function DashboardShell({
           <Logo />
         </span>
         <span className="min-w-0">
-          <span className="block font-display text-sm italic leading-tight text-ivory">Atoreum MV</span>
+          <span className="block font-admin-heading text-sm leading-tight text-ivory">Atoreum MV</span>
           <span className="block font-mono text-[9px] uppercase tracking-[0.3em] text-sand">Admin</span>
         </span>
       </Link>
@@ -83,7 +101,7 @@ export default function DashboardShell({
           </button>
         </form>
 
-        <p className="mt-4 truncate font-display italic text-ivory">{user.name}</p>
+        <p className="mt-4 truncate font-admin-heading font-semibold text-ivory">{user.name}</p>
         <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-sand">
           {user.role === "superadmin" ? "Super Admin" : "Store Manager"}
         </p>
@@ -120,7 +138,7 @@ export default function DashboardShell({
             <Logo />
           </span>
           <span>
-            <span className="block font-display text-sm italic leading-tight text-ivory">Atoreum MV</span>
+            <span className="block font-admin-heading text-sm leading-tight text-ivory">Atoreum MV</span>
             <span className="block font-mono text-[8px] uppercase tracking-[0.3em] text-sand">Admin</span>
           </span>
         </Link>
@@ -167,7 +185,13 @@ export default function DashboardShell({
         {sidebarContent}
       </aside>
 
-      <main className="min-h-screen flex-1 px-4 pt-20 pb-8 sm:px-6 lg:ml-64 lg:px-10 lg:pt-10">{children}</main>
+      {/* min-w-0 overrides a flex item's default min-width: auto, which
+          otherwise lets intrinsically-wide content (a data table, e.g.)
+          grow this pane past the viewport instead of scrolling within its
+          own overflow-x-auto wrapper -- confirmed on /dashboard/customers,
+          where the table pushed the whole page into horizontal scroll on
+          mobile despite already being wrapped for it. */}
+      <main className="min-h-screen min-w-0 flex-1 px-4 pt-20 pb-8 sm:px-6 lg:ml-64 lg:px-10 lg:pt-10">{children}</main>
     </div>
     </ToastProvider>
   );
