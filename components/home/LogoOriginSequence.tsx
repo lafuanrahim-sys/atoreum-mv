@@ -364,6 +364,32 @@ export default function LogoOriginSequence() {
         placeCallout(kaafuMap, kaafuLeader, kaafuDot, kaafuLabel);
         placeCallout(huvMap, huvLeader, huvDot, huvLabel);
 
+        // Mobile-only camera zoom for the map-trace scene (2-3): the map's
+        // own real content -- the three atoll silhouettes plus their
+        // leader-line/label callouts, read live via getBBox() now that
+        // placeCallout has positioned everything -- only fills a fraction
+        // of the full square canvas (MAP_CONTEXT's faint full-chain
+        // atmosphere spans much taller, which is why the plain container
+        // upsize alone barely moved the needle on a small phone stage).
+        // Framing tightly around just that real content and excluding the
+        // atmosphere layer (explicitly "for atmosphere only -- never
+        // focused on", so minor clipping of its faint extremities is an
+        // acceptable trade) makes the map and its labels meaningfully
+        // bigger and more legible on mobile without touching desktop,
+        // which stays on FULL_VB throughout.
+        const isMobile = window.innerWidth < 768;
+        const mapBBoxes = [lhavMap, kaafuMap, huvMap, lhavCallout, kaafuCallout, huvCallout].map((el) =>
+          el.getBBox()
+        );
+        const mapBBoxUnion = mapBBoxes.slice(1).reduce<Bbox>((acc, b) => {
+          const minX = Math.min(acc.x, b.x);
+          const minY = Math.min(acc.y, b.y);
+          const maxX = Math.max(acc.x + acc.width, b.x + b.width);
+          const maxY = Math.max(acc.y + acc.height, b.y + b.height);
+          return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+        }, mapBBoxes[0]);
+        const mapVB = frameSquare(mapBBoxUnion, 45);
+
         const waveBBox = waveGroup.getBBox();
         gsap.set(waveClipRect, {
           attr: { x: waveBBox.x - 4, y: waveBBox.y - 4, width: 0, height: waveBBox.height + 8 },
@@ -411,7 +437,7 @@ export default function LogoOriginSequence() {
           });
         });
 
-        gsap.set(svg, { attr: { viewBox: FULL_VB } });
+        gsap.set(svg, { attr: { viewBox: isMobile ? mapVB : FULL_VB } });
         gsap.set(contextGroup, { opacity: 0 });
         gsap.set([lhavMap, kaafuMap, huvMap], { opacity: 0 });
         gsap.set([blobLhav, blobKaafu1, blobKaafu2, blobHuvadhoo], { opacity: 0 });
@@ -487,6 +513,14 @@ export default function LogoOriginSequence() {
         labelBeat(huvMap, huvLeader, huvDot, huvLabel);
         tl.to({}, { duration: 0.9 }); // hold, all three labeled
         tl.to([lhavCallout, kaafuCallout, huvCallout], { opacity: 0, duration: 0.6 });
+        // Mobile only: camera was zoomed in tight on the map for scenes 2-3
+        // (mapVB, computed above) so it reads legibly on a small square
+        // stage -- pull back out to the full canvas here, concurrent with
+        // the callout fade-out just above, so the camera is already back
+        // on FULL_VB before Scene 4's atoll flight starts (which needs the
+        // full canvas -- see that scene's own comment below -- to
+        // guarantee nothing clips mid-flight).
+        if (isMobile) tl.to(svg, { attr: { viewBox: FULL_VB }, duration: 1.3 }, "<");
 
         // Scene 4: the three labeled atolls detach from the map and fly to a
         // point just above their real seal-blob geometry (see STOP_OFFSET_PX

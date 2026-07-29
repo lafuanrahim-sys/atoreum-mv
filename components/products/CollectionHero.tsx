@@ -69,7 +69,7 @@ export default function CollectionHero() {
         <div
           aria-hidden
           className="absolute inset-0 md:hidden"
-          style={{ background: "linear-gradient(180deg, rgba(245,237,228,0.88) 0%, rgba(245,237,228,0.72) 45%, rgba(245,237,228,0.28) 75%, rgba(245,237,228,0) 100%)" }}
+          style={{ background: "linear-gradient(180deg, rgba(245,237,228,0.94) 0%, rgba(245,237,228,0.9) 40%, rgba(245,237,228,0.78) 65%, rgba(245,237,228,0.48) 85%, rgba(245,237,228,0.2) 100%)" }}
         />
       </div>
       {/* Header is 80px tall, so pt-[180px] lands the text exactly 100px
