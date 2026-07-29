@@ -8,6 +8,32 @@ function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
 }
 
+/**
+ * This used to be one hardcoded paragraph assuming every order was an
+ * unverified bank transfer -- wrong for cash orders (Confirmed immediately
+ * at checkout, no transfer involved at all) and wrong again for a transfer
+ * order revisited after an admin has already verified it. Branches on the
+ * order's actual paymentMethod + current status instead.
+ */
+function statusMessage(order: { status: string; paymentMethod?: string; paymentProofPath: string | null }) {
+  if (order.paymentMethod === "cash") {
+    return "Your order is confirmed. Please have the exact amount ready in cash for our courier when it's delivered.";
+  }
+  if (order.status === "Pending Verification") {
+    return (
+      "Your order is Pending Verification. We'll confirm it as soon as we've verified your bank transfer" +
+      (order.paymentProofPath
+        ? " and payment proof."
+        : " — if you haven't uploaded your receipt yet, you can reply to your confirmation email with it, or contact us directly.")
+    );
+  }
+  if (order.status === "Cancelled") {
+    return "This order has been cancelled.";
+  }
+  // Confirmed/Shipped/Completed bank transfer -- payment already verified.
+  return "Your order is confirmed. Thank you for your payment.";
+}
+
 export default async function OrderConfirmationPage({
   params,
   searchParams,
@@ -47,13 +73,7 @@ export default async function OrderConfirmationPage({
         </p>
 
         <div className="mt-10 border border-line p-8 text-left">
-          <p className="text-sm leading-relaxed text-ivory-dim">
-            Your order is <span className="text-gold">Pending Verification</span>. We&apos;ll
-            confirm it as soon as we&apos;ve verified your bank transfer{" "}
-            {order.paymentProofPath
-              ? "and payment proof."
-              : "— if you haven't uploaded your receipt yet, you can reply to your confirmation email with it, or contact us directly."}
-          </p>
+          <p className="text-sm leading-relaxed text-ivory-dim">{statusMessage(order)}</p>
 
           <ul className="mt-6 flex flex-col gap-3 border-t border-line pt-6">
             {order.items.map((item) => (
