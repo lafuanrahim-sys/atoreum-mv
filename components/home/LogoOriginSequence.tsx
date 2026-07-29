@@ -767,8 +767,23 @@ export default function LogoOriginSequence() {
             and could grow taller than the screen has room for; the cap
             makes width give way to height instead once that's the
             tighter constraint. From md up this is back to the original
-            vw/vh-based side-column sizing. */}
-        <div ref={stageRef} className="logo-origin-stage relative aspect-square w-full max-h-[52vh] shrink-0 md:w-[min(40vw,62vh)] md:max-h-none">
+            vw/vh-based side-column sizing.
+
+            translate-y-[100px] below: a plain visual offset, not margin --
+            margin here would grow this flex-col wrapper's own height, which
+            motionRoot's justify-center then re-centers, absorbing roughly
+            half the requested shift instead of moving the stage down by the
+            full amount. transform doesn't affect layout/centering at all,
+            so this is an exact, predictable 100px on top of wherever
+            centering would otherwise put it. 100, not the 250 first tried,
+            because 250 pushed the stage's own bottom edge past the
+            viewport's bottom on both a standard 390x844 phone (~12px) and,
+            worse, a shorter 375x667 one (~90px) -- traded a cut-off top for
+            a cut-off bottom. 100px stays comfortably clear of that on both
+            (max safe headroom measured at ~160px on the shorter one).
+            Mobile-only; md:translate-y-0 reverts to the original untouched
+            desktop position. */}
+        <div ref={stageRef} className="logo-origin-stage relative aspect-square w-full max-h-[52vh] shrink-0 translate-y-[100px] md:w-[min(40vw,62vh)] md:max-h-none md:translate-y-0">
           <svg
             ref={svgRef}
             viewBox={`0 0 ${CANVAS} ${CANVAS}`}
@@ -965,8 +980,17 @@ export default function LogoOriginSequence() {
             comfortably clear of the centered stage above it at every scroll
             position (the stage's own max height is well under half the
             section height). From md up this returns to a normal in-flow
-            flex sibling, unchanged from the original side-column design. */}
-        <div className="absolute inset-x-0 bottom-6 z-10 flex h-40 w-full shrink-0 items-center justify-center px-4 text-center md:relative md:inset-auto md:bottom-auto md:h-36 md:w-36 md:items-center md:justify-start md:px-0 md:text-left lg:h-48 lg:w-48 xl:h-64 xl:w-64 2xl:h-80 2xl:w-80">
+            flex sibling, unchanged from the original side-column design.
+
+            pointer-events-none on this outer box, not just its two text
+            children -- this box shares the CTA button's exact rect
+            (absolute inset-x-0 bottom-6 z-10, see the CTA's own comment
+            above) and sits after it in the DOM, so without this it silently
+            intercepted every tap meant for the button underneath even while
+            fully invisible, which is why "Go to Collections" didn't respond
+            on mobile. Its two children were already pointer-events-none
+            themselves; this just closes the gap on the box they sit in. */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-6 z-10 flex h-40 w-full shrink-0 items-center justify-center px-4 text-center md:relative md:inset-auto md:bottom-auto md:h-36 md:w-36 md:items-center md:justify-start md:px-0 md:text-left lg:h-48 lg:w-48 xl:h-64 xl:w-64 2xl:h-80 2xl:w-80">
           <div ref={flowerTextContainerRef} className="pointer-events-none absolute inset-0 flex items-center justify-center md:justify-start">
             <TypedLine text={FLOWER_TEXT} lineRef={flowerTextLineRef} className={CAPTION_TEXT_CLASS} />
           </div>
