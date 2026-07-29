@@ -2,15 +2,18 @@
 
 import path from "path";
 import crypto from "crypto";
+import { headers } from "next/headers";
 import { createOrder } from "@/lib/data/orders.server";
 import { notifyNewOrder } from "@/lib/notify";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { parseBoliAmount, redeemForOrder } from "@/lib/boli/ledger.server";
 import { uploadPublicFile, PAYMENT_PROOFS_BUCKET } from "@/lib/storage";
+import { orderAccessToken } from "@/lib/orderAccessToken";
+import { checkRateLimit } from "@/lib/rateLimit";
 import type { OrderItem, PaymentMethod } from "@/lib/types";
 
 export type CheckoutResult =
-  | { ok: true; orderId: string }
+  | { ok: true; orderId: string; accessToken: string }
   | { ok: false; error: string };
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8MB
@@ -19,7 +22,19 @@ const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"];
 const ALLOWED_EXT = /\.(jpe?g|png|webp|heic|heif|pdf)$/i;
 
+async function clientIp(): Promise<string> {
+  const forwarded = (await headers()).get("x-forwarded-for");
+  return forwarded?.split(",")[0]?.trim() || "unknown";
+}
+
 export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
+  // Guest checkout allowed, so this can only be keyed on IP -- bounds
+  // automated order/upload spam without limiting a real shopper placing a
+  // normal handful of orders.
+  if (!checkRateLimit(`checkout:ip:${await clientIp()}`, 8, 600)) {
+    return { ok: false, error: "Too many attempts. Please wait a few minutes and try again." };
+  }
+
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
@@ -132,5 +147,5 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
 
   notifyNewOrder(order);
 
-  return { ok: true, orderId: order.id };
+  return { ok: true, orderId: order.id, accessToken: orderAccessToken(order.id) };
 }

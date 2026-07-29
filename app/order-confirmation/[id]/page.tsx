@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderById } from "@/lib/data/orders.server";
+import { verifyOrderAccessToken } from "@/lib/orderAccessToken";
+import { getCurrentUser } from "@/lib/auth/currentUser.server";
 
 function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
@@ -8,12 +10,30 @@ function formatPrice(price: number, currency: string) {
 
 export default async function OrderConfirmationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ t?: string }>;
 }) {
   const { id } = await params;
+  const { t: token } = await searchParams;
   const order = await getOrderById(id);
   if (!order) notFound();
+
+  // The order id is also its DB primary key -- short and never meant to be
+  // secret, so it can't be trusted as a bearer credential on its own (it's
+  // guessable/enumerable). Allow access either via the one-time token minted
+  // at checkout (checkout.ts) and carried in the redirect URL -- covers
+  // guest checkouts, which have no account to check ownership against -- or,
+  // same ownership rule the account page already uses, for a signed-in user
+  // revisiting later.
+  const hasValidToken = verifyOrderAccessToken(id, token);
+  if (!hasValidToken) {
+    const user = await getCurrentUser();
+    const owns =
+      !!user && (order.userId === user.id || order.customer.email.toLowerCase() === user.email.toLowerCase());
+    if (!owns) notFound();
+  }
 
   return (
     <div className="page-gutter bg-ink pt-10 pb-28 md:pt-14">

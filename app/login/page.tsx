@@ -20,6 +20,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   exists: "An account with this email already exists. Try signing in instead.",
   unverified: "Please verify your email before signing in — check your inbox for the link.",
   "verify-failed": "That verification link is invalid or has expired. Request a new one below.",
+  "rate-limited": "Too many attempts. Please wait a few minutes and try again.",
 };
 
 const NOTICE_MESSAGES: Record<string, string> = {

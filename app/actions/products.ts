@@ -22,7 +22,9 @@ async function requireAdmin() {
 }
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
+// SVG deliberately excluded -- it's an XML format that can carry an embedded
+// <script>, and product images have no real need to be vector art.
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 async function saveUploadedImages(formData: FormData): Promise<string[]> {
   const files = formData.getAll("images").filter((f): f is File => f instanceof File && f.size > 0);
@@ -35,7 +37,7 @@ async function saveUploadedImages(formData: FormData): Promise<string[]> {
       throw new Error(`${file.name} is too large (max 8MB).`);
     }
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      throw new Error(`${file.name} must be a JPG, PNG, WEBP, or SVG.`);
+      throw new Error(`${file.name} must be a JPG, PNG, or WEBP.`);
     }
     const ext = path.extname(file.name) || "";
     const safeName = `${Date.now()}-${crypto.randomUUID()}${ext}`;

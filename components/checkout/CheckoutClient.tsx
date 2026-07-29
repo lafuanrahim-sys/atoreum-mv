@@ -145,7 +145,7 @@ export default function CheckoutClient({
         return;
       }
       clearCart();
-      router.push(`/order-confirmation/${result.orderId}`);
+      router.push(`/order-confirmation/${result.orderId}?t=${result.accessToken}`);
     } catch {
       // Network / transport failure (offline, request too large, timeout) —
       // without this the rejection left the button stuck on "Placing Order…".

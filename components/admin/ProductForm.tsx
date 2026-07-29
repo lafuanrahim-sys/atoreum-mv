@@ -46,7 +46,7 @@ export default function ProductForm({
 
   const addFiles = (incoming: FileList | File[]) => {
     const accepted = Array.from(incoming).filter((f) =>
-      ["image/jpeg", "image/png", "image/webp", "image/svg+xml"].includes(f.type)
+      ["image/jpeg", "image/png", "image/webp"].includes(f.type)
     );
     if (!accepted.length) return;
     setNewFiles((prev) => {
@@ -185,7 +185,7 @@ export default function ProductForm({
           type="file"
           name="images"
           multiple
-          accept="image/jpeg,image/png,image/webp,image/svg+xml"
+          accept="image/jpeg,image/png,image/webp"
           className="sr-only"
           tabIndex={-1}
           aria-hidden="true"

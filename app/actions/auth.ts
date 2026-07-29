@@ -17,6 +17,7 @@ import {
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { setSessionCookie } from "@/lib/auth/setSessionCookie.server";
 import { sendVerificationEmail } from "@/lib/email";
+import { checkLoginRateLimit, checkRegistrationRateLimit, checkResendVerificationRateLimit } from "@/lib/auth/rateLimit";
 
 /** Origin to build absolute links (verification emails) against — derived from the request rather than a hardcoded env var, so it's correct in dev, staging, and prod without config. */
 async function getBaseUrl(): Promise<string> {
@@ -24,6 +25,14 @@ async function getBaseUrl(): Promise<string> {
   const host = h.get("host") ?? "localhost:3000";
   const proto = h.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "production" ? "https" : "http");
   return `${proto}://${host}`;
+}
+
+// No CDN/reverse-proxy of record for this deployment — best-effort only,
+// same as the identical helper in app/api/boli/dive/play/route.ts (that one
+// reads from a NextRequest directly; Server Actions only have headers()).
+async function clientIp(): Promise<string> {
+  const forwarded = (await headers()).get("x-forwarded-for");
+  return forwarded?.split(",")[0]?.trim() || "unknown";
 }
 
 function loginRedirect(params: Record<string, string>): never {
@@ -40,6 +49,11 @@ export async function loginAction(formData: FormData): Promise<void> {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
   const from = String(formData.get("from") ?? "");
+
+  const rateLimit = checkLoginRateLimit(email, await clientIp());
+  if (!rateLimit.ok) {
+    loginRedirect({ error: "rate-limited", mode: "login", ...(from ? { from } : {}) });
+  }
 
   const user = await verifyCredentials(email, password);
   if (!user) {
@@ -73,6 +87,9 @@ export async function registerAction(formData: FormData): Promise<void> {
   if (password.length < 8) {
     loginRedirect({ error: "password", mode: "register", ...(from ? { from } : {}) });
   }
+  if (!checkRegistrationRateLimit(await clientIp()).ok) {
+    loginRedirect({ error: "rate-limited", mode: "register", ...(from ? { from } : {}) });
+  }
 
   const result = await createUser({ name, email, password });
   if ("error" in result) {
@@ -105,15 +122,24 @@ export async function resendVerificationAction(formData: FormData): Promise<void
   const email = String(formData.get("email") ?? "");
   const from = String(formData.get("from") ?? "");
 
-  const result = await issueVerificationToken(email);
-  if (!("error" in result)) {
-    const verifyUrl = `${await getBaseUrl()}/api/verify-email?token=${result.verificationToken}`;
-    const sendResult = await sendVerificationEmail({ to: result.user.email, name: result.user.name, verifyUrl });
-    if ("error" in sendResult) console.error("Verification email failed to send:", sendResult.error);
+  // Unauthenticated and, unlike registration, not even limited by needing a
+  // fresh email each time — capped per target address (not per requester)
+  // so this can't be looped to flood one inbox. Silently skips the actual
+  // send rather than surfacing a distinct error: same reasoning as the
+  // account-enumeration protection below, this shouldn't tell a caller
+  // anything about the target beyond "an email may or may not have gone
+  // out" (a legitimate user hitting this is rare and can just wait).
+  if (checkResendVerificationRateLimit(email).ok) {
+    const result = await issueVerificationToken(email);
+    if (!("error" in result)) {
+      const verifyUrl = `${await getBaseUrl()}/api/verify-email?token=${result.verificationToken}`;
+      const sendResult = await sendVerificationEmail({ to: result.user.email, name: result.user.name, verifyUrl });
+      if ("error" in sendResult) console.error("Verification email failed to send:", sendResult.error);
+    }
   }
   // Same response whether the account doesn't exist, is already verified,
-  // or the resend just went out — no reason to hand out account-existence
-  // info from a public form.
+  // the resend just went out, or it was silently rate-limited — no reason
+  // to hand out account-existence (or rate-limit) info from a public form.
   loginRedirect({ mode: "login", notice: "verify-sent", email, ...(from ? { from } : {}) });
 }
 

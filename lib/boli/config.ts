@@ -195,7 +195,7 @@ export const GAME_ENABLED = true;
  * SET THIS TO `false` BEFORE LAUNCH — that is the entire "switch back to
  * real 24h gameplay" step; nothing else needs to change.
  */
-export const UNLIMITED_DIVE_PLAYS_FOR_ADMINS = true;
+export const UNLIMITED_DIVE_PLAYS_FOR_ADMINS = false;
 
 // ---------------------------------------------------------------------------
 // Fraud controls (BOLI_SPEC.md §6)
@@ -242,7 +242,6 @@ export const REFUND_FLAG_WINDOW_DAYS = 90;
 export const RATE_LIMITS = {
   play: { perUser: { limit: 10, windowSeconds: 60 }, perIp: { limit: 60, windowSeconds: 60 } },
   redemptionPreview: { perUser: { limit: 30, windowSeconds: 60 } },
-  registration: { perIp: { limit: 5, windowSeconds: 3600 } },
 } as const;
 
 // ---------------------------------------------------------------------------

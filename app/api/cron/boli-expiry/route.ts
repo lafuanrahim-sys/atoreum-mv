@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { listAllBoliUserIds, expireUser } from "@/lib/boli/ledger.server";
 
@@ -19,8 +20,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "BOLI_CRON_SECRET is not configured." }, { status: 500 });
   }
 
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${secret}`) {
+  const authHeader = request.headers.get("authorization") ?? "";
+  const expected = `Bearer ${secret}`;
+  const given = Buffer.from(authHeader);
+  const wanted = Buffer.from(expected);
+  const authorized = given.length === wanted.length && crypto.timingSafeEqual(given, wanted);
+  if (!authorized) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
