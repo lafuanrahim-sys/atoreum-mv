@@ -237,6 +237,21 @@ export default function CategoryRail({
         <span className="text-xs uppercase tracking-[0.3em] text-gold">Category</span>
         <span className="h-px w-8 bg-line" />
       </div>
+      {/* touch-action:pan-x below md -- the drag handlers above are mouse-only
+          (onPointerDown bails on any non-mouse pointerType, deliberately, so
+          a tap still fires its button's click instead of being hijacked into
+          a drag), so touch users depend entirely on the browser's own native
+          horizontal pan for this overflow-x-auto rail. pan-y (the previous
+          value, still used at md+ for parity even though touch panning is
+          moot with mouse-only desktop drag) reserves *vertical* panning as
+          this element's native gesture instead -- exactly backwards, since
+          the rail has no vertical scroll at all, and it left horizontal
+          touch swipes completely unhandled (not native, not JS). pan-x
+          claims horizontal panning as native here and leaves vertical
+          touches to bubble up to the page's own scroll, which is what was
+          actually wanted. Native scroll already drives the 3D arc via the
+          rail's own "scroll" listener below, so this needed no other
+          change. */}
       <div
         ref={railRef}
         role="tablist"
@@ -245,7 +260,7 @@ export default function CategoryRail({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        className={`category-rail flex w-full items-center gap-6 overflow-x-auto px-6 py-4 sm:gap-9 sm:px-10 md:px-24 [-webkit-mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)] [mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)] sm:[-webkit-mask-image:linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] sm:[mask-image:linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] [perspective:800px] [scrollbar-width:none] [touch-action:pan-y] [&::-webkit-scrollbar]:hidden ${
+        className={`category-rail flex w-full items-center gap-6 overflow-x-auto px-6 py-4 sm:gap-9 sm:px-10 md:px-24 [-webkit-mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)] [mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)] sm:[-webkit-mask-image:linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] sm:[mask-image:linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] [perspective:800px] [scrollbar-width:none] [touch-action:pan-x] md:[touch-action:pan-y] [&::-webkit-scrollbar]:hidden ${
           dragging ? "[&_button]:pointer-events-none" : ""
         }`}
       >
