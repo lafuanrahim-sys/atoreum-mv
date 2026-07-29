@@ -6,11 +6,13 @@ import gsap from "gsap";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { parallax } from "@/lib/motion";
 
-// This hero sits directly on the unedited photo -- no gradient/scrim is
-// layered on top of it. Text color is a fixed warm palette (not the site's
-// --ink/--gold theme tokens) sampled to read clearly against the photo's own
-// light wall tone, and to stay consistent regardless of the visitor's
-// light/dark site preference -- the photo's lighting shouldn't flip with it.
+// This hero sits directly on the unedited photo (desktop) or the plain
+// bg-[#f5ede4] backdrop behind an uncropped, corner-anchored copy of it
+// (mobile/tablet, see CollectionHero's own comment) -- no gradient/scrim
+// either way. Text color is a fixed warm palette (not the site's --ink/--gold
+// theme tokens) sampled to read clearly against the photo's own light wall
+// tone, and to stay consistent regardless of the visitor's light/dark site
+// preference -- the photo's lighting shouldn't flip with it.
 const WARM = {
   heading: "#241d17",
   body: "#6b5d50",
@@ -48,28 +50,37 @@ export default function CollectionHero() {
       ref={sectionRef}
       className="relative -mt-24 flex h-[100svh] w-full items-start overflow-hidden md:-mt-28"
     >
-      <div ref={bgRef} className="absolute inset-x-0 top-[-8%] bottom-[-8%]">
+      {/* bg-[#f5ede4]: the same warm light tone the old mobile scrim was
+          built from (rgba(245,237,228,...)) — invisible on desktop where
+          the photo covers the container edge-to-edge, but on mobile/tablet
+          (see below) it's the backdrop showing through wherever the
+          now-uncropped photo doesn't reach. */}
+      <div ref={bgRef} className="absolute inset-x-0 top-[-8%] bottom-[-8%] bg-[#f5ede4]">
+        {/* Below md: object-contain + object-right-bottom, not the
+            object-cover crop desktop uses. object-cover on a container this
+            tall and narrow (mobile hero is close to a 9:19 sleeve; the
+            photo itself is a 3:2 landscape) forced the image to scale up
+            until it covered the container's height, cropping away roughly
+            70% of its width in the process -- landing the text over the
+            bottle itself (busy, high-contrast glass and gold that no fixed
+            WARM text color could stay readable against, hence the old
+            scrim below) and cutting the second bottle off-frame entirely.
+            object-contain shows the whole photo, uncropped, at whatever
+            size fits the container -- "zoomed out" is the correct
+            description, not a metaphor -- anchored to the bottom-right
+            corner so both bottles land together there, fully visible,
+            exactly where the desktop crop's own focal point already put
+            them. The now-empty area behind the text (upper-left) is just
+            the plain bg-[#f5ede4] backdrop above, so text reads cleanly
+            without needing a scrim over the photo at all. From md up this
+            reverts to the exact original object-cover crop. */}
         <Image
           src="/images/hero/collection.png"
           alt="Lebelage Real Sensation Blemish Ampoule and Pore Cream staged on stone with cherry blossom"
           fill
           priority
-          className="object-cover object-[62%_center]"
+          className="object-contain object-right-bottom md:object-cover md:object-[62%_center]"
           sizes="100vw"
-        />
-        {/* Mobile-only scrim: the same 62%-center crop that reads fine as a
-            wide desktop banner (mostly light wall behind the text corner)
-            frames much tighter on a phone, landing the text squarely over
-            the bottle itself — busy, high-contrast glass and gold that no
-            fixed WARM text color can stay readable against. A soft warm
-            veil (same palette family as WARM.heading/body, so it reads as
-            an intentional part of the photo's own light rather than a
-            slapped-on box) restores contrast without touching the
-            deliberately scrim-free desktop treatment described above. */}
-        <div
-          aria-hidden
-          className="absolute inset-0 md:hidden"
-          style={{ background: "linear-gradient(180deg, rgba(245,237,228,0.94) 0%, rgba(245,237,228,0.9) 40%, rgba(245,237,228,0.78) 65%, rgba(245,237,228,0.48) 85%, rgba(245,237,228,0.2) 100%)" }}
         />
       </div>
       {/* Header is 80px tall, so pt-[180px] lands the text exactly 100px
