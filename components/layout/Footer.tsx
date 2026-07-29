@@ -3,14 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { useChromeHidden } from "@/lib/layout/ChromeVisibility";
 
 export default function Footer() {
   const pathname = usePathname();
+  const chromeHidden = useChromeHidden();
   const ref = useScrollReveal<HTMLElement>({ start: "top 92%" });
   // Hidden on the homepage (by design), inside the admin dashboard (which
   // has its own shell), and on the maintenance page (deliberately
   // chrome-free -- nothing on it should link back into the site).
-  if (pathname === "/" || pathname.startsWith("/dashboard") || pathname === "/maintenance") return null;
+  // chromeHidden is the reliable signal for the latter two (see
+  // lib/layout/ChromeVisibility.tsx) -- usePathname() alone can lag behind
+  // a Server Action redirect that middleware further redirects.
+  if (chromeHidden || pathname === "/" || pathname.startsWith("/dashboard") || pathname === "/maintenance") return null;
 
   return (
     <footer ref={ref} className="page-gutter border-t border-line bg-ink py-16">

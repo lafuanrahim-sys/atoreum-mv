@@ -1,14 +1,18 @@
 import Logo from "@/components/ui/Logo";
+import { HideChrome } from "@/lib/layout/ChromeVisibility";
 
 /**
  * Shown in place of the entire site when maintenance mode is on (see
- * app/layout.tsx) -- no header, nav, or footer, so there's nothing here for
+ * middleware.ts) -- no header, nav, or footer, so there's nothing here for
  * a visitor to click through to the rest of the (intentionally offline)
- * store.
+ * store. Mounts HideChrome rather than relying solely on Header/Footer's
+ * own pathname check, since that can lag behind certain redirect chains
+ * (see lib/layout/ChromeVisibility.tsx).
  */
 export default function MaintenancePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-ink px-6 text-center">
+      <HideChrome />
       <span className="h-10 w-10">
         <Logo />
       </span>

@@ -9,6 +9,7 @@ import ThemeToggle from "@/components/layout/ThemeToggle";
 import ProfileButton from "@/components/layout/ProfileButton";
 import BoliChip from "@/components/layout/BoliChip";
 import CartButton from "@/components/cart/CartButton";
+import { useChromeHidden } from "@/lib/layout/ChromeVisibility";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -23,6 +24,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
+  const chromeHidden = useChromeHidden();
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > SCROLL_THRESHOLD);
@@ -34,9 +36,12 @@ export default function Header() {
   // The admin dashboard brings its own shell (sidebar + identity), so the
   // storefront chrome stays out of it entirely. The maintenance page is
   // deliberately chrome-free too — nothing on it should link back into the
-  // (intentionally offline) rest of the site. After the hooks — early
-  // returns must never sit between hook calls.
-  if (pathname.startsWith("/dashboard") || pathname === "/maintenance") return null;
+  // (intentionally offline) rest of the site. chromeHidden is the reliable
+  // signal (see lib/layout/ChromeVisibility.tsx) -- usePathname() alone can
+  // lag behind a Server Action redirect that middleware further redirects,
+  // confirmed in testing; kept as a fallback since it's usually correct too.
+  // After the hooks — early returns must never sit between hook calls.
+  if (chromeHidden || pathname.startsWith("/dashboard") || pathname === "/maintenance") return null;
 
   // The Collection page's hero sits on a fixed, real photo (not a themed
   // bg-ink section) that never flips with light/dark mode, so at the top of

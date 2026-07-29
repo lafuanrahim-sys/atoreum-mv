@@ -6,6 +6,7 @@ import DashboardNav from "@/components/dashboard/DashboardNav";
 import Logo from "@/components/ui/Logo";
 import ToastProvider from "@/components/dashboard/ToastProvider";
 import { cn } from "@/lib/utils";
+import { HideChrome } from "@/lib/layout/ChromeVisibility";
 
 /**
  * Admin portal shell. The sidebar is a fixed, always-visible column on wide
@@ -106,6 +107,7 @@ export default function DashboardShell({
   return (
     <ToastProvider>
     <div className="flex min-h-screen bg-ink-2">
+      <HideChrome />
       {/* Wide screens: always-on fixed column. */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-line bg-ink pt-6 lg:flex">
         {sidebarContent}

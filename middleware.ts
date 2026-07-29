@@ -91,10 +91,15 @@ export async function middleware(request: NextRequest) {
 
   const exempt = MAINTENANCE_EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   if (!exempt && !isAdminRole(session?.role) && (await getMaintenanceMode(request.nextUrl.origin))) {
-    // Rewrite, not redirect — the visitor's URL bar keeps showing whatever
-    // page they actually asked for, matching the app/layout.tsx-based
-    // version's original behavior.
-    return NextResponse.rewrite(new URL("/maintenance", request.url));
+    // Redirect, not rewrite. A rewrite quietly serves /maintenance's route
+    // tree while the client-side router still believes it's on whatever
+    // page was actually requested -- fine for a full page load (curl, or a
+    // fresh visit), but a client-side <Link> navigation sends the router an
+    // RSC payload shaped for a route it didn't ask for, which it can't
+    // reconcile: confirmed in testing as a stale header with blank content
+    // underneath. A real redirect lands the client on /maintenance for
+    // real, so the payload always matches what the router expects.
+    return NextResponse.redirect(new URL("/maintenance", request.url));
   }
 
   return NextResponse.next();

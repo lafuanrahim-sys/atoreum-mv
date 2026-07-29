@@ -6,11 +6,10 @@ export const metadata: Metadata = {
 };
 
 /**
- * Real route middleware.ts rewrites every non-exempt path to while
- * maintenance mode is on (see middleware.ts) -- a rewrite rather than a
- * redirect, so the visitor's URL bar still shows whatever page they asked
- * for. Header/Footer both self-hide on this path (same pattern they already
- * use for /dashboard) so nothing here links back into the "offline" site.
+ * Real route middleware.ts redirects every non-exempt path to while
+ * maintenance mode is on (see middleware.ts). Header/Footer both self-hide
+ * on this path (same pattern they already use for /dashboard) so nothing
+ * here links back into the "offline" site.
  */
 export default function Maintenance() {
   return <MaintenancePage />;

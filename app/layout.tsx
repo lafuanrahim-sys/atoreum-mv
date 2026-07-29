@@ -8,6 +8,7 @@ import Footer from "@/components/layout/Footer";
 import { CartProvider } from "@/lib/cart/CartContext";
 import { SessionProvider } from "@/lib/auth/SessionContext";
 import CartDrawer from "@/components/cart/CartDrawer";
+import { ChromeVisibilityProvider } from "@/lib/layout/ChromeVisibility";
 
 // Display serif for headlines — editorial, luxury-catalogue register.
 const playfair = Playfair_Display({
@@ -70,22 +71,24 @@ export default function RootLayout({
         </a>
         <SessionProvider>
           <CartProvider>
-            <SmoothScroll>
-              <Header />
-              <main id="main" className="pt-24 md:pt-28">
-                {/* The admin dashboard has its own nested, content-only
-                    PageTransition (app/dashboard/layout.tsx) so its sidebar
-                    never re-fades on internal navigation -- skip this outer
-                    whole-subtree fade for dashboard-to-dashboard moves and
-                    let the inner one handle it; still fade normally when
-                    entering/leaving the dashboard section. */}
-                <PageTransition skipPrefixes={["/dashboard"]}>
-                  {children}
-                </PageTransition>
-              </main>
-              <Footer />
-            </SmoothScroll>
-            <CartDrawer />
+            <ChromeVisibilityProvider>
+              <SmoothScroll>
+                <Header />
+                <main id="main" className="pt-24 md:pt-28">
+                  {/* The admin dashboard has its own nested, content-only
+                      PageTransition (app/dashboard/layout.tsx) so its sidebar
+                      never re-fades on internal navigation -- skip this outer
+                      whole-subtree fade for dashboard-to-dashboard moves and
+                      let the inner one handle it; still fade normally when
+                      entering/leaving the dashboard section. */}
+                  <PageTransition skipPrefixes={["/dashboard"]}>
+                    {children}
+                  </PageTransition>
+                </main>
+                <Footer />
+              </SmoothScroll>
+              <CartDrawer />
+            </ChromeVisibilityProvider>
           </CartProvider>
         </SessionProvider>
       </body>
