@@ -55,8 +55,23 @@ async function getMaintenanceMode(origin: string): Promise<boolean> {
   return cachedMaintenanceMode;
 }
 
+const CANONICAL_HOST = "atoreum.mv";
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // The site only exists at atoreum.mv now — the *.vercel.app fallback
+  // (both the stable project alias, atoreum-mv.vercel.app, and every
+  // individual deployment's own preview URL) redirects to the real domain
+  // instead of serving content directly. www.atoreum.mv and localhost are
+  // untouched.
+  const host = request.headers.get("host") ?? "";
+  if (host.endsWith(".vercel.app")) {
+    return NextResponse.redirect(
+      new URL(`${pathname}${request.nextUrl.search}`, `https://${CANONICAL_HOST}`),
+      308
+    );
+  }
 
   if (pathname === "/admin/login" || pathname === "/admin") {
     return NextResponse.redirect(
