@@ -67,6 +67,48 @@ async function nextOrderNumber(): Promise<string> {
   return `ATM-${datePart}-${String(todayCount + 1).padStart(4, "0")}`;
 }
 
+/** Statuses at which an order's items are treated as a committed sale —
+ * stock has been (or should be) deducted for them. Everything else
+ * ("Pending Verification", the pre-Confirmed state for bank transfers) has
+ * not yet touched stock. */
+const STOCK_COMMITTED_STATUSES: ReadonlySet<OrderStatus> = new Set(["Confirmed", "Shipped", "Completed"]);
+
+/**
+ * Adjusts stock_on_hand for every line item in one order, atomically (all
+ * items or none). `direction` is -1 to deduct (a sale becoming committed)
+ * or +1 to restore (a committed order being cancelled) — greatest(0, ...)
+ * on the deduct path is a defensive floor, not a substitute for checking
+ * availability before accepting the order (checkout doesn't currently do
+ * that at all; a race between two simultaneous confirmations could still
+ * oversell before either deduction lands).
+ */
+async function adjustStockForItems(items: OrderItem[], direction: 1 | -1): Promise<void> {
+  if (items.length === 0) return;
+  const client = await pool().connect();
+  try {
+    await client.query("BEGIN");
+    for (const item of items) {
+      if (direction === -1) {
+        await client.query(
+          "update products set stock_on_hand = greatest(0, stock_on_hand - $2), updated_at = now() where id = $1",
+          [item.productId, item.quantity]
+        );
+      } else {
+        await client.query(
+          "update products set stock_on_hand = stock_on_hand + $2, updated_at = now() where id = $1",
+          [item.productId, item.quantity]
+        );
+      }
+    }
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 export async function createOrder(params: {
   items: OrderItem[];
   subtotal: number;
@@ -114,6 +156,14 @@ export async function createOrder(params: {
       params.boliRedeemed ? (params.boliDiscountAmount ?? null) : null,
     ]
   );
+  // Cash orders land straight on "Confirmed" (see the status assignment
+  // above) -- there's no separate admin action that would otherwise cause
+  // this deduction, so it has to happen here. Bank-transfer orders start
+  // at "Pending Verification" and get deducted later, in
+  // updateOrderStatus, when an admin actually confirms them.
+  if (status === "Confirmed") {
+    await adjustStockForItems(params.items, -1);
+  }
   return rowToOrder(rows[0]);
 }
 
@@ -136,9 +186,29 @@ export async function hasCompletedPurchase(email: string, productId: string): Pr
 }
 
 export async function updateOrderStatus(id: string, status: OrderStatus): Promise<Order | null> {
+  // Needs the order's *previous* status to know whether this transition
+  // crosses into or out of "stock committed" territory -- e.g. a bank
+  // transfer order moving Pending Verification -> Confirmed should deduct
+  // now (createOrder only deducts cash orders, which are Confirmed from
+  // the start); a Confirmed/Shipped/Completed order moving to Cancelled
+  // should give its stock back, or it's gone for good with no order to
+  // account for it.
+  const before = await getOrderById(id);
+  if (!before) return null;
+
   const { rows } = await pool().query<OrderRow>(
     "update orders set status = $2, updated_at = now() where id = $1 returning *",
     [id, status]
   );
-  return rows[0] ? rowToOrder(rows[0]) : null;
+  if (!rows[0]) return null;
+
+  const wasCommitted = STOCK_COMMITTED_STATUSES.has(before.status);
+  const isCommitted = STOCK_COMMITTED_STATUSES.has(status);
+  if (!wasCommitted && isCommitted) {
+    await adjustStockForItems(before.items, -1);
+  } else if (wasCommitted && status === "Cancelled") {
+    await adjustStockForItems(before.items, 1);
+  }
+
+  return rowToOrder(rows[0]);
 }
