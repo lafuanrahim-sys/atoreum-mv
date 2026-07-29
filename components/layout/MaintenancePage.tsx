@@ -20,10 +20,13 @@ export default function MaintenancePage() {
     <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 overflow-hidden bg-ink px-6 text-center">
       <HideChrome />
       <MaintenanceLogo />
-      <div>
+      <div className="maintenance-text-reveal">
         {/* No separate "Atoreum MV" label -- the logo above already spells
             it out (ATOREUM + MV), so a text duplicate right underneath
-            would just be redundant. */}
+            would just be redundant. Starts partway through the logo's own
+            reveal (see the animation-delay on .maintenance-text-reveal) so
+            the two read as one choreographed sequence -- logo first, text
+            following -- rather than everything popping in at once. */}
         <h1 className="font-display text-2xl text-ivory md:text-3xl">We&apos;ll be back shortly.</h1>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-ivory-dim">
           The store is offline for maintenance right now. Please check back soon.

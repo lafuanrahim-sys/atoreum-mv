@@ -383,6 +383,10 @@ button:not(:disabled),
   from { opacity: 0; transform: translateY(14px) scale(0.92); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+@keyframes maintenance-text-reveal-kf {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @keyframes maintenance-glow-kf {
   0%, 100% { transform: scale(1); opacity: 0.5; }
   50% { transform: scale(1.15); opacity: 0.85; }
@@ -398,6 +402,12 @@ button:not(:disabled),
 @media (prefers-reduced-motion: no-preference) {
   .maintenance-reveal {
     animation: maintenance-reveal-kf 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* both -- holds the from-state through the delay so the text stays
+     invisible until its cue, instead of flashing visible then jumping
+     back. Starts at 0.35s, partway through the logo's 0.9s reveal. */
+  .maintenance-text-reveal {
+    animation: maintenance-text-reveal-kf 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
   }
   .maintenance-glow {
     animation: maintenance-glow-kf 4.5s ease-in-out infinite;
