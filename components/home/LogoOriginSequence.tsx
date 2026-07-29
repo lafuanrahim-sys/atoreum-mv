@@ -371,18 +371,21 @@ export default function LogoOriginSequence() {
         // own real content -- the three atoll silhouettes plus their
         // leader-line/label callouts, read live via getBBox() now that
         // placeCallout has positioned everything -- only fills a fraction
-        // of the full square canvas (MAP_CONTEXT's faint full-chain
-        // atmosphere spans much taller, which is why the plain container
-        // upsize alone barely moved the needle on a small phone stage).
-        // Framing tightly around just that real content and excluding the
-        // atmosphere layer (explicitly "for atmosphere only -- never
-        // focused on", so minor clipping of its faint extremities is an
-        // acceptable trade) makes the map and its labels meaningfully
-        // bigger and more legible on mobile without touching desktop,
-        // which stays on FULL_VB throughout.
+        // of the full square canvas, which is why the plain container
+        // upsize alone barely moved the needle on a small phone stage.
+        // contextGroup (MAP_CONTEXT, the faint full-chain atmosphere
+        // silhouette behind the three highlighted atolls) is included in
+        // the union too -- an earlier version deliberately left it out to
+        // crop in tighter/bigger, treating minor clipping of it as an
+        // acceptable trade, but on an actual phone that read as the map
+        // being broken/incomplete rather than "focused": a user asking
+        // "where's the top part of the map?" isn't wrong, faint or not, it
+        // was really being cut off. Including it means the crop is a
+        // little less tight, but nothing is ever missing. From md up this
+        // never applies -- desktop stays on FULL_VB throughout.
         const isMobile = window.innerWidth < 768;
-        const mapBBoxes = [lhavMap, kaafuMap, huvMap, lhavCallout, kaafuCallout, huvCallout].map((el) =>
-          el.getBBox()
+        const mapBBoxes = [lhavMap, kaafuMap, huvMap, lhavCallout, kaafuCallout, huvCallout, contextGroup].map(
+          (el) => el.getBBox()
         );
         const mapBBoxUnion = mapBBoxes.slice(1).reduce<Bbox>((acc, b) => {
           const minX = Math.min(acc.x, b.x);
