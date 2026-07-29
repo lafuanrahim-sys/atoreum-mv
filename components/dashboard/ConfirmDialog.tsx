@@ -34,14 +34,14 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-ink/70 p-4 backdrop-blur-sm"
+      className="modal-backdrop-in fixed inset-0 z-[200] flex items-center justify-center bg-ink/70 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-sm border-t-2 border-ivory bg-ink p-7 shadow-2xl"
+        className="modal-panel-in w-full max-w-sm border-t-2 border-ivory bg-ink p-7 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-sand">Confirm</p>

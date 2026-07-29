@@ -43,7 +43,7 @@ export default function DashboardNav({
             onClick={onNavigate}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "group flex items-center gap-3 border-l-2 py-2.5 pl-4 pr-2 font-mono text-xs uppercase tracking-[0.12em] transition-colors",
+              "group flex items-center gap-3 border-l-2 py-2.5 pl-4 pr-2 font-mono text-xs uppercase tracking-[0.12em] transition-all duration-150 hover:translate-x-0.5",
               isActive ? "border-gold-deep text-ivory" : "border-transparent text-ivory-dim hover:border-line hover:text-ivory"
             )}
           >

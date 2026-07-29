@@ -292,6 +292,68 @@ button:not(:disabled),
   display: none;
 }
 
+/* Generic small-message entrance (form errors/notices, inline confirmations)
+   -- reused across login, account, and dashboard forms rather than each
+   defining its own one-off keyframe. */
+@keyframes fade-in-up-kf {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fade-in-up {
+    animation: fade-in-up-kf 0.3s ease-out;
+  }
+}
+
+/* One-shot entrance for a standalone card on first paint (login, and any
+   similar single-card view) -- distinct from PageTransition, which only
+   animates *subsequent* navigations, never the very first render (that
+   would flash blank-then-visible on a fresh page load). */
+@keyframes card-entrance-kf {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card-entrance {
+    animation: card-entrance-kf 0.45s ease-out;
+  }
+}
+
+/* Modal/dialog entrance (ConfirmDialog.tsx and similar) -- scrim fades,
+   panel scales up + fades in from just below full size so it reads as
+   emerging from the trigger rather than snapping into place. Exit stays
+   instant (the component unmounts on close) -- animating that too would
+   need to delay unmounting, not worth the complexity for a confirm dialog
+   that's dismissed and forgotten immediately. */
+@keyframes modal-backdrop-in-kf {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modal-panel-in-kf {
+  from { opacity: 0; transform: scale(0.96) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .modal-backdrop-in {
+    animation: modal-backdrop-in-kf 0.15s ease-out;
+  }
+  .modal-panel-in {
+    animation: modal-panel-in-kf 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/* Toast entrance (ToastProvider.tsx) -- slides up from the stack's own
+   anchor edge rather than popping into place. */
+@keyframes toast-in-kf {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .toast-in {
+    animation: toast-in-kf 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
 /* Product detail page: rotating headline crossfade (ProductHeadlines.tsx) */
 @keyframes product-headline-fadein {
   from { opacity: 0; transform: translateY(4px); }

@@ -6,6 +6,7 @@ import { countUnreadMessages } from "@/lib/data/messages.server";
 import { logoutAction } from "@/app/actions/auth";
 import { toggleDashboardThemeAction } from "@/app/actions/storeAdmin";
 import DashboardShell from "@/components/dashboard/DashboardShell";
+import PageTransition from "@/components/ui/PageTransition";
 
 /**
  * Admin portal shell: fixed sidebar + content pane, in the spirit of the
@@ -36,7 +37,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         toggleThemeAction={toggleDashboardThemeAction}
         logoutAction={logoutAction}
       >
-        {children}
+        {/* Content-only fade -- the sidebar/nav above stays put across
+            dashboard navigation, only this pane crossfades. */}
+        <PageTransition>{children}</PageTransition>
       </DashboardShell>
     </div>
   );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Inter, Montserrat, Pinyon_Script, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/ui/SmoothScroll";
+import PageTransition from "@/components/ui/PageTransition";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { CartProvider } from "@/lib/cart/CartContext";
@@ -71,7 +72,17 @@ export default function RootLayout({
           <CartProvider>
             <SmoothScroll>
               <Header />
-              <main id="main" className="pt-24 md:pt-28">{children}</main>
+              <main id="main" className="pt-24 md:pt-28">
+                {/* The admin dashboard has its own nested, content-only
+                    PageTransition (app/dashboard/layout.tsx) so its sidebar
+                    never re-fades on internal navigation -- skip this outer
+                    whole-subtree fade for dashboard-to-dashboard moves and
+                    let the inner one handle it; still fade normally when
+                    entering/leaving the dashboard section. */}
+                <PageTransition skipPrefixes={["/dashboard"]}>
+                  {children}
+                </PageTransition>
+              </main>
               <Footer />
             </SmoothScroll>
             <CartDrawer />

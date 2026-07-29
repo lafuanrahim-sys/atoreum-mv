@@ -65,7 +65,7 @@ export default function AdminActionButton({
         type="button"
         onClick={() => (confirmTitle ? setConfirmOpen(true) : run())}
         disabled={isPending}
-        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.12em] transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${VARIANT_CLASS[variant]} ${className}`}
+        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.12em] transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 ${VARIANT_CLASS[variant]} ${className}`}
       >
         {icon}
         {isPending ? pendingLabel ?? label : label}

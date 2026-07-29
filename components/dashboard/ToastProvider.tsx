@@ -42,7 +42,7 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
           <div
             key={t.id}
             role="status"
-            className={`pointer-events-auto flex max-w-sm items-center gap-3 border-l-2 bg-ink px-4 py-3 font-mono text-xs shadow-2xl ${
+            className={`toast-in pointer-events-auto flex max-w-sm items-center gap-3 border-l-2 bg-ink px-4 py-3 font-mono text-xs shadow-2xl ${
               t.kind === "success" ? "border-gold-deep text-ivory" : "border-red-500 text-ivory"
             }`}
           >

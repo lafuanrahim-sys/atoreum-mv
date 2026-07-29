@@ -5,6 +5,7 @@ import { getAllOrders } from "@/lib/data/orders.server";
 import { getAllProducts } from "@/lib/data/products.server";
 import { listUsers } from "@/lib/data/users.server";
 import OrderStatusBadge from "@/components/dashboard/OrderStatusBadge";
+import DashboardReveal from "@/components/dashboard/DashboardReveal";
 
 function formatNumber(n: number) {
   return n.toLocaleString("en-US");
@@ -166,7 +167,7 @@ export default async function DashboardHomePage() {
       </header>
 
       {/* Headline figures — one dominant number, two supporting, hairline-divided rather than boxed. */}
-      <div className="mt-10 flex flex-col gap-8 border-b border-line pb-10 sm:flex-row sm:divide-x sm:divide-line">
+      <DashboardReveal className="mt-10 flex flex-col gap-8 border-b border-line pb-10 sm:flex-row sm:divide-x sm:divide-line">
         <div className="sm:pr-10">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Total Revenue</p>
           <div className="mt-3 flex flex-wrap items-baseline gap-3">
@@ -198,7 +199,7 @@ export default async function DashboardHomePage() {
           <p className="mt-3 font-mono text-3xl font-medium text-ivory tabular-nums">{formatNumber(customers.length)}</p>
           <p className="mt-4 text-xs text-ivory-dim">registered accounts</p>
         </div>
-      </div>
+      </DashboardReveal>
 
       {/* Editorial two-column body: a single hairline rule separates the columns instead of boxed cards. */}
       <div className="mt-12 flex flex-col gap-12 lg:flex-row lg:gap-0">

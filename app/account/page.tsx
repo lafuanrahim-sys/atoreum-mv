@@ -13,6 +13,7 @@ import { dismissDiveIntroAction, replayDiveTestAction } from "@/app/actions/boli
 import { isAdminRole } from "@/lib/auth/userSession";
 import { getBalance, listLedger, getExpiringSoon, estimatePurchaseEarn } from "@/lib/boli/ledger.server";
 import { EXPIRY_WARNING_WINDOW_DAYS, UNLIMITED_DIVE_PLAYS_FOR_ADMINS } from "@/lib/boli/config";
+import PageTransition from "@/components/ui/PageTransition";
 
 export const metadata: Metadata = {
   title: "My Account — Atoreum MV",
@@ -146,7 +147,7 @@ export default async function AccountPage({
               key={t.key}
               href={`/account?tab=${t.key}`}
               aria-current={tab === t.key ? "page" : undefined}
-              className={`px-4 pb-3 transition-colors ${
+              className={`px-4 pb-3 transition-colors active:scale-95 ${
                 tab === t.key ? "border-b border-gold text-gold" : "text-ivory-dim hover:text-gold"
               }`}
             >
@@ -155,6 +156,7 @@ export default async function AccountPage({
           ))}
         </nav>
 
+        <PageTransition transitionKey={tab === "boli" ? `boli-${boliView}` : tab}>
         <div className="mt-10">
           {tab === "orders" && (
             <div>
@@ -241,14 +243,14 @@ export default async function AccountPage({
                 <Link
                   href="/account?tab=boli&boliView=my"
                   aria-current={boliView !== "dive" ? "page" : undefined}
-                  className={boliView !== "dive" ? "text-gold" : "text-ivory-dim hover:text-gold"}
+                  className={`transition-colors active:scale-95 ${boliView !== "dive" ? "text-gold" : "text-ivory-dim hover:text-gold"}`}
                 >
                   My Boli
                 </Link>
                 <Link
                   href="/account?tab=boli&boliView=dive"
                   aria-current={boliView === "dive" ? "page" : undefined}
-                  className={boliView === "dive" ? "text-gold" : "text-ivory-dim hover:text-gold"}
+                  className={`transition-colors active:scale-95 ${boliView === "dive" ? "text-gold" : "text-ivory-dim hover:text-gold"}`}
                 >
                   Boli Dive
                 </Link>
@@ -281,6 +283,7 @@ export default async function AccountPage({
             />
           )}
         </div>
+        </PageTransition>
       </div>
     </div>
   );

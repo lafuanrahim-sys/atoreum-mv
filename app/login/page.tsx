@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import { loginAction, registerAction, resendVerificationAction } from "@/app/actions/auth";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { isAdminRole } from "@/lib/auth/userSession";
+import PageTransition from "@/components/ui/PageTransition";
+import SubmitButton from "@/components/ui/SubmitButton";
+import PasswordField from "@/components/ui/PasswordField";
 
 export const metadata: Metadata = {
   title: "Sign in — Atoreum MV",
@@ -48,7 +51,7 @@ export default async function LoginPage({
 
   return (
     <div className="page-gutter flex min-h-[70vh] items-center justify-center bg-ink pb-24 pt-10 md:pt-14">
-      <div className="w-full max-w-md border border-line p-8 md:p-10">
+      <div className="card-entrance w-full max-w-md border border-line p-8 md:p-10">
         <p className="text-xs uppercase tracking-[0.3em] text-gold">Atoreum MV</p>
         <h1 className="mt-3 font-display text-2xl text-ivory md:text-3xl">
           {isRegister ? "Create your account" : "Welcome back"}
@@ -63,7 +66,7 @@ export default async function LoginPage({
           <Link
             href={modeHref("login")}
             aria-current={!isRegister ? "page" : undefined}
-            className={`px-4 pb-3 transition-colors ${
+            className={`px-4 pb-3 transition-colors active:scale-95 ${
               !isRegister ? "border-b border-gold text-gold" : "text-ivory-dim hover:text-gold"
             }`}
           >
@@ -72,7 +75,7 @@ export default async function LoginPage({
           <Link
             href={modeHref("register")}
             aria-current={isRegister ? "page" : undefined}
-            className={`px-4 pb-3 transition-colors ${
+            className={`px-4 pb-3 transition-colors active:scale-95 ${
               isRegister ? "border-b border-gold text-gold" : "text-ivory-dim hover:text-gold"
             }`}
           >
@@ -80,77 +83,84 @@ export default async function LoginPage({
           </Link>
         </div>
 
-        {errorMessage && (
-          <p role="alert" className="mt-6 text-sm text-red-400">
-            {errorMessage}
-          </p>
-        )}
+        {/* Keyed on mode so switching Sign In <-> Create Account crossfades
+            (same route, only the ?mode= search param changes -- the
+            route-level PageTransition in layout.tsx intentionally ignores
+            search-param-only changes). */}
+        <PageTransition transitionKey={mode}>
+          <div>
+            {errorMessage && (
+              <p role="alert" className="fade-in-up mt-6 text-sm text-red-400">
+                {errorMessage}
+              </p>
+            )}
 
-        {noticeMessage && (
-          <p role="status" className="mt-6 text-sm text-emerald-400">
-            {noticeMessage}
-          </p>
-        )}
+            {noticeMessage && (
+              <p role="status" className="fade-in-up mt-6 text-sm text-emerald-400">
+                {noticeMessage}
+              </p>
+            )}
 
-        {needsResend && (
-          <form action={resendVerificationAction} className="mt-3">
-            <input type="hidden" name="from" value={from} />
-            <input type="hidden" name="email" value={email} />
-            <button type="submit" className="text-xs uppercase tracking-[0.2em] text-gold hover:underline">
-              Resend verification email{email ? ` to ${email}` : ""}
-            </button>
-          </form>
-        )}
+            {needsResend && (
+              <form action={resendVerificationAction} className="mt-3">
+                <input type="hidden" name="from" value={from} />
+                <input type="hidden" name="email" value={email} />
+                <button type="submit" className="text-xs uppercase tracking-[0.2em] text-gold hover:underline">
+                  Resend verification email{email ? ` to ${email}` : ""}
+                </button>
+              </form>
+            )}
 
-        <form action={isRegister ? registerAction : loginAction} className="mt-6 flex flex-col gap-5">
-          <input type="hidden" name="from" value={from} />
+            <form action={isRegister ? registerAction : loginAction} className="mt-6 flex flex-col gap-5">
+              <input type="hidden" name="from" value={from} />
 
-          {isRegister && (
-            <label className="flex flex-col gap-2">
-              <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">Full name</span>
-              <input
-                type="text"
-                name="name"
-                required
-                autoComplete="name"
-                className="border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none"
-              />
-            </label>
-          )}
+              {isRegister && (
+                <label className="flex flex-col gap-2">
+                  <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">Full name</span>
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    autoComplete="name"
+                    className="border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none"
+                  />
+                </label>
+              )}
 
-          <label className="flex flex-col gap-2">
-            <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">Email</span>
-            <input
-              defaultValue={email}
-              type="email"
-              name="email"
-              required
-              autoComplete="email"
-              className="border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none"
-            />
-          </label>
+              <label className="flex flex-col gap-2">
+                <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">Email</span>
+                <input
+                  defaultValue={email}
+                  type="email"
+                  name="email"
+                  required
+                  autoComplete="email"
+                  className="border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none"
+                />
+              </label>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">
-              Password{isRegister ? " (min 8 characters)" : ""}
-            </span>
-            <input
-              type="password"
-              name="password"
-              required
-              minLength={isRegister ? 8 : undefined}
-              autoComplete={isRegister ? "new-password" : "current-password"}
-              className="border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none"
-            />
-          </label>
+              <label className="flex flex-col gap-2">
+                <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">
+                  Password{isRegister ? " (min 8 characters)" : ""}
+                </span>
+                <PasswordField
+                  name="password"
+                  required
+                  minLength={isRegister ? 8 : undefined}
+                  autoComplete={isRegister ? "new-password" : "current-password"}
+                />
+              </label>
 
-          <button
-            type="submit"
-            className="mt-2 bg-gold-deep px-6 py-4 text-xs uppercase tracking-[0.2em] text-ink transition-colors hover:bg-gold-deep/90"
-          >
-            {isRegister ? "Create Account" : "Sign In"}
-          </button>
-        </form>
+              <SubmitButton
+                variant="solid"
+                className="mt-2 py-4"
+                pendingLabel={isRegister ? "Creating account…" : "Signing in…"}
+              >
+                {isRegister ? "Create Account" : "Sign In"}
+              </SubmitButton>
+            </form>
+          </div>
+        </PageTransition>
       </div>
     </div>
   );
