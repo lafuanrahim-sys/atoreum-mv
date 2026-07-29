@@ -364,3 +364,37 @@ button:not(:disabled),
     animation: product-headline-fadein 0.6s ease-out;
   }
 }
+
+/* MaintenancePage.tsx: the seal emblem "breathes" -- a soft glow and the
+   icon itself scale up and down in sync, with two staggered rings expanding
+   outward and fading like ripples on water (the brand's ocean motif). Pure
+   CSS rather than GSAP since it's a set-and-forget ambient loop with no
+   orchestration or interaction to justify a JS timeline -- keeps the page
+   animating even before hydration. Transform/opacity only so it stays
+   compositor-only on low-power mobile GPUs. */
+@keyframes maintenance-glow-kf {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.15); opacity: 0.85; }
+}
+@keyframes maintenance-icon-breathe-kf {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes maintenance-ripple-kf {
+  0% { transform: scale(0.7); opacity: 0.5; }
+  100% { transform: scale(2); opacity: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .maintenance-glow {
+    animation: maintenance-glow-kf 4.5s ease-in-out infinite;
+  }
+  .maintenance-icon-breathe {
+    animation: maintenance-icon-breathe-kf 4.5s ease-in-out infinite;
+  }
+  .maintenance-ripple {
+    animation: maintenance-ripple-kf 4s ease-out infinite;
+  }
+  .maintenance-ripple-delay {
+    animation-delay: 2s;
+  }
+}

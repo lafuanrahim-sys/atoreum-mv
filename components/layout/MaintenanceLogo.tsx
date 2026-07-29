@@ -1,0 +1,60 @@
+/**
+ * Animated centerpiece for MaintenancePage.tsx -- the seal emblem (the same
+ * artwork as public/atoreum-icon.svg, inlined rather than <Image>'d so the
+ * icon itself can join the CSS animation) breathes gently while a soft glow
+ * and two staggered rings expand outward behind it like ripples on water,
+ * so the "closed for now" page reads as quietly alive rather than dead.
+ * Pure CSS (see the maintenance-* keyframes in app/globals.css) -- no JS
+ * needed for a set-and-forget ambient loop, and it keeps animating from
+ * first paint. Scales down on small screens so it never dominates a short
+ * mobile viewport (the page itself is pinned non-scrollable).
+ */
+export default function MaintenanceLogo() {
+  return (
+    <div className="relative flex h-20 w-20 items-center justify-center sm:h-28 sm:w-28 md:h-32 md:w-32">
+      <span
+        aria-hidden="true"
+        className="maintenance-glow pointer-events-none absolute inset-0 rounded-full bg-gold/40 blur-xl"
+      />
+      <span
+        aria-hidden="true"
+        className="maintenance-ripple pointer-events-none absolute inset-0 rounded-full border border-gold/40"
+      />
+      <span
+        aria-hidden="true"
+        className="maintenance-ripple maintenance-ripple-delay pointer-events-none absolute inset-0 rounded-full border border-gold/40"
+      />
+      <svg
+        viewBox="0 0 763.49 763.49"
+        role="img"
+        aria-label="Atoreum MV"
+        className="maintenance-icon-breathe relative h-full w-full"
+      >
+        <path
+          fill="none"
+          stroke="#6c7770"
+          strokeWidth={4}
+          strokeMiterlimit={10}
+          d="M684.27,381.75 C684.27,548.83 548.83,684.27 381.75,684.27 C214.67,684.27 79.23,548.83 79.23,381.75 C79.23,214.67 214.67,79.23 381.75,79.23 C548.83,79.23 684.27,214.67 684.27,381.75 Z"
+        />
+        <g fill="#6c7770">
+          <path d="M456.76,361.3c-120.61,33.33-234.74,110.32-372.92,34.17-.09.06-.18.08.19.36,59.69,44.84,144.76,49.88,240.04,26.49,74.63-16.59,148.36-48.68,232.56-49.34,42.03-.33,69.99,10.55,81.98,16.21,11.53,5.44,32.34,18.52,35.79,25.27-23.06-54.26-110.16-83.24-217.64-53.16Z" />
+          <path d="M674.4,414.46c.11.26.23.53.34.79-.08-.25-.2-.52-.34-.79Z" />
+        </g>
+        <g fill="none" stroke="#8eaba5" strokeWidth={8} strokeMiterlimit={10}>
+          <path d="M439.71,512.63c2.74-20.22,12.6-28.76,37.55-29.09,12.33-.16,22.22-2.45,32.76-9.76,30.37-21.07,59.38-7.22,64.77,29.69,1,6.84,1.16,13.58,4.19,20.26,10.87,23.97,4.58,40.78-19.05,53.43-23.63,12.66-48.26,8.48-60.75-10.8-5.28-8.16-9.13-17.24-14.27-25.51-5.39-8.66-11.27-15.12-23.8-10.14-17.29,6.87-23.94.62-21.4-18.09Z" />
+          <path d="M342.88,601.55c-4.28,12.66-13.45,20.56-26.6,17.85-27.13-5.61-54.92-10.02-75.1-32.88-10.84-12.29-12.02-12.91,5.91-24.13,12.86-8.04,27.63-12.39,40.1-21.86,9.22-7,17.41-.26,21.45,9.17,5.92,13.83,12.87,25.85,28.19,31.74,8.62,3.31,8.45,11.9,6.04,20.1Z" />
+          <path d="M417.57,628.6c-5.58-.46-11.17-.78-16.72-1.48-13.29-1.67-20.19-9.51-19.18-22.71,1.15-14.95,12.77-12.05,22.27-11.27,11.27.92,22.15,4.01,31.5,10.49,5.53,3.84,12.49,8.12,9.91,16.63-2.54,8.39-10.22,8.36-17.3,8.51-3.49.08-6.99-.13-10.49-.18Z" />
+          <path d="M172.6,512c-.24-9.51,4.51-15.83,12.77-19.81,7.49-3.62,14.82-4.75,20.67,2.86,4.44,5.78,9.8,10.11,17.13,11.04,9.52,1.22,19.1,1.98,14.84,15.86-4.19,13.69-13.32,23.39-27.04,26.07-8.07,1.57-37.54-28.08-38.38-36.02Z" />
+        </g>
+        <g fill="#e9baa6">
+          <path d="M171.41,294.57c1.13-.91,14.87-11.59,32.13-6.31,18.66,5.71,23.75,23.83,23.96,24.69-1.23.92-15.58,11.88-32.95,6.1-17.74-5.9-22.77-23.12-23.14-24.48Z" />
+          <path d="M194.82,367.27c-.52-1.36-6.43-17.73,3.93-32.51,11.19-15.98,30.01-15.23,30.88-15.16.5,1.45,6.49,18.49-4.38,33.22-11.09,15.04-29.03,14.51-30.43,14.44Z" />
+          <path d="M271.37,367.47c-1.45.07-18.84.63-29.7-13.78-11.74-15.58-5.21-33.24-4.87-34.06,1.54-.02,19.59-.46,30.24,14.43,10.88,15.2,4.83,32.09,4.33,33.41Z" />
+          <path d="M295.13,294.85c-.38,1.41-5.22,18.12-22.28,23.99-18.45,6.35-33.22-5.32-33.89-5.89.45-1.47,5.62-18.77,23.07-24.3,17.82-5.65,32.01,5.32,33.11,6.2Z" />
+          <path d="M233.41,249.78c1.22.8,15.62,10.56,15.93,28.61.34,19.51-15.32,29.96-16.08,30.41-1.26-.88-16.11-11.14-15.98-29.45.13-18.69,14.95-28.8,16.13-29.57Z" />
+        </g>
+      </svg>
+    </div>
+  );
+}

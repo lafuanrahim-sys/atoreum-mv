@@ -1,4 +1,4 @@
-import Logo from "@/components/ui/Logo";
+import MaintenanceLogo from "@/components/layout/MaintenanceLogo";
 import { HideChrome } from "@/lib/layout/ChromeVisibility";
 
 /**
@@ -19,9 +19,7 @@ export default function MaintenancePage() {
     // padding entirely and guarantees no scroll.
     <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 overflow-hidden bg-ink px-6 text-center">
       <HideChrome />
-      <span className="h-10 w-10">
-        <Logo />
-      </span>
+      <MaintenanceLogo />
       <div>
         <p className="text-xs uppercase tracking-[0.3em] text-gold">Atoreum MV</p>
         <h1 className="mt-3 font-display text-2xl text-ivory md:text-3xl">We&apos;ll be back shortly.</h1>
