@@ -119,5 +119,11 @@ create table if not exists store_settings (
   account_name text not null default '',
   account_number text not null default '',
   swift text not null default '',
+  -- When true, the public storefront shows a "closed for maintenance" page
+  -- to everyone except signed-in admins (see app/layout.tsx) -- an
+  -- instant, self-service on/off switch for the whole site that doesn't
+  -- need a redeploy or Vercel dashboard access.
+  maintenance_mode boolean not null default false,
   updated_at timestamptz not null default now()
 );
+alter table store_settings add column if not exists maintenance_mode boolean not null default false;

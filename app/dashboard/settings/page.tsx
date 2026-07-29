@@ -3,9 +3,11 @@ import { getSettings } from "@/lib/data/settings.server";
 import {
   addBrandAction,
   removeBrandAction,
+  toggleMaintenanceModeAction,
   updateSettingsAction,
 } from "@/app/actions/storeAdmin";
 import PageHeader from "@/components/dashboard/PageHeader";
+import SubmitButton from "@/components/ui/SubmitButton";
 
 /**
  * Store settings: bank-transfer details shown at checkout, plus the brand
@@ -17,9 +19,13 @@ import PageHeader from "@/components/dashboard/PageHeader";
 export default async function DashboardSettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ settings?: string; brand?: string }>;
+  searchParams: Promise<{ settings?: string; brand?: string; maintenance?: string }>;
 }) {
-  const { settings: settingsFlag = "", brand: brandFlag = "" } = await searchParams;
+  const {
+    settings: settingsFlag = "",
+    brand: brandFlag = "",
+    maintenance: maintenanceFlag = "",
+  } = await searchParams;
   const [settings, brands] = await Promise.all([getSettings(), listBrands()]);
 
   return (
@@ -29,6 +35,47 @@ export default async function DashboardSettingsPage({
         title="Settings"
         description="Payment details shown at checkout, and the brand list offered when adding products."
       />
+
+      {/* Site on/off switch -- separated from the rest of settings and
+          styled with the same danger tone as a destructive action, since
+          it's the one control here that immediately affects every visitor. */}
+      <div
+        className={`mt-10 flex flex-col gap-4 border p-6 sm:flex-row sm:items-center sm:justify-between ${
+          settings.maintenanceMode ? "border-red-500/40 bg-red-500/5" : "border-line"
+        }`}
+      >
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Site Status</p>
+          <p className="mt-1.5 font-display text-xl italic text-ivory">
+            {settings.maintenanceMode ? "Closed for maintenance" : "Live"}
+          </p>
+          <p className="mt-1 max-w-md text-xs text-ivory-dim">
+            {settings.maintenanceMode
+              ? "Visitors see a “back soon” page instead of the store. You can still sign in and use this dashboard."
+              : "The storefront is visible to everyone. Turning this on takes it offline for all visitors except signed-in admins."}
+          </p>
+          {maintenanceFlag === "on" && (
+            <p className="fade-in-up mt-2 font-mono text-xs uppercase tracking-[0.1em] text-red-400" role="status">
+              Site is now offline.
+            </p>
+          )}
+          {maintenanceFlag === "off" && (
+            <p className="fade-in-up mt-2 font-mono text-xs uppercase tracking-[0.1em] text-gold-deep" role="status">
+              Site is live again.
+            </p>
+          )}
+        </div>
+        <form action={toggleMaintenanceModeAction}>
+          <input type="hidden" name="maintenanceMode" value={settings.maintenanceMode ? "off" : "on"} />
+          <SubmitButton
+            variant={settings.maintenanceMode ? "solid" : "outline"}
+            className={settings.maintenanceMode ? "" : "!border-red-500/50 !text-red-400 hover:!border-red-400 hover:!text-red-300"}
+            pendingLabel={settings.maintenanceMode ? "Going live…" : "Taking offline…"}
+          >
+            {settings.maintenanceMode ? "Bring site back online" : "Take site offline"}
+          </SubmitButton>
+        </form>
+      </div>
 
       <div className="mt-10 flex flex-col gap-12 lg:flex-row lg:gap-0">
         {/* Bank transfer details */}

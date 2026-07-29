@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { isAdminRole } from "@/lib/auth/userSession";
 import { addBrand, removeBrand } from "@/lib/data/brands.server";
 import { hasCompletedPurchase } from "@/lib/data/orders.server";
-import { saveSettings } from "@/lib/data/settings.server";
+import { getSettings, saveSettings, setMaintenanceMode } from "@/lib/data/settings.server";
 import {
   createReview,
   deleteReview,
@@ -62,7 +62,9 @@ export async function removeBrandAction(name: string): Promise<void> {
 
 export async function updateSettingsAction(formData: FormData): Promise<void> {
   await requireAdmin();
+  const current = await getSettings();
   await saveSettings({
+    ...current,
     bankName: String(formData.get("bankName") ?? "").trim(),
     accountName: String(formData.get("accountName") ?? "").trim(),
     accountNumber: String(formData.get("accountNumber") ?? "").trim(),
@@ -71,6 +73,24 @@ export async function updateSettingsAction(formData: FormData): Promise<void> {
   revalidatePath("/dashboard/settings");
   revalidatePath("/checkout");
   redirect("/dashboard/settings?settings=saved");
+}
+
+/* ---------- Maintenance mode ---------- */
+
+/**
+ * Site-wide on/off switch (see app/layout.tsx) -- while enabled, every
+ * visitor except a signed-in admin sees a "closed for maintenance" page
+ * instead of the storefront. Toggled from Dashboard -> Settings, takes
+ * effect within a few seconds (the flag is read with a short cache, not
+ * live on every request -- see the unstable_cache wrapper in layout.tsx).
+ */
+export async function toggleMaintenanceModeAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const enabled = formData.get("maintenanceMode") === "on";
+  await setMaintenanceMode(enabled);
+  revalidatePath("/", "layout");
+  revalidatePath("/dashboard/settings");
+  redirect(`/dashboard/settings?maintenance=${enabled ? "on" : "off"}`);
 }
 
 /* ---------- Reviews ---------- */
