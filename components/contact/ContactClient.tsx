@@ -194,10 +194,10 @@ export default function ContactClient({ sent, error }: { sent: boolean; error: b
               <dt className="text-xs uppercase tracking-[0.2em] text-ivory-dim">Inquiries</dt>
               <dd className="mt-2">
                 <a
-                  href="mailto:sales@aranzo.co"
+                  href="mailto:sales@atoreum.mv"
                   className="font-display text-2xl text-ivory transition-colors hover:text-gold"
                 >
-                  sales@aranzo.co
+                  sales@atoreum.mv
                 </a>
               </dd>
             </div>
