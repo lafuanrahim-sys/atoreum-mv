@@ -11,7 +11,13 @@ import { HideChrome } from "@/lib/layout/ChromeVisibility";
  */
 export default function MaintenancePage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-ink px-6 text-center">
+    // Fixed + inset-0, not min-h-screen -- this renders inside root
+    // layout's <main>, which reserves pt-24/28 for the (here, hidden)
+    // header. min-h-screen is relative to normal document flow, so that
+    // padding pushed the whole page taller than the viewport and made it
+    // scrollable. Pinning directly to the viewport sidesteps the ancestor
+    // padding entirely and guarantees no scroll.
+    <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 overflow-hidden bg-ink px-6 text-center">
       <HideChrome />
       <span className="h-10 w-10">
         <Logo />
