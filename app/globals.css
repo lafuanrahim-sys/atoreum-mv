@@ -166,10 +166,17 @@ body {
 
 /* Branded keyboard-focus ring. :focus-visible only, so mouse clicks stay
    clean; inputs that opt into focus:outline-none + border-gold keep their
-   own treatment (their utility outranks this bare pseudo-class). */
-:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 2px;
+   own treatment (their utility outranks this bare pseudo-class). Must be
+   in @layer base -- CSS cascade layers let ANY layered rule (Tailwind's
+   utilities, including focus:outline-none, live in @layer utilities) beat
+   an unlayered one regardless of specificity, so left bare this rule always
+   won and drew its own outline on top of a wrapper's own focus border
+   (visible as a nested double box on PasswordField and similar). */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
 }
 
 /* Tailwind v4 preflight leaves buttons at cursor: default — restore the
