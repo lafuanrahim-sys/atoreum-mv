@@ -21,8 +21,10 @@ export default function MaintenancePage() {
       <HideChrome />
       <MaintenanceLogo />
       <div>
-        <p className="text-xs uppercase tracking-[0.3em] text-gold">Atoreum MV</p>
-        <h1 className="mt-3 font-display text-2xl text-ivory md:text-3xl">We&apos;ll be back shortly.</h1>
+        {/* No separate "Atoreum MV" label -- the logo above already spells
+            it out (ATOREUM + MV), so a text duplicate right underneath
+            would just be redundant. */}
+        <h1 className="font-display text-2xl text-ivory md:text-3xl">We&apos;ll be back shortly.</h1>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-ivory-dim">
           The store is offline for maintenance right now. Please check back soon.
         </p>
