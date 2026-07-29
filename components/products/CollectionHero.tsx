@@ -75,7 +75,7 @@ export default function CollectionHero() {
           alt="Lebelage Real Sensation Blemish Ampoule and Pore Cream staged on stone with cherry blossom"
           fill
           priority
-          className="object-cover object-top md:hidden"
+          className="object-cover object-top lg:hidden"
           sizes="100vw"
         />
         <Image
@@ -83,20 +83,25 @@ export default function CollectionHero() {
           alt="Lebelage Real Sensation Blemish Ampoule and Pore Cream staged on stone with cherry blossom"
           fill
           priority
-          className="hidden object-cover object-[62%_center] md:block"
+          className="hidden object-cover object-[62%_center] lg:block"
           sizes="100vw"
         />
       </div>
-      {/* Header is 80px tall, so md:pt-[180px] lands the text exactly 100px
-          below it on desktop. Below md, pt-[85px] instead -- mobile.png's
+      {/* Header is 80px tall, so lg:pt-[180px] lands the text exactly 100px
+          below it on desktop. Below lg, pt-[85px] instead -- mobile.png's
           product shot sits high enough up the frame (see its own comment)
           that at the original 180px this text block's natural height ran
           into the top of the bottles on a short-enough phone; shifting the
-          block up buys clearance without shrinking the text itself.
+          block up buys clearance without shrinking the text itself. Tied to
+          the same lg breakpoint as the mobile.png/collection.png swap above
+          (not md) since that's also where the header itself switches from
+          hamburger to full nav -- at md, tablet-width viewports got the
+          desktop photo and offset without the desktop-width text column to
+          match, running the heading straight into the product shot.
           Padding matches the header's px scale exactly at md+ (no
           max-w/mx-auto centering here) so the two stay left-aligned at
           every breakpoint, including ultra-wide screens. */}
-      <div ref={ref} className="relative z-10 w-full px-6 pt-[85px] md:px-12 md:pt-[180px] lg:px-16 xl:px-20 2xl:px-24">
+      <div ref={ref} className="relative z-10 w-full px-6 pt-[85px] md:px-12 lg:pt-[180px] lg:px-16 xl:px-20 2xl:px-24">
         <div className="max-w-2xl">
           <p
             data-reveal
