@@ -22,7 +22,7 @@ export default async function DashboardReviewsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <StarRating rating={review.rating} />
-            <span className="font-display italic text-ivory">{review.userName}</span>
+            <span className="font-admin-heading font-semibold text-ivory">{review.userName}</span>
             <span className="text-ivory-dim">
               on{" "}
               {product ? (

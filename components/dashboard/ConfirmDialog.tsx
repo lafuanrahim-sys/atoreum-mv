@@ -45,7 +45,7 @@ export default function ConfirmDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-sand">Confirm</p>
-        <h2 id="confirm-dialog-title" className="mt-2 font-display text-xl italic text-ivory">
+        <h2 id="confirm-dialog-title" className="mt-2 font-admin-heading text-xl font-semibold text-ivory">
           {title}
         </h2>
         {message && <p className="mt-3 text-sm leading-relaxed text-ivory-dim">{message}</p>}

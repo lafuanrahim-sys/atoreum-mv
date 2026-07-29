@@ -27,7 +27,7 @@ export default async function DashboardOrderDetailPage({
       <div className="flex flex-wrap items-start justify-between gap-6 border-b-2 border-ivory pb-6">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-sand">Order Record</p>
-          <h1 className="mt-3 font-display text-3xl italic text-ivory md:text-4xl">{order.orderNumber}</h1>
+          <h1 className="mt-3 font-admin-heading text-3xl font-bold text-ivory md:text-4xl">{order.orderNumber}</h1>
           <p className="mt-2 font-mono text-xs text-ivory-dim">
             Placed {new Date(order.createdAt).toLocaleString()}
           </p>
@@ -65,7 +65,7 @@ export default async function DashboardOrderDetailPage({
       <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
         <div>
           <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Bill To</h2>
-          <p className="mt-3 font-display italic text-ivory">{order.customer.name}</p>
+          <p className="mt-3 font-admin-heading font-semibold text-ivory">{order.customer.name}</p>
           <p className="mt-1 text-sm text-ivory-dim">{order.customer.email}</p>
           <p className="text-sm text-ivory-dim">{order.customer.phone}</p>
           <p className="mt-2 text-sm text-ivory-dim">{order.customer.address}</p>
@@ -92,7 +92,7 @@ export default async function DashboardOrderDetailPage({
           ))}
         </ul>
         <div className="mt-3 flex items-baseline justify-between border-t-2 border-ivory pt-3">
-          <span className="font-display italic text-ivory">Total</span>
+          <span className="font-admin-heading font-semibold text-ivory">Total</span>
           <span className="font-mono text-xl tabular-nums text-ivory">{formatPrice(order.subtotal, order.currency)}</span>
         </div>
       </div>

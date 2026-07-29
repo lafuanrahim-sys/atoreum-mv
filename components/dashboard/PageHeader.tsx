@@ -16,7 +16,7 @@ export default function PageHeader({
     <header className="flex flex-wrap items-end justify-between gap-6 border-b-2 border-ivory pb-6">
       <div>
         <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-sand">{eyebrow}</p>
-        <h1 className="mt-3 font-display text-3xl font-bold text-ivory md:text-4xl">
+        <h1 className="mt-3 font-admin-heading text-3xl font-bold text-ivory md:text-4xl">
           {title}
           {count !== undefined && (
             <span className="ml-3 font-mono text-lg font-normal text-ivory-dim align-middle">— {count}</span>

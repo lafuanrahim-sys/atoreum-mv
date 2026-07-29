@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter, Montserrat, Cinzel_Decorative, JetBrains_Mono } from "next/font/google";
+import { Playfair_Display, Inter, Montserrat, Cinzel_Decorative, Marcellus_SC, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/ui/SmoothScroll";
 import PageTransition from "@/components/ui/PageTransition";
@@ -52,6 +52,18 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+// Marcellus SC — upright small-caps display serif, the admin dashboard's
+// heading font. Replaces font-display's italic (Playfair Display's cursive
+// swashes read fine on the storefront's editorial copy but were hard to
+// scan in a data-dense admin UI) everywhere the dashboard needs something
+// that reads unambiguously as a heading.
+const marcellusSC = Marcellus_SC({
+  variable: "--font-admin-heading",
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Atoreum MV — Lebelage launch in the Maldives",
   description:
@@ -65,7 +77,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${playfair.variable} ${inter.variable} ${montserrat.variable} ${cinzelDecorative.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className={`${playfair.variable} ${inter.variable} ${montserrat.variable} ${cinzelDecorative.variable} ${marcellusSC.variable} ${jetbrainsMono.variable} antialiased`}>
         <a href="#main" className="skip-link">
           Skip to content
         </a>

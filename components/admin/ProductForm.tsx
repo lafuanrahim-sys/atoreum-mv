@@ -240,7 +240,7 @@ function FormSection({ eyebrow, title, children }: { eyebrow: string; title: str
     <fieldset className="m-0 flex flex-col gap-5 border-0 border-t border-line p-0 pt-6">
       <legend className="flex items-baseline gap-3 pb-1">
         <span className="font-mono text-[10px] text-sand">{eyebrow}</span>
-        <span className="font-display text-lg italic text-ivory">{title}</span>
+        <span className="font-admin-heading text-lg font-semibold text-ivory">{title}</span>
       </legend>
       {children}
     </fieldset>

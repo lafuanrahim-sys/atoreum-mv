@@ -145,8 +145,8 @@ export default async function DashboardHomePage() {
           {dateline} · Store Briefing
         </p>
         <div className="mt-3 flex flex-wrap items-end justify-between gap-6">
-          <h1 className="font-display text-4xl leading-tight text-ivory md:text-5xl">
-            {greeting}, <span className="italic text-gold-deep">{user?.name.split(" ")[0]}</span>.
+          <h1 className="font-admin-heading text-4xl font-bold leading-tight text-ivory md:text-5xl">
+            {greeting}, <span className="text-gold-deep">{user?.name.split(" ")[0]}</span>.
           </h1>
           <div className="flex gap-3">
             <Link
@@ -205,7 +205,7 @@ export default async function DashboardHomePage() {
       <div className="mt-12 flex flex-col gap-12 lg:flex-row lg:gap-0">
         <div className="lg:flex-1 lg:pr-10">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-display text-xl italic text-ivory">Recent Orders</h2>
+            <h2 className="font-admin-heading text-xl font-semibold text-ivory">Recent Orders</h2>
             <Link href="/dashboard/orders" className="font-mono text-[11px] uppercase tracking-[0.15em] text-gold-deep hover:underline">
               View all →
             </Link>
@@ -259,7 +259,7 @@ export default async function DashboardHomePage() {
 
           {/* Best sellers — ranked leaderboard, bar length maps to relative units sold. */}
           <div className="mt-12">
-            <h2 className="font-display text-xl italic text-ivory">Best Selling</h2>
+            <h2 className="font-admin-heading text-xl font-semibold text-ivory">Best Selling</h2>
             {bestSellers.length === 0 ? (
               <p className="mt-4 text-sm text-ivory-dim">No sales yet.</p>
             ) : (
@@ -298,7 +298,7 @@ export default async function DashboardHomePage() {
         {/* Stock signal */}
         <div className="lg:w-80 lg:shrink-0 lg:pl-10">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-display text-xl italic text-ivory">Stock Signal</h2>
+            <h2 className="font-admin-heading text-xl font-semibold text-ivory">Stock Signal</h2>
             <Link href="/dashboard/products" className="font-mono text-[11px] uppercase tracking-[0.15em] text-gold-deep hover:underline">
               Manage →
             </Link>

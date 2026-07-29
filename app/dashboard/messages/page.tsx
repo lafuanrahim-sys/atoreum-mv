@@ -85,7 +85,7 @@ export default async function DashboardMessagesPage({
                       aria-label="Unread"
                     />
                   )}
-                  <span className="font-display italic text-ivory">{m.name}</span>
+                  <span className="font-admin-heading font-semibold text-ivory">{m.name}</span>
                   <a href={`tel:${m.phone.replace(/\s+/g, "")}`} className="font-mono text-gold-deep hover:underline tabular-nums">
                     {m.phone}
                   </a>

@@ -229,6 +229,10 @@ button:not(:disabled),
   font-family: var(--font-script), cursive;
 }
 
+.font-admin-heading {
+  font-family: var(--font-admin-heading), serif;
+}
+
 /* utility: hairline divider used across sections instead of hard borders */
 .hairline {
   height: 1px;

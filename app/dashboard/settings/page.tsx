@@ -46,7 +46,7 @@ export default async function DashboardSettingsPage({
       >
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Site Status</p>
-          <p className="mt-1.5 font-display text-xl italic text-ivory">
+          <p className="mt-1.5 font-admin-heading text-xl font-semibold text-ivory">
             {settings.maintenanceMode ? "Closed for maintenance" : "Live"}
           </p>
           <p className="mt-1 max-w-md text-xs text-ivory-dim">
@@ -81,7 +81,7 @@ export default async function DashboardSettingsPage({
         {/* Bank transfer details */}
         <form action={updateSettingsAction} className="flex flex-col gap-6 lg:flex-1 lg:pr-10">
           <div>
-            <h2 className="font-display text-xl italic text-ivory">Bank Transfer Details</h2>
+            <h2 className="font-admin-heading text-xl font-semibold text-ivory">Bank Transfer Details</h2>
             <p className="mt-1 text-xs text-ivory-dim">Shown to customers on the checkout payment step.</p>
           </div>
 
@@ -121,7 +121,7 @@ export default async function DashboardSettingsPage({
 
         {/* Brands manager */}
         <div className="lg:w-96 lg:shrink-0 lg:pl-10">
-          <h2 className="font-display text-xl italic text-ivory">Brands</h2>
+          <h2 className="font-admin-heading text-xl font-semibold text-ivory">Brands</h2>
           <p className="mt-1 text-xs text-ivory-dim">These populate the Brand dropdown on the product form.</p>
 
           <form action={addBrandAction} className="mt-6 flex gap-3">
