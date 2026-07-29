@@ -107,17 +107,17 @@ export default function ProductCard({
           )}
         </Link>
 
-        <div className="absolute top-4 left-4 border border-photo-well-line bg-photo-well/70 px-2.5 py-1 text-[10px] font-medium tracking-[0.18em] text-photo-well-fg uppercase backdrop-blur-sm">
+        <div className="absolute top-2 left-2 border border-photo-well-line bg-photo-well/70 px-1.5 py-0.5 text-[8px] font-medium tracking-[0.1em] text-photo-well-fg uppercase backdrop-blur-sm sm:top-4 sm:left-4 sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
           {product.category}
         </div>
 
         {product.stockStatus !== "in-stock" ? (
-          <div className="absolute top-4 right-4">
+          <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
             <StockBadge status={product.stockStatus} onWell />
           </div>
         ) : (
           (isNew || product.featured) && (
-            <div className="absolute top-4 right-4 border border-gold/60 bg-ink/80 px-2.5 py-1 text-[10px] font-medium tracking-[0.18em] text-gold uppercase backdrop-blur-sm">
+            <div className="absolute top-2 right-2 border border-gold/60 bg-ink/80 px-1.5 py-0.5 text-[8px] font-medium tracking-[0.1em] text-gold uppercase backdrop-blur-sm sm:top-4 sm:right-4 sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
               {isNew ? "New" : "Bestseller"}
             </div>
           )

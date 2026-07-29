@@ -38,8 +38,8 @@ export default function StockBadge({
     <span
       className={
         onWell
-          ? `inline-block border border-photo-well-line bg-photo-well/85 px-3 py-1 text-[10px] tracking-[0.2em] uppercase ${ON_WELL_STYLES[status]}`
-          : `inline-block border border-line bg-ink-2/85 px-3 py-1 text-[10px] tracking-[0.2em] uppercase ${STYLES[status]}`
+          ? `inline-block border border-photo-well-line bg-photo-well/85 px-2 py-0.5 text-[8px] tracking-[0.1em] uppercase sm:px-3 sm:py-1 sm:text-[10px] sm:tracking-[0.2em] ${ON_WELL_STYLES[status]}`
+          : `inline-block border border-line bg-ink-2/85 px-2 py-0.5 text-[8px] tracking-[0.1em] uppercase sm:px-3 sm:py-1 sm:text-[10px] sm:tracking-[0.2em] ${STYLES[status]}`
       }
     >
       {LABELS[status]}
