@@ -191,7 +191,7 @@ export default function ProductGrid({
       <div
         key={`${active}-${sort}-${query}-${currentPage}`}
         ref={ref}
-        className="mt-12 grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-4"
+        className="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-8 sm:gap-y-16 lg:grid-cols-4"
       >
         {paged.map((product) => (
           <ProductCard key={product.id} product={product} rating={ratings?.[product.id]} />

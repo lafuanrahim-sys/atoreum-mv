@@ -152,7 +152,13 @@ export default function ProductCard({
           {product.description}
         </p>
 
-        <div className="mt-auto flex items-center justify-between pt-6">
+        {/* Stacked on mobile (not the two-per-row width's fault alone — a
+            text-3xl price and a text button were always going to be tight
+            at 2-up card widths) — a full-width button below the price
+            gives it room to say "Add to Cart" on one line and a bigger tap
+            target, instead of wrapping to two lines in a squeezed row.
+            sm+ reverts to the original single-row layout unchanged. */}
+        <div className="mt-auto flex flex-col items-stretch gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
           <span className="flex items-baseline gap-1.5">
             <span className="text-[10px] tracking-[0.15em] text-ivory-dim uppercase">
               {product.currency}
@@ -177,7 +183,7 @@ export default function ProductCard({
               addedTimer.current = setTimeout(() => setJustAdded(false), 2000);
             }}
             title={outOfStock ? "Out of stock" : "Add to cart"}
-            className={`border px-4 py-2 text-[10px] tracking-[0.2em] uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:group-hover:border-line disabled:group-hover:text-ivory-dim ${
+            className={`border px-4 py-2 text-[10px] tracking-[0.2em] uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:group-hover:border-line disabled:group-hover:text-ivory-dim sm:w-auto ${
               justAdded
                 ? "border-gold text-gold"
                 : "border-line text-ivory-dim motion-safe:group-hover:border-gold motion-safe:group-hover:text-gold"

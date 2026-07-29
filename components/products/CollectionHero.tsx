@@ -57,6 +57,20 @@ export default function CollectionHero() {
           className="object-cover object-[62%_center]"
           sizes="100vw"
         />
+        {/* Mobile-only scrim: the same 62%-center crop that reads fine as a
+            wide desktop banner (mostly light wall behind the text corner)
+            frames much tighter on a phone, landing the text squarely over
+            the bottle itself — busy, high-contrast glass and gold that no
+            fixed WARM text color can stay readable against. A soft warm
+            veil (same palette family as WARM.heading/body, so it reads as
+            an intentional part of the photo's own light rather than a
+            slapped-on box) restores contrast without touching the
+            deliberately scrim-free desktop treatment described above. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 md:hidden"
+          style={{ background: "linear-gradient(180deg, rgba(245,237,228,0.88) 0%, rgba(245,237,228,0.72) 45%, rgba(245,237,228,0.28) 75%, rgba(245,237,228,0) 100%)" }}
+        />
       </div>
       {/* Header is 80px tall, so pt-[180px] lands the text exactly 100px
           below it. Padding matches the header's px scale exactly (no
