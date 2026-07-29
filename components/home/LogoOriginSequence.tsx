@@ -714,8 +714,27 @@ export default function LogoOriginSequence() {
             desktop is pixel-identical to before. */}
         <div aria-hidden className="hidden shrink-0 md:block md:h-36 md:w-36 lg:h-48 lg:w-48 xl:h-64 xl:w-64 2xl:h-80 2xl:w-80" />
 
-        <div className="flex shrink-0 flex-col items-center gap-6">
-        <div ref={stageRef} className="logo-origin-stage relative aspect-square w-[min(84vw,58vh)] shrink-0 md:w-[min(40vw,62vh)]">
+        {/* -mx-4 bleeds this group past motionRoot's own px-6, so the stage
+            (below) reads as a bigger, more full-bleed hero visual — only
+            the caption text still wants a comfortable side margin for
+            readability, and it's a separate flex sibling (see below),
+            unaffected by this. Net ~8px margin either side of a 390px
+            phone, not full edge-to-edge — kept deliberately short of that
+            so the circular stage doesn't read as touching the screen
+            frame. md:mx-0 fully reverts at the desktop side-column
+            breakpoint. */}
+        <div className="-mx-4 flex w-[calc(100%+2rem)] shrink-0 flex-col items-center gap-6 md:mx-0 md:w-auto">
+        {/* Below md, sized off this group's own bled width (see -mx-4
+            above) rather than a separate vw guess — w-full fills exactly
+            what that width allows at any phone size, no magic percentage
+            to keep in sync with it. The max-h cap is a safety net for
+            unusually short viewports (a landscape phone, a small old
+            handset): aspect-square would otherwise size purely off width
+            and could grow taller than the screen has room for; the cap
+            makes width give way to height instead once that's the
+            tighter constraint. From md up this is back to the original
+            vw/vh-based side-column sizing. */}
+        <div ref={stageRef} className="logo-origin-stage relative aspect-square w-full max-h-[52vh] shrink-0 md:w-[min(40vw,62vh)] md:max-h-none">
           <svg
             ref={svgRef}
             viewBox={`0 0 ${CANVAS} ${CANVAS}`}
