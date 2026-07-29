@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/ui/Logo";
@@ -86,7 +86,17 @@ export default function Header() {
           })}
           <ThemeToggle />
           <ProfileButton />
-          <BoliChip />
+          {/* BoliChip reads useSearchParams() (to refetch when the dive
+              game's own searchParams-only navigation changes the balance --
+              see its own comment) -- Next requires a Suspense boundary
+              around any client component that does, or static prerendering
+              of pages without one of their own (the auto-generated 404,
+              notably) fails the production build outright. fallback={null}
+              since the chip already renders nothing until it has a real
+              balance to show. */}
+          <Suspense fallback={null}>
+            <BoliChip />
+          </Suspense>
           <CartButton />
         </nav>
 
@@ -101,7 +111,9 @@ export default function Header() {
 
         <div className="flex items-center gap-4 lg:hidden">
           <ProfileButton />
-          <BoliChip />
+          <Suspense fallback={null}>
+            <BoliChip />
+          </Suspense>
           <CartButton />
           <button
             aria-label="Toggle menu"

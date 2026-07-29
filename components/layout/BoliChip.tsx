@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth/SessionContext";
 
 /**
@@ -9,10 +10,31 @@ import { useSession } from "@/lib/auth/SessionContext";
  * account "Boli" tab. Renders nothing for guests, and nothing if the
  * balance can't be loaded (e.g. Boli not yet provisioned) rather than
  * showing a broken/zero state.
+ *
+ * Refetches on pathname/searchParams change and on window focus, not just
+ * once on mount — this chip lives in the root layout, which stays mounted
+ * across every client-side navigation in the app (unlike the account
+ * page's own Boli balance display, a Server Component that does refetch on
+ * navigation). Without this, the number here froze at whatever it was on
+ * first load: playing Boli Dive (a searchParams-only change on /account,
+ * ?boliView=dive -> ?boliView=my) or completing a checkout that redeems/
+ * earns Boli left this chip showing the pre-play balance until a full page
+ * reload remounted it — reported as "have to restart the page" to see an
+ * updated balance.
  */
 export default function BoliChip() {
   const { loggedIn } = useSession();
   const [balance, setBalance] = useState<number | null>(null);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const searchParamsKey = searchParams.toString();
+
+  const refetch = useCallback(() => {
+    fetch("/api/boli/balance")
+      .then((res) => res.json())
+      .then((data) => setBalance(typeof data.balance === "number" ? data.balance : null))
+      .catch(() => setBalance(null));
+  }, []);
 
   useEffect(() => {
     if (!loggedIn) {
@@ -31,7 +53,25 @@ export default function BoliChip() {
     return () => {
       cancelled = true;
     };
-  }, [loggedIn]);
+  }, [loggedIn, pathname, searchParamsKey]);
+
+  // Belt-and-suspenders on top of the pathname/searchParams effect above —
+  // catches cases that aren't a distinct client-side navigation, like
+  // switching back to this tab after playing in another one, or a Server
+  // Action redirect chain (checkout) that doesn't always land on a URL
+  // different enough to re-trigger the effect above.
+  useEffect(() => {
+    if (!loggedIn) return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refetch();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", refetch);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", refetch);
+    };
+  }, [loggedIn, refetch]);
 
   if (!loggedIn || balance === null) return null;
 

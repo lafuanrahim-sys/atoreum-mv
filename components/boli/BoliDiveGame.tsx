@@ -608,7 +608,19 @@ export default function BoliDiveGame({
   };
 
   if (phase === "loading") {
-    return <div className="fixed inset-0 z-50" style={{ background: BG_DEEP }} role="status" aria-label="Loading Boli Dive" />;
+    // Was a blank dark div -- indistinguishable from a hang, especially on
+    // a cold serverless DB connection where /api/boli/dive/today's first
+    // hit of the day can take a real moment. A visible spinner at least
+    // confirms something is happening.
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: BG_DEEP }} role="status" aria-label="Loading Boli Dive">
+        <span
+          aria-hidden="true"
+          className="h-8 w-8 animate-spin rounded-full border-2 border-transparent"
+          style={{ borderTopColor: GOLD, borderRightColor: "rgba(244,197,66,0.25)" }}
+        />
+      </div>
+    );
   }
 
   const matchedIndices = result ? getMatchedIndices(result) : [];
