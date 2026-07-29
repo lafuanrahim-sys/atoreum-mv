@@ -6,13 +6,12 @@ import gsap from "gsap";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { parallax } from "@/lib/motion";
 
-// This hero sits directly on the unedited photo (desktop) or the plain
-// bg-[#f5ede4] backdrop behind an uncropped, corner-anchored copy of it
-// (mobile/tablet, see CollectionHero's own comment) -- no gradient/scrim
-// either way. Text color is a fixed warm palette (not the site's --ink/--gold
-// theme tokens) sampled to read clearly against the photo's own light wall
-// tone, and to stay consistent regardless of the visitor's light/dark site
-// preference -- the photo's lighting shouldn't flip with it.
+// This hero sits directly on the unedited photo -- no gradient/scrim is
+// layered on top of it, at any breakpoint. Text color is a fixed warm
+// palette (not the site's --ink/--gold theme tokens) sampled to read clearly
+// against the photo's own light wall tone, and to stay consistent regardless
+// of the visitor's light/dark site preference -- the photo's lighting
+// shouldn't flip with it.
 const WARM = {
   heading: "#241d17",
   body: "#6b5d50",
@@ -48,29 +47,56 @@ export default function CollectionHero() {
   return (
     <section
       ref={sectionRef}
-      className="relative -mt-24 flex w-full flex-col overflow-hidden bg-[#f5ede4] md:h-[100svh] md:flex-row md:items-start md:-mt-28 md:bg-transparent"
+      className="relative -mt-24 flex h-[100svh] w-full items-start overflow-hidden md:-mt-28"
     >
-      {/* Header is 80px tall, so pt-[180px] lands the text exactly 100px
-          below it. Padding matches the header's px scale exactly (no
+      {/* Two swapped-in photos, not one crop of the same photo: the old
+          approach tried to make a landscape desktop banner (collection.png,
+          1536x1024, 3:2) also work as a full-bleed mobile background, which
+          needed increasingly convoluted object-fit/aspect-ratio/DOM-flow
+          workarounds (see git history) to avoid either cropping the bottle
+          out of frame or leaving a blank gap above it. mobile.png is a
+          separate photo shot/composed for this specifically -- empty space
+          at the top for the text to sit on, both bottles lower-right,
+          864x1821 (~0.47 aspect) which is already close enough to a phone
+          viewport's own ratio that object-cover needs almost no cropping.
+          object-top (not center): on a proportionally wider/shorter phone,
+          object-cover has to crop some height to fill the container, and
+          centered crop trims evenly off both ends -- eating into the
+          empty top margin the text needs *and* pushing the product shot
+          up into it at the same time. Anchoring to the top keeps that
+          margin fully intact and lets the crop take the difference off
+          the bottom instead, which is just extra water/reflection below
+          the stone, not anything that needs to stay in frame. Simple
+          full-bleed absolute + object-cover, same pattern as desktop,
+          works directly -- no scrim, no letterboxing container. */}
+      <div ref={bgRef} className="absolute inset-x-0 top-[-8%] bottom-[-8%]">
+        <Image
+          src="/images/hero/mobile.png"
+          alt="Lebelage Real Sensation Blemish Ampoule and Pore Cream staged on stone with cherry blossom"
+          fill
+          priority
+          className="object-cover object-top md:hidden"
+          sizes="100vw"
+        />
+        <Image
+          src="/images/hero/collection.png"
+          alt="Lebelage Real Sensation Blemish Ampoule and Pore Cream staged on stone with cherry blossom"
+          fill
+          priority
+          className="hidden object-cover object-[62%_center] md:block"
+          sizes="100vw"
+        />
+      </div>
+      {/* Header is 80px tall, so md:pt-[180px] lands the text exactly 100px
+          below it on desktop. Below md, pt-[85px] instead -- mobile.png's
+          product shot sits high enough up the frame (see its own comment)
+          that at the original 180px this text block's natural height ran
+          into the top of the bottles on a short-enough phone; shifting the
+          block up buys clearance without shrinking the text itself.
+          Padding matches the header's px scale exactly at md+ (no
           max-w/mx-auto centering here) so the two stay left-aligned at
-          every breakpoint, including ultra-wide screens.
-
-          This used to be the second child, layered via z-10 over an
-          absolutely-positioned full-bleed photo behind it -- fine on
-          desktop (see the photo's own comment), but on mobile/tablet that
-          meant the photo and this text block were positioned completely
-          independently, with nothing guaranteeing space between them. A
-          scale-based attempt to shrink the photo's blank backdrop
-          (bigger photo = starts higher up) overlapped this paragraph on
-          a short-enough phone; the text is unchanged here, only its
-          position in the DOM/flow moved -- now first, with the photo (see
-          below) a normal-flow sibling *after* it instead of an
-          independently-positioned overlay, so overlap is structurally
-          impossible regardless of viewport height or text length. From md
-          up this reverts to the exact original relative+z-10 treatment,
-          which still works precisely because the photo goes back to being
-          absolutely positioned behind it there. */}
-      <div ref={ref} className="relative z-10 w-full px-6 pt-[180px] md:px-12 lg:px-16 xl:px-20 2xl:px-24">
+          every breakpoint, including ultra-wide screens. */}
+      <div ref={ref} className="relative z-10 w-full px-6 pt-[85px] md:px-12 md:pt-[180px] lg:px-16 xl:px-20 2xl:px-24">
         <div className="max-w-2xl">
           <p
             data-reveal
@@ -102,38 +128,6 @@ export default function CollectionHero() {
             perform under salt air, sunlight, and island humidity.
           </p>
         </div>
-      </div>
-
-      {/* bg-[#f5ede4]: the same warm light tone the old mobile scrim was
-          built from (rgba(245,237,228,...)) — invisible on desktop where
-          the photo covers the container edge-to-edge, but on mobile/tablet
-          it's the backdrop showing through wherever the photo doesn't
-          reach.
-
-          Below md this is a normal flow block, sized to the photo's own
-          native 3:2 ratio (aspect-[3/2]; the file is 1536x1024) rather
-          than absolutely filling the section -- combined with
-          object-contain below, a box shaped exactly like the photo means
-          object-contain has zero leftover space to letterbox into: the
-          full photo fills the box edge to edge, nothing cropped, nothing
-          blank. object-cover was cropping ~70% of the width away on a
-          container this tall and narrow (see git history); object-contain
-          in a same-aspect-ratio box needed no cropping *or* a container
-          override to begin with. From md up this reverts to the original
-          absolute, full-bleed, aspect-auto background with the original
-          object-cover crop -- untouched. */}
-      <div
-        ref={bgRef}
-        className="relative aspect-[3/2] w-full bg-[#f5ede4] md:absolute md:inset-x-0 md:top-[-8%] md:bottom-[-8%] md:aspect-auto"
-      >
-        <Image
-          src="/images/hero/collection.png"
-          alt="Lebelage Real Sensation Blemish Ampoule and Pore Cream staged on stone with cherry blossom"
-          fill
-          priority
-          className="object-contain object-right-bottom md:object-cover md:object-[62%_center]"
-          sizes="100vw"
-        />
       </div>
     </section>
   );
