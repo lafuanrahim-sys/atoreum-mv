@@ -70,7 +70,7 @@ export default function CollectionHero() {
           up this reverts to the exact original relative+z-10 treatment,
           which still works precisely because the photo goes back to being
           absolutely positioned behind it there. */}
-      <div ref={ref} className="relative z-10 w-full px-6 pt-[180px] pb-10 md:px-12 md:pb-0 lg:px-16 xl:px-20 2xl:px-24">
+      <div ref={ref} className="relative z-10 w-full px-6 pt-[180px] md:px-12 lg:px-16 xl:px-20 2xl:px-24">
         <div className="max-w-2xl">
           <p
             data-reveal
