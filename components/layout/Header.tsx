@@ -109,7 +109,12 @@ export default function Header() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-4 lg:hidden">
+        {/* gap-2 (not gap-4, used elsewhere) -- with a Boli balance chip
+            showing (signed-in visitors), the logo wordmark plus all four
+            icons don't fit a phone-width row at the wider gap: the icon
+            group overflowed its own padding by ~19px, rendering right up
+            against the screen edge instead of respecting px-6. */}
+        <div className="flex items-center gap-2 lg:hidden">
           <ProfileButton />
           <Suspense fallback={null}>
             <BoliChip />
