@@ -20,23 +20,28 @@ type CoverflowCard = {
 // image here is a copy (not a reference into a product's own photo folder)
 // consolidated under /public/images/categories -- keeps this component's
 // asset set self-contained and independent of individual products' photos
-// getting renamed/moved/removed.
+// getting renamed/moved/removed. .webp, not .png -- the source PNGs were
+// raw, uncompressed 1254x1254 exports (1.6-2.5MB each, ~29MB total for all
+// 15) despite displaying at a max of 620px; re-encoded to WebP at the same
+// dimensions cut that to ~1.5MB total with no visible quality loss, which
+// showed up directly in a Lighthouse run as the difference between a 75 and
+// a much healthier mobile performance score on this page.
 const CARDS: CoverflowCard[] = [
-  { label: "Ampoule", image: "/images/categories/ampoule.png" },
-  { label: "Cream", image: "/images/categories/cream.png" },
-  { label: "Foam", image: "/images/categories/foam.png" },
-  { label: "Sun Care", image: "/images/categories/sun-care.png" },
-  { label: "Toner", image: "/images/categories/toner.png" },
-  { label: "Mask Pack", image: "/images/categories/mask-pack.png" },
-  { label: "Foam Pack 2in1", image: "/images/categories/foam-pack-2in1.png" },
-  { label: "Toner Pad", image: "/images/categories/toner-pad.png" },
-  { label: "Lotion", image: "/images/categories/lotion.png" },
-  { label: "Make-up", image: "/images/categories/make-up.png" },
-  { label: "Eye Cream", image: "/images/categories/eye-cream.png" },
-  { label: "Soothing Gel", image: "/images/categories/soothing-gel.png" },
-  { label: "Emulsion", image: "/images/categories/emulsion.png" },
-  { label: "Essence", image: "/images/categories/essence.png" },
-  { label: "Serum", image: "/images/categories/serum.png" },
+  { label: "Ampoule", image: "/images/categories/ampoule.webp" },
+  { label: "Cream", image: "/images/categories/cream.webp" },
+  { label: "Foam", image: "/images/categories/foam.webp" },
+  { label: "Sun Care", image: "/images/categories/sun-care.webp" },
+  { label: "Toner", image: "/images/categories/toner.webp" },
+  { label: "Mask Pack", image: "/images/categories/mask-pack.webp" },
+  { label: "Foam Pack 2in1", image: "/images/categories/foam-pack-2in1.webp" },
+  { label: "Toner Pad", image: "/images/categories/toner-pad.webp" },
+  { label: "Lotion", image: "/images/categories/lotion.webp" },
+  { label: "Make-up", image: "/images/categories/make-up.webp" },
+  { label: "Eye Cream", image: "/images/categories/eye-cream.webp" },
+  { label: "Soothing Gel", image: "/images/categories/soothing-gel.webp" },
+  { label: "Emulsion", image: "/images/categories/emulsion.webp" },
+  { label: "Essence", image: "/images/categories/essence.webp" },
+  { label: "Serum", image: "/images/categories/serum.webp" },
 ];
 
 // Coverflow-style depth stack: every card's rotateY/translateZ/translateX/
