@@ -27,7 +27,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-      <div className="flex items-center border border-line">
+      <div className="flex items-center justify-center border border-line sm:justify-start">
         <button
           type="button"
           onClick={() => setQuantity((q) => Math.max(1, q - 1))}
