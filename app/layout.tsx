@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Inter, Montserrat, Cinzel_Decorative, Marcellus_SC, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/ui/SmoothScroll";
@@ -69,6 +69,19 @@ export const metadata: Metadata = {
   title: "Atoreum MV — Lebelage launch in the Maldives",
   description:
     "Atoreum MV introduces Lebelage to the Maldives with premium Korean skincare curated for island life.",
+};
+
+// minimumScale pins the page at 100% or tighter -- can't pinch out past the
+// normal view, which is what was actually asked for. maximumScale stays
+// generous (5x) and userScalable stays true so zooming IN still works --
+// unlike blocking zoom outright, this doesn't fail WCAG 1.4.4/1.4.10, which
+// are about being able to magnify content, not about being able to shrink it.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({
