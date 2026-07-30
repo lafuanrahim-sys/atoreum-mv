@@ -141,13 +141,20 @@ export default async function AccountPage({
           </div>
         </div>
 
-        <nav className="mt-10 flex gap-1 border-b border-line text-xs uppercase tracking-[0.2em]">
+        {/* overflow-x-auto + shrink-0 tabs -- four tabs at their natural
+            uppercase/tracked width don't fit a phone-width viewport, and
+            without this the row was overflowing the whole page horizontally
+            (confirmed: 415px of content in a 390px viewport) instead of
+            scrolling within itself. Scrollbar hidden to match the
+            established pattern for this site's other horizontal-scroll
+            rail (CategoryRail). */}
+        <nav className="mt-10 flex gap-1 overflow-x-auto border-b border-line text-xs uppercase tracking-[0.2em] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((t) => (
             <Link
               key={t.key}
               href={`/account?tab=${t.key}`}
               aria-current={tab === t.key ? "page" : undefined}
-              className={`px-4 pb-3 transition-colors active:scale-95 ${
+              className={`shrink-0 px-4 pb-3 transition-colors active:scale-95 ${
                 tab === t.key ? "border-b border-gold text-gold" : "text-ivory-dim hover:text-gold"
               }`}
             >
