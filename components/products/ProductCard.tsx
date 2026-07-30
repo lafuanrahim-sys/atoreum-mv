@@ -53,7 +53,15 @@ export default function ProductCard({
   }, []);
 
   return (
-    <article data-reveal className="group flex flex-col">
+    <article
+      data-reveal
+      // Frosted glass tile -- same material language as the header/cart
+      // panels (translucent themed tint, blur, diagonal sheen, inset top
+      // highlight, soft outer shadow), sized so the photo frame and text
+      // both sit inset from the glass edges instead of bleeding to the
+      // grid track's own edges.
+      className="group flex flex-col overflow-hidden rounded-sm border border-ivory/15 bg-ink-2/40 bg-[linear-gradient(145deg,rgba(255,255,255,0.06),rgba(255,255,255,0)_55%)] p-3 shadow-[0_1px_0_0_rgba(255,255,255,0.07)_inset,0_18px_36px_-24px_rgba(0,0,0,0.45)] backdrop-blur-xl backdrop-saturate-150 sm:p-4"
+    >
       <div
         data-card-frame
         className="relative aspect-[4/5] touch-manipulation overflow-hidden bg-photo-well rounded-sm shadow-sm transition-transform duration-200 active:scale-[0.97] md:duration-500 md:active:scale-100 md:motion-safe:group-hover:scale-[1.01]"

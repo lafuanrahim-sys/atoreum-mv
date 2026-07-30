@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/ui/Logo";
@@ -18,20 +18,10 @@ const NAV_LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
-const SCROLL_THRESHOLD = 60;
-
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
   const chromeHidden = useChromeHidden();
-
-  useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > SCROLL_THRESHOLD);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   // The admin dashboard brings its own shell (sidebar + identity), so the
   // storefront chrome stays out of it entirely. The maintenance page is
@@ -43,25 +33,14 @@ export default function Header() {
   // After the hooks — early returns must never sit between hook calls.
   if (chromeHidden || pathname.startsWith("/dashboard") || pathname === "/maintenance") return null;
 
-  // The Collection page's hero sits on a fixed, real photo (not a themed
-  // bg-ink section) that never flips with light/dark mode, so at the top of
-  // that page the header text is pinned to a fixed dark tone regardless of
-  // theme. Everywhere else -- and everywhere once scrolled, since the
-  // blurred bg-ink backdrop below takes over supplying contrast -- the
-  // themed `text-ivory` token (dark in light mode, light in dark mode) is
-  // what stays readable.
-  const onPhotoHero = pathname === "/products" && !isScrolled;
-  const textClass = onPhotoHero ? "text-[#241d17]" : "text-ivory";
-  const hamburgerBg = onPhotoHero ? "bg-[#241d17]" : "bg-ivory";
-
   return (
     <header
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-colors duration-300",
-        isScrolled
-          ? "border-b border-ivory/15 bg-ink/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0)_55%)] shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_12px_30px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl backdrop-saturate-150"
-          : "bg-transparent"
-      )}
+      // Permanent glass panel -- always the frosted dark backdrop, on every
+      // page and scroll position, not just once scrolled. Nav text/icons
+      // can now always use the light (ivory) treatment: the dark tint
+      // behind them no longer comes and goes, so there's no more bare
+      // transparent-over-bright-photo case that needed a dark-text fallback.
+      className="fixed top-0 left-0 right-0 z-50 border-b border-ivory/15 bg-ink/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0)_55%)] shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_12px_30px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl backdrop-saturate-150"
       // Keeps the header pinned to what's actually visible instead of the
       // layout viewport's fixed origin when pinch-zoomed/panned -- see
       // lib/layout/VisualViewportSync.tsx. No-op (0px) at normal zoom.
@@ -83,7 +62,7 @@ export default function Header() {
                   "relative text-xs tracking-[0.2em] uppercase transition-colors hover:text-gold",
                   "after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-current after:transition-transform after:duration-300",
                   isActive && "after:scale-x-100",
-                  isActive && !onPhotoHero ? "text-gold" : textClass
+                  isActive ? "text-gold" : "text-ivory"
                 )}
               >
                 {link.label}
@@ -110,7 +89,7 @@ export default function Header() {
           <span className="block h-10 w-10">
             <Logo />
           </span>
-          <span className={cn("font-display text-lg uppercase tracking-[0.25em]", textClass)}>
+          <span className="font-display text-lg uppercase tracking-[0.25em] text-ivory">
             Atoreum <span className="text-gold">MV</span>
           </span>
         </Link>
@@ -134,15 +113,13 @@ export default function Header() {
           >
             <span
               className={cn(
-                "h-px w-6 transition-transform duration-300",
-                hamburgerBg,
+                "h-px w-6 bg-ivory transition-transform duration-300",
                 menuOpen && "translate-y-[3.5px] rotate-45"
               )}
             />
             <span
               className={cn(
-                "h-px w-6 transition-transform duration-300",
-                hamburgerBg,
+                "h-px w-6 bg-ivory transition-transform duration-300",
                 menuOpen && "-translate-y-[3.5px] -rotate-45"
               )}
             />
