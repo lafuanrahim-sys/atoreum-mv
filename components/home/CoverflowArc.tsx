@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -67,6 +67,19 @@ const BLUR_RATE = 3.2;
 const PERSPECTIVE_RATIO = 2.8; // perspective distance / card size — smaller = stronger near/far size contrast
 const DESKTOP_QUERY = "(min-width: 768px)"; // matches Tailwind's `md:` breakpoint used below
 
+// Mobile row: same "focus" idea as the desktop stack (the centered card
+// reads as active, neighbors recede) but driven by the row's own native
+// horizontal scroll position instead of a custom drag handler — swiping
+// stays exactly the platform gesture it already is, this just reacts to it.
+// Falloff is per "step" (one card-width + gap away), not a raw pixel
+// distance, so it scales correctly with --card-size at any viewport width.
+const MOBILE_GAP_PX = 8;
+const MOBILE_SCALE_MIN = 0.84;
+const MOBILE_SCALE_FALLOFF = 0.16;
+const MOBILE_OPACITY_MIN = 0.5;
+const MOBILE_OPACITY_FALLOFF = 0.42;
+const MOBILE_LIFT_MAX = 6; // px, off-center cards sit slightly lower
+
 // Shared between the desktop stack and mobile row so the photo/placeholder/
 // label treatment can't drift between the two.
 function CardMedia({ card }: { card: CoverflowCard }) {
@@ -109,6 +122,9 @@ export default function CoverflowArc() {
   const stackRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const cardSizeRef = useRef(520);
+  const mobileRowRef = useRef<HTMLDivElement | null>(null);
+  const mobileCardRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
@@ -304,10 +320,76 @@ export default function CoverflowArc() {
           stage.removeEventListener("click", onClickCapture, true);
         };
       });
+
+      mm.add("(max-width: 767px)", () => {
+        const row = mobileRowRef.current;
+        if (!row) return;
+        const reduceMotion = prefersReducedMotion();
+
+        const applyMobileState = () => {
+          const rowRect = row.getBoundingClientRect();
+          const rowCenter = rowRect.left + rowRect.width / 2;
+
+          // Read phase first (every card's position) before any writes —
+          // interleaving getBoundingClientRect with gsap.set per card would
+          // force a synchronous layout recalc between each one.
+          const measurements = mobileCardRefs.current.map((card) => {
+            if (!card) return null;
+            const rect = card.getBoundingClientRect();
+            return { card, dist: rect.left + rect.width / 2 - rowCenter, width: rect.width };
+          });
+
+          let nearestIndex = 0;
+          let nearestDist = Infinity;
+          measurements.forEach((m, i) => {
+            if (m && Math.abs(m.dist) < nearestDist) {
+              nearestDist = Math.abs(m.dist);
+              nearestIndex = i;
+            }
+          });
+
+          if (!reduceMotion) {
+            measurements.forEach((m) => {
+              if (!m) return;
+              const steps = Math.abs(m.dist) / (m.width + MOBILE_GAP_PX);
+              gsap.set(m.card, {
+                scale: gsap.utils.clamp(MOBILE_SCALE_MIN, 1, 1 - steps * MOBILE_SCALE_FALLOFF),
+                opacity: gsap.utils.clamp(MOBILE_OPACITY_MIN, 1, 1 - steps * MOBILE_OPACITY_FALLOFF),
+                y: gsap.utils.clamp(0, MOBILE_LIFT_MAX, steps * MOBILE_LIFT_MAX),
+              });
+            });
+          }
+
+          setActiveIndex((prev) => (prev === nearestIndex ? prev : nearestIndex));
+        };
+
+        applyMobileState();
+
+        let ticking = false;
+        const onScroll = () => {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(() => {
+            applyMobileState();
+            ticking = false;
+          });
+        };
+
+        row.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", applyMobileState);
+        return () => {
+          row.removeEventListener("scroll", onScroll);
+          window.removeEventListener("resize", applyMobileState);
+        };
+      });
     }, section);
 
     return () => ctx.revert();
   }, []);
+
+  const scrollToMobileCard = (index: number) => {
+    mobileCardRefs.current[index]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  };
 
   return (
     <section
@@ -356,17 +438,58 @@ export default function CoverflowArc() {
         </div>
       </div>
 
-      {/* Mobile: no 3D — a plain swipeable, snap-scrolling row. */}
-      <div className="coverflow-mobile-row flex w-full gap-2 overflow-x-auto px-[calc(50%-var(--card-size)/2)] md:hidden">
-        {CARDS.map((card) => (
+      {/* Mobile: no 3D — a native swipeable, snap-scrolling row, but the
+          centered card grows/sharpens and its neighbors recede as you swipe
+          (see the matchMedia block above), so it's not just a static strip
+          sliding by. */}
+      <div
+        ref={mobileRowRef}
+        className="coverflow-mobile-row flex w-full gap-2 overflow-x-auto px-[calc(50%-var(--card-size)/2)] md:hidden"
+      >
+        {CARDS.map((card, i) => (
           <Link
             key={card.label}
+            ref={(el) => {
+              mobileCardRefs.current[i] = el;
+            }}
             href={`/products?category=${encodeURIComponent(card.label)}`}
             className="relative block flex-none overflow-hidden bg-ink-2"
             style={{ width: "var(--card-size)", height: "var(--card-size)" }}
           >
             <CardMedia card={card} />
           </Link>
+        ))}
+      </div>
+
+      {/* Segmented progress track, mobile only — 15 categories is too many
+          for individual dots to read cleanly on a phone-width screen, so
+          this doubles as both a position indicator and a jump-to-category
+          control (tap any segment). */}
+      <div
+        className="mt-6 flex w-full gap-1 px-[calc(50%-var(--card-size)/2)] md:hidden"
+        role="group"
+        aria-label="Jump to category"
+      >
+        {CARDS.map((card, i) => (
+          // h-6 button around a slim h-1 bar -- a full 44px touch target
+          // would make 15 of these read as a chunky block instead of a
+          // progress line, but the visual sliver alone is far too short to
+          // tap reliably; this keeps the tap area reasonable without
+          // bloating what's meant to be a thin indicator.
+          <button
+            key={card.label}
+            type="button"
+            onClick={() => scrollToMobileCard(i)}
+            aria-label={`Jump to ${card.label}`}
+            aria-current={i === activeIndex ? "true" : undefined}
+            className="flex h-6 flex-1 items-center"
+          >
+            <span
+              className={`h-1 w-full rounded-full transition-colors duration-300 ${
+                i === activeIndex ? "bg-gold" : "bg-ivory/15"
+              }`}
+            />
+          </button>
         ))}
       </div>
 
