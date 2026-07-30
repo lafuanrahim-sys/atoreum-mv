@@ -41,7 +41,7 @@ export default function ProductReviews({
   flag?: string;
 }) {
   return (
-    <div className="mt-28 border-t border-line pt-16">
+    <div className="mt-10 border-t border-line pt-8 md:mt-28 md:pt-16">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h2 className="font-display text-2xl text-ivory">Reviews</h2>
         {reviews.length > 0 && (
