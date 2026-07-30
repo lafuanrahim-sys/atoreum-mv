@@ -59,7 +59,7 @@ export default function Header() {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-colors duration-300",
         isScrolled
-          ? "border-b border-ivory/10 bg-ink/60 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset] backdrop-blur-xl backdrop-saturate-150"
+          ? "border-b border-ivory/15 bg-ink/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0)_55%)] shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_12px_30px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl backdrop-saturate-150"
           : "bg-transparent"
       )}
       // Keeps the header pinned to what's actually visible instead of the
@@ -151,7 +151,7 @@ export default function Header() {
       </div>
 
       {menuOpen && (
-        <nav className="flex flex-col gap-6 border-t border-ivory/10 bg-ink/75 px-6 py-8 backdrop-blur-xl backdrop-saturate-150 lg:hidden">
+        <nav className="flex flex-col gap-6 border-t border-ivory/15 bg-ink/75 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0)_50%)] px-6 py-8 shadow-[0_20px_40px_-24px_rgba(0,0,0,0.6)] backdrop-blur-xl backdrop-saturate-150 lg:hidden">
           {NAV_LINKS.map((link) => {
             const isActive =
               pathname === link.href ||
