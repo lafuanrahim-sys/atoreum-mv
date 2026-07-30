@@ -62,12 +62,27 @@ export default function ProductGrid({
   // with the stale one anyway. Re-syncs whenever the URL's category
   // genuinely differs from current state; a no-op on the round-trip caused
   // by that same write-back effect, since by then `active` already matches.
+  const scrollToGridOnNextChange = useRef(false);
   useEffect(() => {
     const urlCategory = searchParams?.get("category") ?? "All";
-    if (urlCategory !== active) setActive(urlCategory);
+    if (urlCategory !== active) {
+      // Flagged here, acted on below once the grid for the new category has
+      // actually rendered (this effect fires before that -- setActive is
+      // async) -- the coverflow section's category links land here with
+      // Next's own scroll-to-top suppressed (scroll={false}) specifically so
+      // this can carry the page to the results instead of the page's top.
+      scrollToGridOnNextChange.current = true;
+      setActive(urlCategory);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
   const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!scrollToGridOnNextChange.current) return;
+    scrollToGridOnNextChange.current = false;
+    if (ref.current) scrollToElement(ref.current, { offset: -96 });
+  }, [active]);
 
   const filtered = useMemo(() => {
     const byCategory =

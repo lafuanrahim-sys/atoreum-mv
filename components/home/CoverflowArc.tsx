@@ -442,8 +442,15 @@ export default function CoverflowArc() {
               className="absolute inset-0 overflow-hidden bg-ink-2"
               style={{ backfaceVisibility: "hidden" }}
             >
+              {/* scroll={false} -- this is a same-page navigation (this
+                  section lives on /products itself), so Next's default
+                  scroll-to-top just yanks back up past the hero and this
+                  whole section, away from the grid the click was meant to
+                  reach. ProductGrid scrolls itself down to the results
+                  instead once the category lands (see its own effect). */}
               <Link
                 href={`/products?category=${encodeURIComponent(card.label)}`}
+                scroll={false}
                 className="absolute inset-0 block"
                 aria-label={`Shop ${card.label}`}
                 draggable={false}
@@ -470,6 +477,7 @@ export default function CoverflowArc() {
               mobileCardRefs.current[i] = el;
             }}
             href={`/products?category=${encodeURIComponent(card.label)}`}
+            scroll={false}
             className="relative block flex-none overflow-hidden bg-ink-2"
             style={{ width: "var(--card-size)", height: "var(--card-size)" }}
           >
