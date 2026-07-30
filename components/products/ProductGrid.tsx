@@ -52,6 +52,21 @@ export default function ProductGrid({
   const [query, setQuery] = useState(() => searchParams?.get("q") ?? "");
   const [sort, setSort] = useState<SortOption>(() => (searchParams?.get("sort") as SortOption) || "featured");
   const [page, setPage] = useState(() => Number(searchParams?.get("page")) || 1);
+
+  // `active` above only reads the URL once, at mount -- fine for a fresh
+  // page load or a back/forward restore, but this component stays mounted
+  // across a same-page client-side navigation (e.g. a "shop this category"
+  // link elsewhere on /products, like the coverflow section), so a `?
+  // category=` change from outside never reached `active` on its own, and
+  // the write-back effect below would immediately overwrite the new URL
+  // with the stale one anyway. Re-syncs whenever the URL's category
+  // genuinely differs from current state; a no-op on the round-trip caused
+  // by that same write-back effect, since by then `active` already matches.
+  useEffect(() => {
+    const urlCategory = searchParams?.get("category") ?? "All";
+    if (urlCategory !== active) setActive(urlCategory);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   const ref = useRef<HTMLDivElement | null>(null);
 
   const filtered = useMemo(() => {

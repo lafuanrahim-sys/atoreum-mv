@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { prefersReducedMotion, reveal } from "@/lib/motion";
@@ -8,18 +9,32 @@ import { prefersReducedMotion, reveal } from "@/lib/motion";
 gsap.registerPlugin(ScrollTrigger);
 
 type CoverflowCard = {
+  /** Doubles as the exact `category` value the Collection page's filter expects. */
   label: string;
-  /** Real product/category photo path — swap freely, sizing stays identical. */
-  image: string;
+  /** Real product/category photo path — swap freely, sizing stays identical. Null renders the same "Photo coming soon" placeholder ProductCard uses (Make-up has no product photography yet). */
+  image: string | null;
 };
 
-// Real product photography — all five now sourced from /public/images.
+// One card per catalog category (lib/types.ts CATEGORIES) so this doubles as
+// a visual category picker, not just five hand-picked favorites. Real
+// photography where it exists in /public/images; otherwise each product's
+// own (generic but real, not reused) catalog photo.
 const CARDS: CoverflowCard[] = [
   { label: "Ampoule", image: encodeURI("/images/24K Gold Perfect Ampoule 50g/f56de9ef853768d1a0460e44d5e98fa6.png") },
-  { label: "Cream", image: encodeURI("/images/Black Snail Eye Cream EX 40ml/Black Snail Cream.png") },
-  { label: "Essence", image: encodeURI("/images/Heeyul Premium 24K Gold Essence 130ml/Heeyul Premium 24K Gold Essence 130ml.png") },
+  { label: "Cream", image: "/images/products/crm-001.png" },
+  { label: "Foam", image: encodeURI("/images/Centella Bubble Chewy Foam 200ml/Centella Bubble Chewy Foam.png") },
+  { label: "Sun Care", image: "/images/products/sun-001.png" },
+  { label: "Toner", image: encodeURI("/images/Centella Moisture Skin 150ml/Centella Moisture Skin.png") },
   { label: "Mask Pack", image: encodeURI("/images/Aloe Solution Mask Pack 25g x 10pcs/Aloe Solution Mask Pack.png") },
+  { label: "Foam Pack 2in1", image: encodeURI("/images/Charcoal Clay 2in1 Pack Foam 120ml/d89e390c0d2c17e3decf01dd1cca30ed.png") },
+  { label: "Toner Pad", image: "/images/products/tpd-001.png" },
+  { label: "Lotion", image: "/images/products/lot-001.png" },
+  { label: "Make-up", image: null },
+  { label: "Eye Cream", image: encodeURI("/images/Black Snail Eye Cream EX 40ml/Black Snail Cream.png") },
+  { label: "Soothing Gel", image: encodeURI("/images/Cica Moisture Soothing Gel 300ml/0922a719f81bda34f290ebd7b44bf12a.png") },
   { label: "Emulsion", image: encodeURI("/images/Vitamin C Pure Emulsion 120ml/Vitamin C Pure Emulsion.png") },
+  { label: "Essence", image: encodeURI("/images/Heeyul Premium 24K Gold Essence 130ml/Heeyul Premium 24K Gold Essence 130ml.png") },
+  { label: "Serum", image: "/images/products/ser-001.png" },
 ];
 
 // Coverflow-style depth stack: every card's rotateY/translateZ/translateX/
@@ -51,6 +66,42 @@ const BLUR_MAX_PX = 4;
 const BLUR_RATE = 3.2;
 const PERSPECTIVE_RATIO = 2.8; // perspective distance / card size — smaller = stronger near/far size contrast
 const DESKTOP_QUERY = "(min-width: 768px)"; // matches Tailwind's `md:` breakpoint used below
+
+// Shared between the desktop stack and mobile row so the photo/placeholder/
+// label treatment can't drift between the two.
+function CardMedia({ card }: { card: CoverflowCard }) {
+  return (
+    <>
+      {card.image ? (
+        <img
+          src={card.image}
+          alt={card.label}
+          draggable={false}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : (
+        // Same "no photo yet" treatment as ProductCard -- Make-up has no
+        // product photography in the catalog yet, so this card still needs
+        // to exist (every category should be pickable here) without
+        // pretending a photo exists.
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-moss/30 via-ink-2 to-ink">
+          <svg viewBox="0 0 40 40" aria-hidden="true" className="h-9 w-9 text-ivory-dim/30">
+            <rect x="6" y="10" width="28" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" />
+            <circle cx="14" cy="17" r="2.4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M6 27l8-7 6 5 6-6 8 8" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+          </svg>
+          <span className="text-[10px] uppercase tracking-[0.2em] text-ivory-dim/50">Photo coming soon</span>
+        </div>
+      )}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
+      <div className="pointer-events-none absolute inset-0 flex items-end justify-start" style={{ padding: "33px" }}>
+        <span className="font-display text-xl uppercase tracking-[0.08em] text-ivory md:text-3xl">
+          {card.label}
+        </span>
+      </div>
+    </>
+  );
+}
 
 export default function CoverflowArc() {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -98,9 +149,9 @@ export default function CoverflowArc() {
         measure();
         window.addEventListener("resize", measure);
 
-        // Entrance choreography: the five cards start as one stacked deck and
+        // Entrance choreography: the cards start as one stacked deck and
         // fan out into the arc when the section scrolls into view — the
-        // motion literally performs the section's headline ("Five formulas,
+        // motion literally performs the section's headline ("Every formula,
         // one arc"). `spread` interpolates every distance-derived quantity
         // from "stacked at focus" (0) to the normal coverflow layout (1), so
         // a drag mid-fan simply works with wherever the fan currently is.
@@ -158,6 +209,13 @@ export default function CoverflowArc() {
         let isDragging = false;
         let dragStartX = 0;
         let dragStartProgress = 0;
+        // Cards are now links (clicking one navigates to that category) --
+        // this distinguishes an actual drag from a click that happens not
+        // to move the pointer, so browsing the stack doesn't accidentally
+        // fire a navigation on release. CLICK_SUPPRESS_PX is small enough
+        // that a genuine tap still registers as a click.
+        let draggedPastThreshold = false;
+        const CLICK_SUPPRESS_PX = 6;
 
         // Velocity is tracked in progress-units/ms from the last two
         // pointermove samples (not the whole drag average) so a throw
@@ -174,6 +232,7 @@ export default function CoverflowArc() {
         const onPointerDown = (event: PointerEvent) => {
           momentumTween?.kill();
           isDragging = true;
+          draggedPastThreshold = false;
           dragStartX = event.clientX;
           dragStartProgress = progress;
           velocity = 0;
@@ -185,6 +244,7 @@ export default function CoverflowArc() {
         const onPointerMove = (event: PointerEvent) => {
           if (!isDragging) return;
           const deltaX = event.clientX - dragStartX;
+          if (Math.abs(deltaX) > CLICK_SUPPRESS_PX) draggedPastThreshold = true;
           const stepPx = cardSizeRef.current * SPACING_RATIO;
           const deltaProgress = -(deltaX / stepPx) / (total - 1);
           progress = gsap.utils.clamp(0, 1, dragStartProgress + deltaProgress);
@@ -196,6 +256,16 @@ export default function CoverflowArc() {
             velocity = (progress - lastMoveProgress) / dt;
             lastMoveTime = now;
             lastMoveProgress = progress;
+          }
+        };
+
+        // Capture phase, so this runs before the click ever reaches the
+        // <Link>'s own handler -- a real drag suppresses the navigation
+        // that would otherwise fire on pointerup's matching click event.
+        const onClickCapture = (event: MouseEvent) => {
+          if (draggedPastThreshold) {
+            event.preventDefault();
+            event.stopPropagation();
           }
         };
 
@@ -222,6 +292,7 @@ export default function CoverflowArc() {
         stage.addEventListener("pointermove", onPointerMove);
         stage.addEventListener("pointerup", endDrag);
         stage.addEventListener("pointercancel", endDrag);
+        stage.addEventListener("click", onClickCapture, true);
 
         return () => {
           window.removeEventListener("resize", measure);
@@ -230,6 +301,7 @@ export default function CoverflowArc() {
           stage.removeEventListener("pointermove", onPointerMove);
           stage.removeEventListener("pointerup", endDrag);
           stage.removeEventListener("pointercancel", endDrag);
+          stage.removeEventListener("click", onClickCapture, true);
         };
       });
     }, section);
@@ -245,7 +317,7 @@ export default function CoverflowArc() {
       <div className="coverflow-header relative z-10 mb-14 text-center md:mb-20">
         <p className="text-xs tracking-[0.3em] text-gold uppercase">The Edit</p>
         <h2 className="mt-4 font-display text-2xl text-ivory md:text-4xl">
-          Five formulas, one arc
+          Every formula, one arc
         </h2>
       </div>
 
@@ -271,18 +343,14 @@ export default function CoverflowArc() {
               className="absolute inset-0 overflow-hidden bg-ink-2"
               style={{ backfaceVisibility: "hidden" }}
             >
-              <img
-                src={card.image}
-                alt={card.label}
+              <Link
+                href={`/products?category=${encodeURIComponent(card.label)}`}
+                className="absolute inset-0 block"
+                aria-label={`Shop ${card.label}`}
                 draggable={false}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
-              <div className="pointer-events-none absolute inset-0 flex items-end justify-start" style={{ padding: "33px" }}>
-                <span className="font-display text-xl uppercase tracking-[0.08em] text-ivory md:text-3xl">
-                  {card.label}
-                </span>
-              </div>
+              >
+                <CardMedia card={card} />
+              </Link>
             </div>
           ))}
         </div>
@@ -291,23 +359,14 @@ export default function CoverflowArc() {
       {/* Mobile: no 3D — a plain swipeable, snap-scrolling row. */}
       <div className="coverflow-mobile-row flex w-full gap-2 overflow-x-auto px-[calc(50%-var(--card-size)/2)] md:hidden">
         {CARDS.map((card) => (
-          <div
+          <Link
             key={card.label}
-            className="relative flex-none overflow-hidden bg-ink-2"
+            href={`/products?category=${encodeURIComponent(card.label)}`}
+            className="relative block flex-none overflow-hidden bg-ink-2"
             style={{ width: "var(--card-size)", height: "var(--card-size)" }}
           >
-            <img
-              src={card.image}
-              alt={card.label}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
-            <div className="pointer-events-none absolute inset-0 flex items-end justify-start" style={{ padding: "33px" }}>
-              <span className="font-display text-xl uppercase tracking-[0.08em] text-ivory">
-                {card.label}
-              </span>
-            </div>
-          </div>
+            <CardMedia card={card} />
+          </Link>
         ))}
       </div>
 
@@ -324,7 +383,7 @@ export default function CoverflowArc() {
           scrollbar-width: none;
         }
         .coverflow-mobile-row::-webkit-scrollbar { display: none; }
-        .coverflow-mobile-row > div { scroll-snap-align: center; }
+        .coverflow-mobile-row > a { scroll-snap-align: center; }
       `}</style>
     </section>
   );
