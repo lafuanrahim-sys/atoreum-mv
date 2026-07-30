@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/ui/Logo";
@@ -25,6 +25,8 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
   const chromeHidden = useChromeHidden();
+  const menuRef = useRef<HTMLElement | null>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > SCROLL_THRESHOLD);
@@ -32,6 +34,23 @@ export default function Header() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Tapping anywhere outside the open dropdown (or its own toggle button,
+  // which handles its own open/close) closes it -- previously the only way
+  // out was pressing the hamburger again. pointerdown (not click) so it
+  // reacts on touch-down like the rest of the site's tap feedback, and only
+  // listens while the menu is actually open.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (menuRef.current?.contains(target)) return;
+      if (toggleRef.current?.contains(target)) return;
+      setMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [menuOpen]);
 
   // The admin dashboard brings its own shell (sidebar + identity), so the
   // storefront chrome stays out of it entirely. The maintenance page is
@@ -131,6 +150,7 @@ export default function Header() {
           </Suspense>
           <CartButton />
           <button
+            ref={toggleRef}
             aria-label="Toggle menu"
             aria-expanded={menuOpen}
             className="flex flex-col gap-1.5"
@@ -155,7 +175,16 @@ export default function Header() {
       </div>
 
       {menuOpen && (
-        <nav className="flex flex-col gap-6 border-t border-ivory/15 bg-ink/75 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0)_50%)] px-6 py-8 shadow-[0_20px_40px_-24px_rgba(0,0,0,0.6)] backdrop-blur-xl backdrop-saturate-150 lg:hidden">
+        <nav
+          ref={menuRef}
+          // Same tint/sheen/highlight recipe as the header's own scrolled
+          // glass -- previously a noticeably darker, differently-angled
+          // sheen (bg-ink/75 vs the header's /60), which read as a
+          // mismatched second material instead of the same pane continuing
+          // down. Keeps its own larger drop shadow since it's a floating
+          // panel over whatever content is beneath it.
+          className="flex flex-col gap-6 border-t border-ivory/15 bg-ink/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0)_55%)] px-6 py-8 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_20px_40px_-24px_rgba(0,0,0,0.6)] backdrop-blur-xl backdrop-saturate-150 lg:hidden"
+        >
           {NAV_LINKS.map((link) => {
             const isActive =
               pathname === link.href ||
