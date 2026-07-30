@@ -62,6 +62,10 @@ export default function Header() {
           ? "border-b border-ivory/10 bg-ink/60 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset] backdrop-blur-xl backdrop-saturate-150"
           : "bg-transparent"
       )}
+      // Keeps the header pinned to what's actually visible instead of the
+      // layout viewport's fixed origin when pinch-zoomed/panned -- see
+      // lib/layout/VisualViewportSync.tsx. No-op (0px) at normal zoom.
+      style={{ transform: "translate(var(--vv-offset-x, 0px), var(--vv-offset-y, 0px))" }}
     >
       <div className="flex w-full items-center justify-between px-6 py-5 md:px-12 lg:px-16 xl:px-20 2xl:px-24">
         <nav className="hidden items-center gap-6 lg:flex">

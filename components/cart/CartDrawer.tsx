@@ -22,9 +22,16 @@ export default function CartDrawer() {
       />
 
       <aside
-        className={`fixed right-0 top-0 z-[70] flex h-full w-full max-w-md flex-col border-l border-ivory/10 bg-ink-2/75 shadow-2xl backdrop-blur-xl backdrop-saturate-150 transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className="fixed right-0 top-0 z-[70] flex h-full w-full max-w-md flex-col border-l border-ivory/10 bg-ink-2/75 shadow-2xl backdrop-blur-xl backdrop-saturate-150 transition-transform duration-300"
+        // Composed with the visual-viewport offset (see
+        // lib/layout/VisualViewportSync.tsx) so the drawer stays pinned to
+        // what's actually visible instead of the layout viewport's fixed
+        // origin when pinch-zoomed/panned -- the slide-in/out translateX
+        // moved from a Tailwind class to here so both transforms can
+        // combine in one declaration (only one `transform` wins otherwise).
+        style={{
+          transform: `translate(var(--vv-offset-x, 0px), var(--vv-offset-y, 0px)) translateX(${isOpen ? "0" : "100%"})`,
+        }}
         role="dialog"
         aria-label="Shopping cart"
         aria-hidden={!isOpen}

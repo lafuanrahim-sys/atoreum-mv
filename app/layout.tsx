@@ -9,6 +9,7 @@ import { CartProvider } from "@/lib/cart/CartContext";
 import { SessionProvider } from "@/lib/auth/SessionContext";
 import CartDrawer from "@/components/cart/CartDrawer";
 import { ChromeVisibilityProvider } from "@/lib/layout/ChromeVisibility";
+import VisualViewportSync from "@/lib/layout/VisualViewportSync";
 
 // Display serif for headlines — editorial, luxury-catalogue register.
 const playfair = Playfair_Display({
@@ -81,6 +82,7 @@ export default function RootLayout({
         <a href="#main" className="skip-link">
           Skip to content
         </a>
+        <VisualViewportSync />
         <SessionProvider>
           <CartProvider>
             <ChromeVisibilityProvider>
