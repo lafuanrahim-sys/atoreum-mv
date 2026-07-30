@@ -159,7 +159,7 @@ export default function ProductCard({
             target, instead of wrapping to two lines in a squeezed row.
             sm+ reverts to the original single-row layout unchanged. */}
         <div className="mt-auto flex flex-col items-stretch gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
-          <span className="flex items-baseline gap-1.5">
+          <span className="flex items-baseline justify-center gap-1.5 sm:justify-start">
             <span className="text-[10px] tracking-[0.15em] text-ivory-dim uppercase">
               {product.currency}
             </span>
