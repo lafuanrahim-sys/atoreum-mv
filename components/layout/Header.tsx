@@ -58,7 +58,9 @@ export default function Header() {
     <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-colors duration-300",
-        isScrolled ? "border-b border-ivory/15 bg-ink/95 backdrop-blur-md" : "bg-transparent"
+        isScrolled
+          ? "border-b border-ivory/10 bg-ink/60 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset] backdrop-blur-xl backdrop-saturate-150"
+          : "bg-transparent"
       )}
     >
       <div className="flex w-full items-center justify-between px-6 py-5 md:px-12 lg:px-16 xl:px-20 2xl:px-24">
@@ -145,7 +147,7 @@ export default function Header() {
       </div>
 
       {menuOpen && (
-        <nav className="flex flex-col gap-6 border-t border-line bg-ink px-6 py-8 lg:hidden">
+        <nav className="flex flex-col gap-6 border-t border-ivory/10 bg-ink/75 px-6 py-8 backdrop-blur-xl backdrop-saturate-150 lg:hidden">
           {NAV_LINKS.map((link) => {
             const isActive =
               pathname === link.href ||

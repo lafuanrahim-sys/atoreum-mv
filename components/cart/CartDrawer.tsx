@@ -22,7 +22,7 @@ export default function CartDrawer() {
       />
 
       <aside
-        className={`fixed right-0 top-0 z-[70] flex h-full w-full max-w-md flex-col bg-ink-2 shadow-2xl transition-transform duration-300 ${
+        className={`fixed right-0 top-0 z-[70] flex h-full w-full max-w-md flex-col border-l border-ivory/10 bg-ink-2/75 shadow-2xl backdrop-blur-xl backdrop-saturate-150 transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
