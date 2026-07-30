@@ -16,25 +16,27 @@ type CoverflowCard = {
 };
 
 // One card per catalog category (lib/types.ts CATEGORIES) so this doubles as
-// a visual category picker, not just five hand-picked favorites. Real
-// photography where it exists in /public/images; otherwise each product's
-// own (generic but real, not reused) catalog photo.
+// a visual category picker, not just five hand-picked favorites. Every
+// image here is a copy (not a reference into a product's own photo folder)
+// consolidated under /public/images/categories -- keeps this component's
+// asset set self-contained and independent of individual products' photos
+// getting renamed/moved/removed.
 const CARDS: CoverflowCard[] = [
-  { label: "Ampoule", image: encodeURI("/images/24K Gold Perfect Ampoule 50g/f56de9ef853768d1a0460e44d5e98fa6.png") },
-  { label: "Cream", image: "/images/products/crm-001.png" },
-  { label: "Foam", image: encodeURI("/images/Centella Bubble Chewy Foam 200ml/Centella Bubble Chewy Foam.png") },
-  { label: "Sun Care", image: "/images/products/sun-001.png" },
-  { label: "Toner", image: encodeURI("/images/Centella Moisture Skin 150ml/Centella Moisture Skin.png") },
-  { label: "Mask Pack", image: encodeURI("/images/Aloe Solution Mask Pack 25g x 10pcs/Aloe Solution Mask Pack.png") },
-  { label: "Foam Pack 2in1", image: encodeURI("/images/Charcoal Clay 2in1 Pack Foam 120ml/d89e390c0d2c17e3decf01dd1cca30ed.png") },
-  { label: "Toner Pad", image: "/images/products/tpd-001.png" },
-  { label: "Lotion", image: "/images/products/lot-001.png" },
+  { label: "Ampoule", image: "/images/categories/ampoule.png" },
+  { label: "Cream", image: "/images/categories/cream.png" },
+  { label: "Foam", image: "/images/categories/foam.png" },
+  { label: "Sun Care", image: "/images/categories/sun-care.png" },
+  { label: "Toner", image: "/images/categories/toner.png" },
+  { label: "Mask Pack", image: "/images/categories/mask-pack.png" },
+  { label: "Foam Pack 2in1", image: "/images/categories/foam-pack-2in1.png" },
+  { label: "Toner Pad", image: "/images/categories/toner-pad.png" },
+  { label: "Lotion", image: "/images/categories/lotion.png" },
   { label: "Make-up", image: null },
-  { label: "Eye Cream", image: encodeURI("/images/Black Snail Eye Cream EX 40ml/Black Snail Cream.png") },
-  { label: "Soothing Gel", image: encodeURI("/images/Cica Moisture Soothing Gel 300ml/0922a719f81bda34f290ebd7b44bf12a.png") },
-  { label: "Emulsion", image: encodeURI("/images/Vitamin C Pure Emulsion 120ml/Vitamin C Pure Emulsion.png") },
-  { label: "Essence", image: encodeURI("/images/Heeyul Premium 24K Gold Essence 130ml/Heeyul Premium 24K Gold Essence 130ml.png") },
-  { label: "Serum", image: "/images/products/ser-001.png" },
+  { label: "Eye Cream", image: "/images/categories/eye-cream.png" },
+  { label: "Soothing Gel", image: "/images/categories/soothing-gel.png" },
+  { label: "Emulsion", image: "/images/categories/emulsion.png" },
+  { label: "Essence", image: "/images/categories/essence.png" },
+  { label: "Serum", image: "/images/categories/serum.png" },
 ];
 
 // Coverflow-style depth stack: every card's rotateY/translateZ/translateX/
