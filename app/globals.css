@@ -233,6 +233,53 @@ button:not(:disabled),
   font-family: var(--font-admin-heading), serif;
 }
 
+/* Full/partial-viewport section heights, with a vh fallback.
+   svh (small viewport height, excludes a mobile browser's collapsible
+   UI chrome) only reached broad support around 2022/2023 -- older
+   WebViews and browsers with a slower update cadence (reported: a
+   Samsung Galaxy Note 8) don't recognize it at all. A browser that
+   can't parse a declaration's *value* drops that one declaration and
+   keeps whatever it last understood, so listing the vh fallback first
+   and the svh override second in the same rule degrades safely instead
+   of collapsing the element's height to 0 -- which, for a GSAP
+   ScrollTrigger pin sized off that height, breaks the trigger's
+   start/end math entirely and can make scroll-linked animation across
+   the whole page stop firing. Plain CSS, not stacked Tailwind
+   utilities, because Tailwind's generated rule order isn't guaranteed
+   to match a className string's order, so two arbitrary-value height
+   utilities can't reliably be relied on to cascade in the order
+   written. */
+.h-100svh {
+  height: 100vh;
+  height: 100svh;
+}
+
+.h-70svh {
+  height: 70vh;
+  height: 70svh;
+}
+
+.coverflow-h-100svh {
+  height: auto;
+}
+@media (min-width: 768px) {
+  .coverflow-h-100svh {
+    height: 100vh;
+    height: 100svh;
+  }
+}
+
+.crossword-hero-h {
+  height: calc(100vh - 6rem);
+  height: calc(100svh - 6rem);
+}
+@media (min-width: 768px) {
+  .crossword-hero-h {
+    height: calc(100vh - 7rem);
+    height: calc(100svh - 7rem);
+  }
+}
+
 /* utility: hairline divider used across sections instead of hard borders */
 .hairline {
   height: 1px;

@@ -136,7 +136,7 @@ export default function JourneyChapter() {
   return (
     <section
       ref={sectionRef}
-      className="page-gutter relative flex h-[100svh] w-full flex-col justify-center overflow-hidden bg-ink"
+      className="page-gutter relative flex h-100svh w-full flex-col justify-center overflow-hidden bg-ink"
     >
       <p className="text-xs tracking-[0.3em] text-gold uppercase">The Journey</p>
 

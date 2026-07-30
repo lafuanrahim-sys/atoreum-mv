@@ -47,7 +47,7 @@ export default function CollectionHero() {
   return (
     <section
       ref={sectionRef}
-      className="relative -mt-24 flex h-[100svh] w-full items-start overflow-hidden md:-mt-28"
+      className="relative -mt-24 flex h-100svh w-full items-start overflow-hidden md:-mt-28"
     >
       {/* Two swapped-in photos, not one crop of the same photo: the old
           approach tried to make a landscape desktop banner (collection.png,

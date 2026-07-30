@@ -735,7 +735,7 @@ export default function LogoOriginSequence() {
   return (
     <section
       ref={sectionRef as React.RefObject<HTMLElement>}
-      className="logo-origin-section relative flex h-[100svh] w-full items-center justify-center overflow-hidden bg-ink"
+      className="logo-origin-section relative flex h-100svh w-full items-center justify-center overflow-hidden bg-ink"
     >
       {/* Reduced-motion fallback only now — every motion-safe visitor, any
           width, gets the real scene below instead. */}

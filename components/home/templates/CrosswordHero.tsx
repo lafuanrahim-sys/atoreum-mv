@@ -7,7 +7,7 @@ import LetterGrid from "@/components/home/LetterGrid";
  */
 export default function CrosswordHero() {
   return (
-    <section className="relative flex h-[calc(100svh-6rem)] w-full items-center justify-center overflow-hidden bg-ink px-4 py-8 md:h-[calc(100svh-7rem)] md:px-12">
+    <section className="crossword-hero-h relative flex w-full items-center justify-center overflow-hidden bg-ink px-4 py-8 md:px-12">
       {/* Height subtracts main's header offset (pt-24/pt-28) so this section
           fills exactly the first screen and the grid centers truly within it. */}
       <h1 className="sr-only">Atoreum MV — Lebelage launch in the Maldives</h1>
