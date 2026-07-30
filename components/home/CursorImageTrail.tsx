@@ -65,10 +65,13 @@ function TrailImage({ item, onDone }: { item: TrailItem; onDone: (id: number) =>
 }
 
 /**
- * A trail of product photos that pop in near the cursor and shrink away as
- * it moves across the section — mouse-only (skipped for touch/coarse
- * pointers and prefers-reduced-motion), matching the interaction
- * conventions already used in LetterGrid.
+ * A trail of product photos that pop in near the pointer and shrink away as
+ * it moves across the section — driven by Pointer Events, which unify mouse
+ * hover and a dragging finger under the same pointermove stream, so the
+ * same listener drives both. touch-action: none on the listening container
+ * stops the browser from treating the drag as a page-scroll gesture instead
+ * (which would otherwise suppress/interrupt the pointermove stream on
+ * touch). Only prefers-reduced-motion opts out.
  */
 export default function CursorImageTrail() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -76,9 +79,10 @@ export default function CursorImageTrail() {
   const poolIndexRef = useRef(0);
   const idRef = useRef(0);
   const [items, setItems] = useState<TrailItem[]>([]);
-  // "Move your cursor" is meaningless on a touchscreen, and without a
-  // pointermove stream the section otherwise renders as a large, permanently
-  // empty block — this drives a static fallback presentation instead.
+  // "Move your cursor" doesn't describe a touchscreen gesture, so the
+  // heading swaps to "A closer look" there; the static fanned hand below is
+  // an idle hint shown only until the first touch, then replaced by the
+  // same live trail the pointermove listener drives on desktop.
   const [isTouch, setIsTouch] = useState(false);
 
   const handleDone = useCallback((id: number) => {
@@ -93,9 +97,8 @@ export default function CursorImageTrail() {
     const container = containerRef.current;
     if (!container) return;
 
-    const touch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (touch || reduceMotion) return;
+    if (reduceMotion) return;
 
     function handlePointerMove(event: PointerEvent) {
       const rect = container!.getBoundingClientRect();
@@ -136,15 +139,16 @@ export default function CursorImageTrail() {
       <div className="pointer-events-none relative z-10 text-center">
         <p className="text-xs tracking-[0.3em] text-gold uppercase">Explore</p>
         <h2 className="mt-4 font-display text-2xl text-ivory md:text-4xl">
-          {isTouch ? "A closer look" : "Move your cursor"}
+          {isTouch ? "Drag your finger" : "Move your cursor"}
         </h2>
       </div>
 
-      {isTouch ? (
-        // Static stand-in for the pointer-driven trail above — same photos,
-        // fanned out like a dealt hand instead of spawned along a cursor
-        // path that doesn't exist on a touchscreen.
-        <div className="flex items-center justify-center">
+      {isTouch && items.length === 0 && (
+        // Idle hint shown only until the first touch -- same photos, fanned
+        // out like a dealt hand instead of spawned along a path that
+        // doesn't exist yet. Replaced by the live trail below as soon as
+        // items start arriving, same as desktop's own first-hover moment.
+        <div className="pointer-events-none flex items-center justify-center">
           {TRAIL_IMAGES.map((src, i) => (
             <div
               key={src}
@@ -158,13 +162,13 @@ export default function CursorImageTrail() {
             </div>
           ))}
         </div>
-      ) : (
-        <div ref={containerRef} className="absolute inset-0">
-          {items.map((item) => (
-            <TrailImage key={item.id} item={item} onDone={handleDone} />
-          ))}
-        </div>
       )}
+
+      <div ref={containerRef} className="absolute inset-0" style={{ touchAction: "none" }}>
+        {items.map((item) => (
+          <TrailImage key={item.id} item={item} onDone={handleDone} />
+        ))}
+      </div>
     </section>
   );
 }
