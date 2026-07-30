@@ -83,8 +83,12 @@ const MOBILE_OPACITY_FALLOFF = 0.42;
 const MOBILE_LIFT_MAX = 6; // px, off-center cards sit slightly lower
 
 // Shared between the desktop stack and mobile row so the photo/placeholder/
-// label treatment can't drift between the two.
-function CardMedia({ card }: { card: CoverflowCard }) {
+// label treatment can't drift between the two. index drives the plate
+// number -- a lookbook-style "N° 01" reads as a deliberate catalog device,
+// not just a caption slapped on a photo, and reuses the kicker-over-heading
+// rhythm the section's own header already establishes (small tracked gold
+// line, then the serif headline) rather than inventing a new type pairing.
+function CardMedia({ card, index }: { card: CoverflowCard; index: number }) {
   return (
     <>
       {card.image ? (
@@ -108,9 +112,18 @@ function CardMedia({ card }: { card: CoverflowCard }) {
           <span className="text-[10px] uppercase tracking-[0.2em] text-ivory-dim/50">Photo coming soon</span>
         </div>
       )}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
-      <div className="pointer-events-none absolute inset-0 flex items-end justify-start" style={{ padding: "33px" }}>
-        <span className="font-display text-xl uppercase tracking-[0.08em] text-ivory md:text-3xl">
+      {/* via stop pushed to 55% (not the 50% default) so the darkened zone
+          reaches high enough to still back the "N°" kicker line, not just
+          the label beneath it -- on warm/bright photography (gold ampoule
+          bottles, cream lotion) the kicker was legible-in-theory but nearly
+          invisible in practice without this. */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/55 via-55% to-transparent" />
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-start justify-end" style={{ padding: "33px" }}>
+        <span className="text-[10px] tracking-[0.35em] text-gold uppercase">
+          N° {String(index + 1).padStart(2, "0")}
+        </span>
+        <span className="mt-2.5 h-px w-9 bg-gold/60" />
+        <span className="mt-3 font-display text-xl uppercase tracking-[0.05em] text-ivory md:text-3xl">
           {card.label}
         </span>
       </div>
@@ -433,7 +446,7 @@ export default function CoverflowArc() {
                 aria-label={`Shop ${card.label}`}
                 draggable={false}
               >
-                <CardMedia card={card} />
+                <CardMedia card={card} index={i} />
               </Link>
             </div>
           ))}
@@ -458,7 +471,7 @@ export default function CoverflowArc() {
             className="relative block flex-none overflow-hidden bg-ink-2"
             style={{ width: "var(--card-size)", height: "var(--card-size)" }}
           >
-            <CardMedia card={card} />
+            <CardMedia card={card} index={i} />
           </Link>
         ))}
       </div>
