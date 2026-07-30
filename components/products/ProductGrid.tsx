@@ -121,7 +121,9 @@ export default function ProductGrid({
   // clip-path while the image inside settles from a deep zoom, then the
   // caption drifts up after it. (A per-column scroll-drift variant was
   // tried here and removed — it staggered row heights against each other,
-  // which read as misaligned cards rather than depth.)
+  // which read as misaligned cards rather than depth.) Desktop only,
+  // unchanged below — mobile gets its own entrance (see the md: split
+  // via matchMedia just below).
   //
   // The grid keys by filter state, so this re-runs on filter changes and
   // doubles as the filter transition. Reduced motion: everything static.
@@ -138,28 +140,74 @@ export default function ProductGrid({
         text: card.querySelector("[data-card-text]"),
       });
 
-      cards.forEach((card) => {
-        const { frame, media, text } = partsOf(card);
-        if (frame) gsap.set(frame, { clipPath: "inset(100% 0% 0% 0%)" });
-        if (media) gsap.set(media, { scale: 1.28, yPercent: 10 });
-        if (text) gsap.set(text, { opacity: 0, y: 18 });
+      const mm = gsap.matchMedia();
+
+      mm.add("(min-width: 768px)", () => {
+        cards.forEach((card) => {
+          const { frame, media, text } = partsOf(card);
+          if (frame) gsap.set(frame, { clipPath: "inset(100% 0% 0% 0%)" });
+          if (media) gsap.set(media, { scale: 1.28, yPercent: 10 });
+          if (text) gsap.set(text, { opacity: 0, y: 18 });
+        });
+
+        ScrollTrigger.batch(cards, {
+          start: "top 88%",
+          once: true,
+          onEnter: (batch) => {
+            batch.forEach((card, i) => {
+              const { frame, media, text } = partsOf(card as HTMLElement);
+              const tl = gsap.timeline({ delay: i * 0.09 });
+              if (frame)
+                tl.to(frame, { clipPath: "inset(0% 0% 0% 0%)", duration: 1, ease: "power4.out" }, 0);
+              if (media)
+                tl.to(media, { scale: 1, yPercent: 0, duration: 1.3, ease: "power3.out" }, 0);
+              if (text)
+                tl.to(text, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 0.3);
+            });
+          },
+        });
       });
 
-      ScrollTrigger.batch(cards, {
-        start: "top 88%",
-        once: true,
-        onEnter: (batch) => {
-          batch.forEach((card, i) => {
-            const { frame, media, text } = partsOf(card as HTMLElement);
-            const tl = gsap.timeline({ delay: i * 0.09 });
-            if (frame)
-              tl.to(frame, { clipPath: "inset(0% 0% 0% 0%)", duration: 1, ease: "power4.out" }, 0);
-            if (media)
-              tl.to(media, { scale: 1, yPercent: 0, duration: 1.3, ease: "power3.out" }, 0);
-            if (text)
-              tl.to(text, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 0.3);
+      // Mobile: cards "deal" into place instead of just fading up — livelier
+      // and more tactile than desktop's understated waterline, and reads as
+      // an individual card arriving rather than a wide row settling (which
+      // is what the desktop treatment is tuned for). Alternating left/right
+      // rotation pivoted from the card's base + a back.out overshoot on
+      // landing echoes a card being dropped onto a table, the same "dealt"
+      // motif already carried by the coverflow section's sound design
+      // (playCardFlick) elsewhere on this page.
+      mm.add("(max-width: 767px)", () => {
+        cards.forEach((card, i) => {
+          const { frame, media, text } = partsOf(card);
+          gsap.set(card, {
+            rotate: i % 2 === 0 ? -5 : 5,
+            y: 28,
+            opacity: 0,
+            transformOrigin: "50% 100%",
           });
-        },
+          if (frame) gsap.set(frame, { clipPath: "inset(100% 0% 0% 0%)" });
+          if (media) gsap.set(media, { scale: 1.2, yPercent: 6 });
+          if (text) gsap.set(text, { opacity: 0, y: 12 });
+        });
+
+        ScrollTrigger.batch(cards, {
+          start: "top 92%",
+          once: true,
+          onEnter: (batch) => {
+            batch.forEach((card, i) => {
+              const el = card as HTMLElement;
+              const { frame, media, text } = partsOf(el);
+              const tl = gsap.timeline({ delay: i * 0.07 });
+              tl.to(el, { rotate: 0, y: 0, opacity: 1, duration: 0.65, ease: "back.out(1.6)" }, 0);
+              if (frame)
+                tl.to(frame, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.7, ease: "power3.out" }, 0);
+              if (media)
+                tl.to(media, { scale: 1, yPercent: 0, duration: 0.8, ease: "power3.out" }, 0);
+              if (text)
+                tl.to(text, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, 0.2);
+            });
+          },
+        });
       });
     }, container);
     return () => ctx.revert();

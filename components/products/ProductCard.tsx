@@ -56,7 +56,7 @@ export default function ProductCard({
     <article data-reveal className="group flex flex-col">
       <div
         data-card-frame
-        className="relative aspect-[4/5] overflow-hidden bg-photo-well rounded-sm shadow-sm transition-transform duration-500 motion-safe:group-hover:scale-[1.01]"
+        className="relative aspect-[4/5] touch-manipulation overflow-hidden bg-photo-well rounded-sm shadow-sm transition-transform duration-200 active:scale-[0.97] md:duration-500 md:active:scale-100 md:motion-safe:group-hover:scale-[1.01]"
       >
         <Link href={`/products/${product.id}`} className="absolute inset-0 block" aria-label={product.name}>
           {thumbnail ? (

@@ -280,6 +280,19 @@ button:not(:disabled),
   }
 }
 
+/* Elastic pop on favoriting a product, mobile only (FavoriteButton scopes
+   the class itself to below md) -- an overshoot-then-settle rather than a
+   linear scale so it reads as a snappy confirmation, not just a resize. */
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.4); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.animate-heart-pop {
+  animation: heart-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 /* utility: hairline divider used across sections instead of hard borders */
 .hairline {
   height: 1px;

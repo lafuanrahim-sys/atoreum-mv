@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { useSession } from "@/lib/auth/SessionContext";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,11 @@ export default function FavoriteButton({
 }) {
   const { favorites, toggleFavorite } = useSession();
   const isFavorite = favorites.includes(productId);
+  // Elastic pop, mobile only (max-md: below) -- a confirmation flourish for
+  // the one-tap-to-favorite gesture that doesn't have a hover state to lean
+  // on. Desktop's existing hover/color transition is untouched.
+  const [justFavorited, setJustFavorited] = useState(false);
+  const popTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   return (
     <button
@@ -23,6 +29,11 @@ export default function FavoriteButton({
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (!isFavorite) {
+          setJustFavorited(true);
+          if (popTimer.current) clearTimeout(popTimer.current);
+          popTimer.current = setTimeout(() => setJustFavorited(false), 400);
+        }
         toggleFavorite(productId);
       }}
       aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
@@ -30,6 +41,7 @@ export default function FavoriteButton({
       className={cn(
         "flex h-9 w-9 items-center justify-center rounded-full bg-ink/70 backdrop-blur-sm transition-colors",
         isFavorite ? "text-gold" : "text-ivory-dim hover:text-gold",
+        justFavorited && "max-md:animate-heart-pop",
         className
       )}
     >
