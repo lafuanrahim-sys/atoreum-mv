@@ -59,8 +59,9 @@ export default function ProductCard({
       // panels (translucent themed tint, blur, diagonal sheen, inset top
       // highlight, soft outer shadow), sized so the photo frame and text
       // both sit inset from the glass edges instead of bleeding to the
-      // grid track's own edges.
-      className="group flex flex-col overflow-hidden rounded-sm border border-ivory/15 bg-ink-2/40 bg-[linear-gradient(145deg,rgba(255,255,255,0.06),rgba(255,255,255,0)_55%)] p-3 shadow-[0_1px_0_0_rgba(255,255,255,0.07)_inset,0_18px_36px_-24px_rgba(0,0,0,0.45)] backdrop-blur-xl backdrop-saturate-150 sm:p-4"
+      // grid track's own edges. No hard border -- the sheen/shadow alone
+      // reads as a glass edge without a drawn outline around every tile.
+      className="group flex flex-col overflow-hidden rounded-sm bg-ink-2/40 bg-[linear-gradient(145deg,rgba(255,255,255,0.06),rgba(255,255,255,0)_55%)] p-3 shadow-[0_1px_0_0_rgba(255,255,255,0.07)_inset,0_18px_36px_-24px_rgba(0,0,0,0.45)] backdrop-blur-xl backdrop-saturate-150 sm:p-4"
     >
       <div
         data-card-frame
