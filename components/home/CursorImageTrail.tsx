@@ -101,8 +101,31 @@ export default function CursorImageTrail() {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) return;
 
+    // getBoundingClientRect was previously called on every single pointermove
+    // (a layout read on every native event, including the ones immediately
+    // discarded by the MIN_DISTANCE check below). touch-action: none blocks
+    // the page from scrolling out from under an active touch drag, but a
+    // desktop mouse can still hover this section while the page scrolls via
+    // wheel, which moves the container relative to the viewport without
+    // firing pointermove -- so resize alone isn't enough to keep the cache
+    // valid. Re-measuring on both resize and scroll (rAF-throttled, since
+    // scroll can fire much faster than either is needed) keeps the cache
+    // accurate while still removing the read from the pointermove hot path.
+    let rect = container.getBoundingClientRect();
+    let ticking = false;
+    const remeasure = () => {
+      rect = container!.getBoundingClientRect();
+      ticking = false;
+    };
+    const scheduleRemeasure = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(remeasure);
+    };
+    window.addEventListener("resize", scheduleRemeasure);
+    window.addEventListener("scroll", scheduleRemeasure, { passive: true });
+
     function handlePointerMove(event: PointerEvent) {
-      const rect = container!.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
@@ -131,8 +154,12 @@ export default function CursorImageTrail() {
       });
     }
 
-    container.addEventListener("pointermove", handlePointerMove);
-    return () => container.removeEventListener("pointermove", handlePointerMove);
+    container.addEventListener("pointermove", handlePointerMove, { passive: true });
+    return () => {
+      window.removeEventListener("resize", scheduleRemeasure);
+      window.removeEventListener("scroll", scheduleRemeasure);
+      container.removeEventListener("pointermove", handlePointerMove);
+    };
   }, []);
 
   return (

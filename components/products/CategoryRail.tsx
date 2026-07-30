@@ -68,9 +68,19 @@ export default function CategoryRail({
     const rail = railRef.current;
     if (!rail || rail.clientWidth === 0) return;
     const center = rail.clientWidth / 2;
+    const scrollLeft = rail.scrollLeft;
+
+    // Reads (offsetLeft/offsetWidth) batched into one pass before any writes
+    // -- interleaving a read then a write per tab, as before, forced a fresh
+    // reflow on every single tab (each write invalidates the layout the next
+    // tab's read needs), instead of one reflow for the whole rail.
+    const entries: { el: HTMLButtonElement; itemCenter: number }[] = [];
     for (const el of Object.values(tabRefs.current)) {
       if (!el) continue;
-      const itemCenter = el.offsetLeft + el.offsetWidth / 2 - rail.scrollLeft;
+      entries.push({ el, itemCenter: el.offsetLeft + el.offsetWidth / 2 - scrollLeft });
+    }
+
+    for (const { el, itemCenter } of entries) {
       const norm = Math.max(-1, Math.min(1, (itemCenter - center) / center));
       const rotate = norm * ARC_MAX_ROTATE;
       const scale = 1 - Math.abs(norm) * ARC_SCALE_FALLOFF;
@@ -101,18 +111,30 @@ export default function CategoryRail({
     applyArc();
   }, [active, categories, applyArc]);
 
-  // Recompute on resize/font-load — offsets shift, but the scroll position
-  // itself is left alone (only a selection change re-centres).
-  useEffect(() => {
-    window.addEventListener("resize", applyArc);
-    return () => window.removeEventListener("resize", applyArc);
-  }, [applyArc]);
-
+  // Recompute on resize/font-load (offsets shift, scroll position itself is
+  // left alone) and on every scroll frame (drag, momentum, programmatic
+  // re-centre). rAF-throttled so a burst of native events -- a fast flick's
+  // scroll stream, or dragging the window edge -- collapses to at most one
+  // recompute per animation frame instead of one per event; the applied
+  // end-state per frame is identical, just not recomputed redundantly within it.
   useEffect(() => {
     const rail = railRef.current;
     if (!rail) return;
-    rail.addEventListener("scroll", applyArc, { passive: true });
-    return () => rail.removeEventListener("scroll", applyArc);
+    let ticking = false;
+    const scheduleApplyArc = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        applyArc();
+      });
+    };
+    window.addEventListener("resize", scheduleApplyArc);
+    rail.addEventListener("scroll", scheduleApplyArc, { passive: true });
+    return () => {
+      window.removeEventListener("resize", scheduleApplyArc);
+      rail.removeEventListener("scroll", scheduleApplyArc);
+    };
   }, [applyArc]);
 
   // Grab-and-throw drag scroll for mouse/trackpad users, with real momentum

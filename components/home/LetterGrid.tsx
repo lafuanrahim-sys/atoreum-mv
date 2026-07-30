@@ -100,6 +100,7 @@ export default function LetterGrid() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const cellRefs = useRef<(HTMLDivElement | null)[]>([]);
   const activeRef = useRef<Set<number>>(new Set());
+  const rectRef = useRef<DOMRect | null>(null);
 
   const dims = useSyncExternalStore(subscribeDims, getDims, getServerDims);
   const [isTouch, setIsTouch] = useState(() =>
@@ -164,7 +165,10 @@ export default function LetterGrid() {
       const container = containerRef.current;
       if (!container) return;
       const { rows, cols } = dims;
-      const rect = container.getBoundingClientRect();
+      // Cached in the effect below (invalidated on resize/scroll) instead of
+      // read here on every pointermove -- this hover grid can fire that
+      // event dozens of times a second while the cursor drifts across it.
+      const rect = rectRef.current ?? container.getBoundingClientRect();
       const cellW = rect.width / cols;
       const cellH = rect.height / rows;
       const pointerCol = (event.clientX - rect.left) / cellW;
@@ -251,9 +255,25 @@ export default function LetterGrid() {
     const container = containerRef.current;
     if (!container) return;
 
+    let ticking = false;
+    const remeasure = () => {
+      rectRef.current = container.getBoundingClientRect();
+      ticking = false;
+    };
+    const scheduleRemeasure = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(remeasure);
+    };
+    remeasure();
+    window.addEventListener("resize", scheduleRemeasure);
+    window.addEventListener("scroll", scheduleRemeasure, { passive: true });
+
     container.addEventListener("pointermove", handlePointerMove);
     container.addEventListener("pointerleave", handlePointerLeave);
     return () => {
+      window.removeEventListener("resize", scheduleRemeasure);
+      window.removeEventListener("scroll", scheduleRemeasure);
       container.removeEventListener("pointermove", handlePointerMove);
       container.removeEventListener("pointerleave", handlePointerLeave);
     };
