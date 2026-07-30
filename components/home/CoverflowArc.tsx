@@ -83,12 +83,8 @@ const MOBILE_OPACITY_FALLOFF = 0.42;
 const MOBILE_LIFT_MAX = 6; // px, off-center cards sit slightly lower
 
 // Shared between the desktop stack and mobile row so the photo/placeholder/
-// label treatment can't drift between the two. index drives the plate
-// number -- a lookbook-style "N° 01" reads as a deliberate catalog device,
-// not just a caption slapped on a photo, and reuses the kicker-over-heading
-// rhythm the section's own header already establishes (small tracked gold
-// line, then the serif headline) rather than inventing a new type pairing.
-function CardMedia({ card, index }: { card: CoverflowCard; index: number }) {
+// label treatment can't drift between the two.
+function CardMedia({ card }: { card: CoverflowCard }) {
   return (
     <>
       {card.image ? (
@@ -112,18 +108,24 @@ function CardMedia({ card, index }: { card: CoverflowCard; index: number }) {
           <span className="text-[10px] uppercase tracking-[0.2em] text-ivory-dim/50">Photo coming soon</span>
         </div>
       )}
-      {/* via stop pushed to 55% (not the 50% default) so the darkened zone
-          reaches high enough to still back the "N°" kicker line, not just
-          the label beneath it -- on warm/bright photography (gold ampoule
-          bottles, cream lotion) the kicker was legible-in-theory but nearly
-          invisible in practice without this. */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/55 via-55% to-transparent" />
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-start justify-end" style={{ padding: "33px" }}>
-        <span className="text-[10px] tracking-[0.35em] text-gold uppercase">
-          N° {String(index + 1).padStart(2, "0")}
-        </span>
-        <span className="mt-2.5 h-px w-9 bg-gold/60" />
-        <span className="mt-3 font-display text-xl uppercase tracking-[0.05em] text-ivory md:text-3xl">
+      {/* Fixed colors here, not the theme-flipping ink/ivory/gold tokens --
+          this scrim and text caption a real photograph, which doesn't
+          repaint itself when the site switches theme. ink flips to a
+          near-white in light mode, so a scrim built from it inverts into a
+          light wash that fades the photo out instead of just backing the
+          text -- same reasoning as --photo-well-fg's fixed color, just for
+          a full-bleed photo caption instead of a badge on a photo well.
+          Kept short and light on purpose -- the photo is the point of this
+          section, not the caption -- so the stop sits low enough (28%) to
+          clear even the smallest card (--card-size bottoms out at 220px on
+          narrow phones), and peak opacity is capped at 70% instead of a
+          flat black. */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#121915]/70 via-[#121915]/28 via-28% to-transparent" />
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-start justify-end" style={{ padding: "24px" }}>
+        <span
+          className="font-display text-xl uppercase tracking-[0.05em] text-[#e9baa6] md:text-3xl"
+          style={{ textShadow: "0 2px 8px rgba(18,25,21,0.85)" }}
+        >
           {card.label}
         </span>
       </div>
@@ -446,7 +448,7 @@ export default function CoverflowArc() {
                 aria-label={`Shop ${card.label}`}
                 draggable={false}
               >
-                <CardMedia card={card} index={i} />
+                <CardMedia card={card} />
               </Link>
             </div>
           ))}
@@ -471,7 +473,7 @@ export default function CoverflowArc() {
             className="relative block flex-none overflow-hidden bg-ink-2"
             style={{ width: "var(--card-size)", height: "var(--card-size)" }}
           >
-            <CardMedia card={card} index={i} />
+            <CardMedia card={card} />
           </Link>
         ))}
       </div>
