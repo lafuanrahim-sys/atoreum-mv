@@ -65,7 +65,12 @@ export default function IntroSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="page-gutter bg-ink py-28 md:py-40">
+    // Asymmetric -- pt keeps the generous entrance gap after VelocityMarquee,
+    // pb is deliberately smaller since JourneyChapter right below is its own
+    // full-height section with its content vertically centered, which was
+    // stacking on top of this padding into one oversized dead-space gap
+    // between the stats row and "The Journey".
+    <section ref={sectionRef} className="page-gutter bg-ink pt-28 pb-12 md:pt-40 md:pb-16">
       <div className="grid gap-12 md:grid-cols-12">
         <div className="intro-eyebrow md:col-span-4">
           <p className="text-xs tracking-[0.3em] text-gold uppercase">

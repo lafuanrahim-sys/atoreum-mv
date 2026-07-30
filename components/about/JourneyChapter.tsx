@@ -134,9 +134,14 @@ export default function JourneyChapter() {
   }, []);
 
   return (
+    // justify-start + a fixed top offset (not justify-center) -- centering
+    // this content in the full h-100svh pin left a huge dead gap above it
+    // that visually merged with IntroSection's own bottom padding right
+    // above into one oversized gap; a fixed offset is also predictable
+    // regardless of how tall the content block ends up being.
     <section
       ref={sectionRef}
-      className="page-gutter relative flex h-100svh w-full flex-col justify-center overflow-hidden bg-ink"
+      className="page-gutter relative flex h-100svh w-full flex-col justify-start overflow-hidden bg-ink pt-20 md:pt-28"
     >
       <p className="text-xs tracking-[0.3em] text-gold uppercase">The Journey</p>
 

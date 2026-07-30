@@ -70,7 +70,7 @@ export default function ExploreProducts() {
             <WordMask text="Discover the curated launch collection." />
           </h2>
           <p data-reveal className="mt-6 text-base leading-relaxed text-ivory-dim md:text-lg">
-            Shop Atoreum MV&apos;s first Lebelage edit — premium Korean skincare made
+            Shop Atoreum MV&apos;s first Lebelage edit, premium Korean skincare made
             for the Maldives and designed to feel effortless every day.
           </p>
         </div>
