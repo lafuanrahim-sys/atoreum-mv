@@ -15,13 +15,14 @@ const TRAIL_IMAGES = [
 ].map((src) => encodeURI(src));
 
 const MIN_DISTANCE = 40; // px the pointer must travel before the next image spawns
-const IMAGE_SIZE = 200; // px, square hit-box — matches the reference's fixed 200x200
+const IMAGE_SIZE = 200; // px, square hit-box, desktop — matches the reference's fixed 200x200
+const IMAGE_SIZE_TOUCH = 140; // px — 200 reads oversized on a phone-width section
 const HOLD_SECONDS = 0.35; // how long an image stays at full scale before shrinking away
 const MAX_ALIVE = 10; // cap so a fast flick across the section can't pile up forever
 
 type TrailItem = { id: number; x: number; y: number; src: string; rotate: number };
 
-function TrailImage({ item, onDone }: { item: TrailItem; onDone: (id: number) => void }) {
+function TrailImage({ item, size, onDone }: { item: TrailItem; size: number; onDone: (id: number) => void }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -52,10 +53,10 @@ function TrailImage({ item, onDone }: { item: TrailItem; onDone: (id: number) =>
       ref={ref}
       className="pointer-events-none absolute will-change-transform"
       style={{
-        left: item.x - IMAGE_SIZE / 2,
-        top: item.y - IMAGE_SIZE / 2,
-        width: IMAGE_SIZE,
-        height: IMAGE_SIZE,
+        left: item.x - size / 2,
+        top: item.y - size / 2,
+        width: size,
+        height: size,
         transform: `rotate(${item.rotate}deg)`,
       }}
     >
@@ -80,9 +81,9 @@ export default function CursorImageTrail() {
   const idRef = useRef(0);
   const [items, setItems] = useState<TrailItem[]>([]);
   // "Move your cursor" doesn't describe a touchscreen gesture, so the
-  // heading swaps to "A closer look" there; the static fanned hand below is
-  // an idle hint shown only until the first touch, then replaced by the
-  // same live trail the pointermove listener drives on desktop.
+  // heading swaps for touch; also drives the smaller image size there
+  // (200px reads oversized on a phone-width section) and nothing else --
+  // no idle placeholder, the trail only appears once you actually drag.
   const [isTouch, setIsTouch] = useState(false);
 
   const handleDone = useCallback((id: number) => {
@@ -135,7 +136,7 @@ export default function CursorImageTrail() {
   }, []);
 
   return (
-    <section className="relative flex h-[70svh] w-full flex-col items-center justify-center gap-10 overflow-hidden bg-ink">
+    <section className="relative flex h-70svh w-full flex-col items-center justify-center gap-10 overflow-hidden bg-ink">
       <div className="pointer-events-none relative z-10 text-center">
         <p className="text-xs tracking-[0.3em] text-gold uppercase">Explore</p>
         <h2 className="mt-4 font-display text-2xl text-ivory md:text-4xl">
@@ -143,30 +144,14 @@ export default function CursorImageTrail() {
         </h2>
       </div>
 
-      {isTouch && items.length === 0 && (
-        // Idle hint shown only until the first touch -- same photos, fanned
-        // out like a dealt hand instead of spawned along a path that
-        // doesn't exist yet. Replaced by the live trail below as soon as
-        // items start arriving, same as desktop's own first-hover moment.
-        <div className="pointer-events-none flex items-center justify-center">
-          {TRAIL_IMAGES.map((src, i) => (
-            <div
-              key={src}
-              className="-ml-6 h-20 w-20 shrink-0 rounded-lg bg-ink-2 shadow-lg first:ml-0 sm:h-24 sm:w-24"
-              style={{
-                transform: `rotate(${(i - (TRAIL_IMAGES.length - 1) / 2) * 8}deg)`,
-                zIndex: i,
-              }}
-            >
-              <img src={src} alt="" className="h-full w-full rounded-lg object-contain" />
-            </div>
-          ))}
-        </div>
-      )}
-
       <div ref={containerRef} className="absolute inset-0" style={{ touchAction: "none" }}>
         {items.map((item) => (
-          <TrailImage key={item.id} item={item} onDone={handleDone} />
+          <TrailImage
+            key={item.id}
+            item={item}
+            size={isTouch ? IMAGE_SIZE_TOUCH : IMAGE_SIZE}
+            onDone={handleDone}
+          />
         ))}
       </div>
     </section>
