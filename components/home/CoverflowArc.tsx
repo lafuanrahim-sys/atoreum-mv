@@ -11,7 +11,7 @@ gsap.registerPlugin(ScrollTrigger);
 type CoverflowCard = {
   /** Doubles as the exact `category` value the Collection page's filter expects. */
   label: string;
-  /** Real product/category photo path — swap freely, sizing stays identical. Null renders the same "Photo coming soon" placeholder ProductCard uses (Make-up has no product photography yet). */
+  /** Real product/category photo path — swap freely, sizing stays identical. Null renders the same "Photo coming soon" placeholder ProductCard uses, for any category without photography yet. */
   image: string | null;
 };
 
@@ -31,7 +31,7 @@ const CARDS: CoverflowCard[] = [
   { label: "Foam Pack 2in1", image: "/images/categories/foam-pack-2in1.png" },
   { label: "Toner Pad", image: "/images/categories/toner-pad.png" },
   { label: "Lotion", image: "/images/categories/lotion.png" },
-  { label: "Make-up", image: null },
+  { label: "Make-up", image: "/images/categories/make-up.png" },
   { label: "Eye Cream", image: "/images/categories/eye-cream.png" },
   { label: "Soothing Gel", image: "/images/categories/soothing-gel.png" },
   { label: "Emulsion", image: "/images/categories/emulsion.png" },
@@ -95,10 +95,10 @@ function CardMedia({ card }: { card: CoverflowCard }) {
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
-        // Same "no photo yet" treatment as ProductCard -- Make-up has no
-        // product photography in the catalog yet, so this card still needs
-        // to exist (every category should be pickable here) without
-        // pretending a photo exists.
+        // Same "no photo yet" treatment as ProductCard -- covers any future
+        // category added without photography yet, so that card still exists
+        // (every category should be pickable here) without pretending a
+        // photo exists. All 15 current categories have real photos now.
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-moss/30 via-ink-2 to-ink">
           <svg viewBox="0 0 40 40" aria-hidden="true" className="h-9 w-9 text-ivory-dim/30">
             <rect x="6" y="10" width="28" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" />
