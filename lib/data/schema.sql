@@ -79,9 +79,15 @@ create table if not exists users (
   email_verified boolean not null default false,
   verification_token_hash text,
   verification_token_expires_at timestamptz,
+  -- Forgot-password flow -- same shape/posture as the verification token
+  -- pair above (hash only, never the raw token; short-lived; single use).
+  password_reset_token_hash text,
+  password_reset_token_expires_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+alter table users add column if not exists password_reset_token_hash text;
+alter table users add column if not exists password_reset_token_expires_at timestamptz;
 
 create table if not exists reviews (
   id text primary key,
@@ -106,9 +112,16 @@ create table if not exists messages (
   name text not null,
   phone text not null default '',
   message text not null default '',
-  status text not null default 'unread' check (status in ('unread', 'read', 'archived')),
+  -- 'deleted' is a soft delete -- Dashboard -> Messages -> Deleted lists and
+  -- can restore these, nothing here is ever hard-deleted from the UI.
+  status text not null default 'unread' check (status in ('unread', 'read', 'archived', 'deleted')),
   created_at timestamptz not null default now()
 );
+-- Existing installs: the inline check above only applies on a fresh create,
+-- so widen the constraint on a table that already exists.
+alter table messages drop constraint if exists messages_status_check;
+alter table messages add constraint messages_status_check
+  check (status in ('unread', 'read', 'archived', 'deleted'));
 
 -- Singleton row (id must be `true`, and `true` is the only value the check
 -- constraint allows, so a second row is structurally impossible) — mirrors

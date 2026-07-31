@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { listUsers } from "@/lib/data/users.server";
 import { getAllOrders } from "@/lib/data/orders.server";
-import { assignRoleAction, deleteUserAction } from "@/app/actions/auth";
+import { adminSendPasswordResetAction, assignRoleAction, deleteUserAction } from "@/app/actions/auth";
 import AdminActionButton from "@/components/dashboard/AdminActionButton";
 import Pagination from "@/components/dashboard/Pagination";
 import SortHeader from "@/components/dashboard/SortHeader";
@@ -152,6 +152,18 @@ export default async function DashboardCustomersPage({
                               : `${u.name} will be able to manage products, orders, and other admin data.`
                           }
                           confirmLabel={u.role === "admin" ? "Revoke" : "Grant access"}
+                        />
+                        <AdminActionButton
+                          action={async () => {
+                            "use server";
+                            await adminSendPasswordResetAction(u.id);
+                          }}
+                          label="Reset password"
+                          pendingLabel="Sending…"
+                          toastMessage={`Password reset email sent to ${u.name}.`}
+                          confirmTitle="Send a password reset email?"
+                          confirmMessage={`${u.name} will receive an email with a link to set a new password. Their current password keeps working until they use it.`}
+                          confirmLabel="Send"
                         />
                         <AdminActionButton
                           action={async () => {

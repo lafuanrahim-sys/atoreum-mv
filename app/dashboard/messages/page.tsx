@@ -4,22 +4,27 @@ import { deleteMessageAction, setMessageStatusAction } from "@/app/actions/messa
 import AdminActionButton from "@/components/dashboard/AdminActionButton";
 import PageHeader from "@/components/dashboard/PageHeader";
 
+type View = "inbox" | "archived" | "deleted";
+
 /**
  * Contact-form inbox: submissions from /contact land here as "unread".
  * Archiving tucks a message away into the Archived tab without deleting it.
+ * "Delete" is a soft delete too -- it moves the message to the Deleted tab
+ * rather than removing it, so a message deleted by mistake can be restored.
  */
 export default async function DashboardMessagesPage({
   searchParams,
 }: {
   searchParams: Promise<{ view?: string }>;
 }) {
-  const { view = "inbox" } = await searchParams;
-  const showArchived = view === "archived";
+  const { view: viewParam = "inbox" } = await searchParams;
+  const view: View = viewParam === "archived" ? "archived" : viewParam === "deleted" ? "deleted" : "inbox";
 
   const all = await listMessages();
-  const inbox = all.filter((m) => m.status !== "archived");
+  const inbox = all.filter((m) => m.status !== "archived" && m.status !== "deleted");
   const archived = all.filter((m) => m.status === "archived");
-  const messages = showArchived ? archived : inbox;
+  const deleted = all.filter((m) => m.status === "deleted");
+  const messages = view === "archived" ? archived : view === "deleted" ? deleted : inbox;
   const unread = inbox.filter((m) => m.status === "unread").length;
 
   return (
@@ -40,12 +45,17 @@ export default async function DashboardMessagesPage({
               label: `Archived (${archived.length})`,
               href: "/dashboard/messages?view=archived",
             },
+            {
+              key: "deleted",
+              label: `Deleted (${deleted.length})`,
+              href: "/dashboard/messages?view=deleted",
+            },
           ].map((t) => (
             <Link
               key={t.key}
               href={t.href}
               className={`border-b-2 py-2.5 transition-colors ${
-                (t.key === "archived") === showArchived
+                t.key === view
                   ? "border-gold-deep italic text-gold-deep"
                   : "border-transparent text-ivory-dim hover:text-ivory"
               }`}
@@ -54,7 +64,7 @@ export default async function DashboardMessagesPage({
             </Link>
           ))}
         </div>
-        {!showArchived && messages.length > 1 && (
+        {view === "inbox" && messages.length > 1 && (
           <AdminActionButton
             action={async () => {
               "use server";
@@ -70,7 +80,7 @@ export default async function DashboardMessagesPage({
 
       {messages.length === 0 ? (
         <p className="mt-8 text-sm text-ivory-dim">
-          {showArchived ? "No archived messages." : "No messages yet."}
+          {view === "archived" ? "No archived messages." : view === "deleted" ? "No deleted messages." : "No messages yet."}
         </p>
       ) : (
         <ul className="mt-2 flex flex-col">
@@ -94,39 +104,53 @@ export default async function DashboardMessagesPage({
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
-                  {!showArchived && (
+                  {view === "deleted" ? (
                     <AdminActionButton
                       action={async () => {
                         "use server";
-                        await setMessageStatusAction(m.id, m.status === "unread" ? "read" : "unread");
+                        await setMessageStatusAction(m.id, "read");
                       }}
-                      label={m.status === "unread" ? "Mark read" : "Mark unread"}
-                      pendingLabel="Updating…"
-                      toastMessage={m.status === "unread" ? "Marked as read." : "Marked as unread."}
+                      label="Restore"
+                      pendingLabel="Restoring…"
+                      toastMessage="Message restored to inbox."
                     />
+                  ) : (
+                    <>
+                      {view === "inbox" && (
+                        <AdminActionButton
+                          action={async () => {
+                            "use server";
+                            await setMessageStatusAction(m.id, m.status === "unread" ? "read" : "unread");
+                          }}
+                          label={m.status === "unread" ? "Mark read" : "Mark unread"}
+                          pendingLabel="Updating…"
+                          toastMessage={m.status === "unread" ? "Marked as read." : "Marked as unread."}
+                        />
+                      )}
+                      <AdminActionButton
+                        action={async () => {
+                          "use server";
+                          await setMessageStatusAction(m.id, view === "archived" ? "read" : "archived");
+                        }}
+                        label={view === "archived" ? "Unarchive" : "Archive"}
+                        pendingLabel="Updating…"
+                        toastMessage={view === "archived" ? "Message moved back to inbox." : "Message archived."}
+                      />
+                      <AdminActionButton
+                        action={async () => {
+                          "use server";
+                          await deleteMessageAction(m.id);
+                        }}
+                        label="Delete"
+                        pendingLabel="Deleting…"
+                        variant="danger"
+                        toastMessage="Message deleted."
+                        confirmTitle="Delete this message?"
+                        confirmMessage="This moves the message to the Deleted tab, where it can be restored later."
+                        confirmLabel="Delete"
+                      />
+                    </>
                   )}
-                  <AdminActionButton
-                    action={async () => {
-                      "use server";
-                      await setMessageStatusAction(m.id, showArchived ? "read" : "archived");
-                    }}
-                    label={showArchived ? "Unarchive" : "Archive"}
-                    pendingLabel="Updating…"
-                    toastMessage={showArchived ? "Message moved back to inbox." : "Message archived."}
-                  />
-                  <AdminActionButton
-                    action={async () => {
-                      "use server";
-                      await deleteMessageAction(m.id);
-                    }}
-                    label="Delete"
-                    pendingLabel="Deleting…"
-                    variant="danger"
-                    toastMessage="Message deleted."
-                    confirmTitle="Delete this message?"
-                    confirmMessage="This message will be permanently removed."
-                    confirmLabel="Delete"
-                  />
                 </div>
               </div>
               <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-ivory-dim">

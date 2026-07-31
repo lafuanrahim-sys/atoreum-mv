@@ -8,7 +8,6 @@ import { isAdminRole } from "@/lib/auth/userSession";
 import { checkRateLimit } from "@/lib/rateLimit";
 import {
   createMessage,
-  deleteMessage,
   setMessageStatus,
   type MessageStatus,
 } from "@/lib/data/messages.server";
@@ -52,8 +51,9 @@ export async function setMessageStatusAction(id: string, status: MessageStatus):
   revalidatePath("/dashboard/messages");
 }
 
+/** Soft delete -- moves the message to the Deleted tab rather than removing it, so it can be restored. */
 export async function deleteMessageAction(id: string): Promise<void> {
   await requireAdmin();
-  await deleteMessage(id);
+  await setMessageStatus(id, "deleted");
   revalidatePath("/dashboard/messages");
 }

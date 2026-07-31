@@ -8,7 +8,10 @@ import {
   changeUserPassword,
   createUser,
   deleteUser,
+  getUserById,
+  issuePasswordResetToken,
   issueVerificationToken,
+  resetPasswordWithToken,
   setUserRole,
   toggleUserFavorite,
   updateUserName,
@@ -16,8 +19,13 @@ import {
 } from "@/lib/data/users.server";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { setSessionCookie } from "@/lib/auth/setSessionCookie.server";
-import { sendVerificationEmail } from "@/lib/email";
-import { checkLoginRateLimit, checkRegistrationRateLimit, checkResendVerificationRateLimit } from "@/lib/auth/rateLimit";
+import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/email";
+import {
+  checkLoginRateLimit,
+  checkPasswordResetRateLimit,
+  checkRegistrationRateLimit,
+  checkResendVerificationRateLimit,
+} from "@/lib/auth/rateLimit";
 
 /** Origin to build absolute links (verification emails) against — derived from the request rather than a hardcoded env var, so it's correct in dev, staging, and prod without config. */
 async function getBaseUrl(): Promise<string> {
@@ -143,6 +151,41 @@ export async function resendVerificationAction(formData: FormData): Promise<void
   loginRedirect({ mode: "login", notice: "verify-sent", email, ...(from ? { from } : {}) });
 }
 
+/** Public: "Forgot password?" form on the login page. Same account-enumeration posture as resendVerificationAction — the response never reveals whether the address had an account. */
+export async function requestPasswordResetAction(formData: FormData): Promise<void> {
+  const email = String(formData.get("email") ?? "");
+
+  if (checkPasswordResetRateLimit(email).ok) {
+    const result = await issuePasswordResetToken(email);
+    if (!("error" in result)) {
+      const resetUrl = `${await getBaseUrl()}/login?mode=reset&token=${result.resetToken}`;
+      const sendResult = await sendPasswordResetEmail({ to: result.user.email, name: result.user.name, resetUrl });
+      if ("error" in sendResult) console.error("Password reset email failed to send:", sendResult.error);
+    }
+  }
+  loginRedirect({ mode: "login", notice: "reset-sent" });
+}
+
+/** Public: destination of the "Reset password" link in the email — sets the new password and signs the user straight in, since typing a new password for a token only they received already proves both intent and ownership. */
+export async function resetPasswordAction(formData: FormData): Promise<void> {
+  const token = String(formData.get("token") ?? "");
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  const withToken = (params: Record<string, string>) =>
+    loginRedirect({ mode: "reset", token, ...params });
+
+  if (!token) loginRedirect({ mode: "login", error: "reset-failed" });
+  if (password.length < 8) withToken({ error: "password" });
+  if (password !== confirmPassword) withToken({ error: "password-mismatch" });
+
+  const result = await resetPasswordWithToken(token, password);
+  if ("error" in result) loginRedirect({ mode: "login", error: "reset-failed" });
+
+  await setSessionCookie(result.id, result.role);
+  redirect(homeFor(result.role));
+}
+
 export async function logoutAction(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(USER_SESSION_COOKIE);
@@ -214,4 +257,27 @@ export async function deleteUserAction(userId: string): Promise<void> {
   await deleteUser(userId);
   revalidatePath("/dashboard/customers");
   revalidatePath("/dashboard");
+}
+
+/**
+ * Super-admin only: sends a customer or admin a password-reset email on
+ * their behalf (e.g. a locked-out customer who calls support) — the same
+ * token/email flow as the public "forgot password" form, so the admin never
+ * sees or sets the account's actual password. Bound directly to an
+ * AdminActionButton, not a form submit, so failures throw for its toast
+ * rather than redirecting.
+ */
+export async function adminSendPasswordResetAction(userId: string): Promise<void> {
+  const actor = await getCurrentUser();
+  if (!actor || actor.role !== "superadmin") redirect("/login");
+
+  const target = await getUserById(userId);
+  if (!target) throw new Error("Account not found.");
+
+  const result = await issuePasswordResetToken(target.email);
+  if ("error" in result) throw new Error(result.error);
+
+  const resetUrl = `${await getBaseUrl()}/login?mode=reset&token=${result.resetToken}`;
+  const sendResult = await sendPasswordResetEmail({ to: result.user.email, name: result.user.name, resetUrl });
+  if ("error" in sendResult) throw new Error("Couldn't send the reset email — try again.");
 }

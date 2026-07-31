@@ -25,6 +25,9 @@ export type User = {
   /** SHA-256 hash of the current outstanding verification token, never the raw token (same posture as passwordHash). Null once verified or if none has been issued. */
   verificationTokenHash: string | null;
   verificationTokenExpiresAt: string | null;
+  /** Same shape as the verification token pair, for the forgot-password flow. Null once used or if none is outstanding. */
+  passwordResetTokenHash: string | null;
+  passwordResetTokenExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -42,6 +45,8 @@ type UserRow = {
   email_verified: boolean;
   verification_token_hash: string | null;
   verification_token_expires_at: string | null;
+  password_reset_token_hash: string | null;
+  password_reset_token_expires_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -58,6 +63,10 @@ function rowToUser(row: UserRow): User {
     verificationTokenHash: row.verification_token_hash,
     verificationTokenExpiresAt: row.verification_token_expires_at
       ? new Date(row.verification_token_expires_at).toISOString()
+      : null,
+    passwordResetTokenHash: row.password_reset_token_hash,
+    passwordResetTokenExpiresAt: row.password_reset_token_expires_at
+      ? new Date(row.password_reset_token_expires_at).toISOString()
       : null,
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
@@ -91,6 +100,9 @@ function generateVerificationToken(): string {
 }
 
 const VERIFICATION_TOKEN_TTL_MS = 1000 * 60 * 60 * 24; // 24h
+// Shorter than the verification link -- a stray password-reset email sitting
+// in an inbox is a more sensitive thing to leave valid for a full day.
+const PASSWORD_RESET_TOKEN_TTL_MS = 1000 * 60 * 60; // 1h
 
 /** The one account that owns the store — always the super admin. */
 export const SUPER_ADMIN_EMAIL = "admin@atoreum.mv";
@@ -226,6 +238,56 @@ export async function verifyCredentials(email: string, password: string): Promis
   const row = rows[0];
   if (!row) return null;
   return verifyPassword(password, row.password_hash) ? sanitize(rowToUser(row)) : null;
+}
+
+/**
+ * Issues a fresh password-reset token for an account (forgot-password form,
+ * or an admin sending a customer a reset link) -- the caller is responsible
+ * for emailing it. Works regardless of email-verification status: losing
+ * your password isn't conditional on having verified the address you're
+ * about to receive the reset link at.
+ */
+export async function issuePasswordResetToken(
+  email: string
+): Promise<{ user: PublicUser; resetToken: string } | { error: string }> {
+  await ensureSeedAdmin();
+  const normalized = email.trim().toLowerCase();
+  const existing = await getUserByEmail(normalized);
+  if (!existing) return { error: "No account found with this email." };
+
+  const resetToken = generateVerificationToken(); // same 32-byte random source, different purpose
+  const { rows } = await pool().query<UserRow>(
+    `update users
+     set password_reset_token_hash = $2, password_reset_token_expires_at = $3, updated_at = now()
+     where email = $1
+     returning *`,
+    [normalized, hashToken(resetToken), new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS).toISOString()]
+  );
+  return { user: sanitize(rowToUser(rows[0])), resetToken };
+}
+
+/** Sets a new password for the account matching this raw token. Consumes the token -- a second use of the same link fails. */
+export async function resetPasswordWithToken(
+  token: string,
+  newPassword: string
+): Promise<PublicUser | { error: string }> {
+  await ensureSeedAdmin();
+  const hash = hashToken(token);
+  const { rows } = await pool().query<UserRow>(
+    `update users
+     set password_hash = $2, password_reset_token_hash = null, password_reset_token_expires_at = null, updated_at = now()
+     where password_reset_token_hash = $1 and password_reset_token_expires_at > now()
+     returning *`,
+    [hash, hashPassword(newPassword)]
+  );
+  if (rows[0]) return sanitize(rowToUser(rows[0]));
+
+  const { rows: expiredRows } = await pool().query<{ id: string }>(
+    "select id from users where password_reset_token_hash = $1",
+    [hash]
+  );
+  if (expiredRows[0]) return { error: "This reset link has expired. Request a new one." };
+  return { error: "This reset link is invalid or has already been used." };
 }
 
 export async function updateUserName(id: string, name: string): Promise<PublicUser | null> {

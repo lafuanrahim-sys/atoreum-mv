@@ -78,3 +78,33 @@ export async function sendVerificationEmail(params: {
     return { error: err instanceof Error ? err.message : "Failed to send verification email." };
   }
 }
+
+export async function sendPasswordResetEmail(params: {
+  to: string;
+  name: string;
+  resetUrl: string;
+}): Promise<{ ok: true } | { error: string }> {
+  try {
+    await getTransporter().sendMail({
+      from: getFromAddress(),
+      to: params.to,
+      subject: "Reset your Atoreum MV password",
+      html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+          <p>Hi ${escapeHtml(params.name)},</p>
+          <p>We received a request to reset the password on your Atoreum MV account. Choose a new password here:</p>
+          <p style="margin: 24px 0;">
+            <a href="${params.resetUrl}" style="background:#8a6d3b;color:#fff;padding:12px 24px;text-decoration:none;border-radius:2px;display:inline-block;">
+              Reset password
+            </a>
+          </p>
+          <p style="font-size: 13px; color: #666;">Or paste this link into your browser:<br />${params.resetUrl}</p>
+          <p style="font-size: 13px; color: #666;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email — your password won't change.</p>
+        </div>
+      `,
+    });
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to send password reset email." };
+  }
+}

@@ -32,3 +32,11 @@ export function checkResendVerificationRateLimit(email: string): RateLimitResult
   }
   return { ok: true };
 }
+
+/** Same posture as the verification resend above — the forgot-password form is public and unauthenticated, so this is the only thing stopping it from being used to spam an arbitrary inbox. */
+export function checkPasswordResetRateLimit(email: string): RateLimitResult {
+  if (!checkRateLimit(`reset-password:email:${email.toLowerCase()}`, 3, 600)) {
+    return { ok: false, retryAfterSeconds: 600 };
+  }
+  return { ok: true };
+}

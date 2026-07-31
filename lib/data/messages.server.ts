@@ -11,7 +11,7 @@ import { pool } from "@/lib/db";
  * Dashboard → Messages.
  */
 
-export type MessageStatus = "unread" | "read" | "archived";
+export type MessageStatus = "unread" | "read" | "archived" | "deleted";
 
 export type ContactMessage = {
   id: string;
@@ -75,9 +75,4 @@ export async function setMessageStatus(id: string, status: MessageStatus): Promi
     [id, status]
   );
   return rows[0] ? rowToMessage(rows[0]) : null;
-}
-
-export async function deleteMessage(id: string): Promise<boolean> {
-  const { rowCount } = await pool().query("delete from messages where id = $1", [id]);
-  return (rowCount ?? 0) > 0;
 }
