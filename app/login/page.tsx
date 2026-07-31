@@ -78,7 +78,13 @@ export default async function LoginPage({
 
   return (
     <div className="page-gutter flex min-h-[70vh] items-center justify-center bg-ink pb-24 pt-10 md:pt-14">
-      <div className="card-entrance w-full max-w-md border border-line p-8 md:p-10">
+      <div className="card-entrance auth-glass-card relative w-full max-w-md overflow-hidden border border-ivory/15 bg-ink-2/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0)_55%)] p-8 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_25px_60px_-15px_rgba(0,0,0,0.5)] backdrop-blur-xl backdrop-saturate-150 md:p-10">
+      {/* z-10 wrapper -- the glass card's own ::before shimmer (see
+          .auth-glass-card in globals.css) is an absolutely-positioned,
+          z-index:auto layer, which paints above plain in-flow content by
+          default; without this, it would sit over the form instead of
+          behind it. */}
+      <div className="relative z-10">
         <p className="text-xs uppercase tracking-[0.3em] text-gold">Atoreum MV</p>
         <h1 className="mt-3 font-display text-2xl text-ivory md:text-3xl">{heading}</h1>
         <p className="mt-2 text-sm leading-relaxed text-ivory-dim">{subtitle}</p>
@@ -252,6 +258,7 @@ export default async function LoginPage({
             )}
           </div>
         </PageTransition>
+      </div>
       </div>
     </div>
   );
