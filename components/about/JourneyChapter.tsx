@@ -135,13 +135,24 @@ export default function JourneyChapter() {
 
   return (
     // justify-start + a fixed top offset (not justify-center) -- centering
-    // this content in the full h-100svh pin left a huge dead gap above it
+    // this content in a full h-100svh pin left a huge dead gap above it
     // that visually merged with IntroSection's own bottom padding right
     // above into one oversized gap; a fixed offset is also predictable
     // regardless of how tall the content block ends up being.
+    //
+    // Height is content-sized (py-20/28, not h-100svh) -- GSAP's pin
+    // reserves the trigger's own rendered height as extra scroll distance
+    // *after* the scrub finishes (the section un-pins and hands off by
+    // scrolling through its own height once more before the next section
+    // appears). At h-100svh with content anchored to the top, that hand-off
+    // was almost entirely empty space -- the real content only ever filled
+    // its top ~60%. Sizing the section to its actual content removes that
+    // dead scroll-through instead of just hiding it visually. bg-ink
+    // matches the page background either way, so during the active pin
+    // (position:fixed, shorter than the viewport) there's no visible seam.
     <section
       ref={sectionRef}
-      className="page-gutter relative flex h-100svh w-full flex-col justify-start overflow-hidden bg-ink pt-20 md:pt-28"
+      className="page-gutter relative flex w-full flex-col justify-start overflow-hidden bg-ink py-20 md:py-28"
     >
       <p className="text-xs tracking-[0.3em] text-gold uppercase">The Journey</p>
 
