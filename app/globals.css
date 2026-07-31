@@ -173,16 +173,23 @@ body {
    PasswordField's show/hide button), since only the <input> itself gets
    re-painted, never its siblings. The absurdly long transition delays the
    browser's own repaint of the fill color for as long as the input exists,
-   which is the standard trick since there's no other way to disable it. */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-  -webkit-text-fill-color: var(--ivory);
-  caret-color: var(--ivory);
-  -webkit-box-shadow: 0 0 0px 1000px transparent inset;
-  box-shadow: 0 0 0px 1000px transparent inset;
-  transition: background-color 9999s ease-in-out 0s, color 9999s ease-in-out 0s;
+   which is the standard trick since there's no other way to disable it.
+   Must be in @layer base for the same reason as :focus-visible below --
+   any Tailwind utility that sets box-shadow on the same input (e.g. an
+   inset-shadow "embossed field" treatment) lives in @layer utilities,
+   which beats an unlayered rule regardless of specificity and would
+   silently un-hide the browser's native autofill fill again. */
+@layer base {
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--ivory);
+    caret-color: var(--ivory);
+    -webkit-box-shadow: 0 0 0px 1000px transparent inset;
+    box-shadow: 0 0 0px 1000px transparent inset;
+    transition: background-color 9999s ease-in-out 0s, color 9999s ease-in-out 0s;
+  }
 }
 
 /* Branded keyboard-focus ring. :focus-visible only, so mouse clicks stay

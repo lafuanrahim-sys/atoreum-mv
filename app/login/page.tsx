@@ -13,7 +13,6 @@ import { isAdminRole } from "@/lib/auth/userSession";
 import PageTransition from "@/components/ui/PageTransition";
 import SubmitButton from "@/components/ui/SubmitButton";
 import PasswordField from "@/components/ui/PasswordField";
-import Logo from "@/components/ui/Logo";
 
 export const metadata: Metadata = {
   title: "Sign in — Atoreum MV",
@@ -77,20 +76,14 @@ export default async function LoginPage({
         ? "Track your orders, keep favorites, and check out faster."
         : "Sign in to see your orders, favorites, and profile.";
 
+  // Debossed field treatment -- an inset shadow (dark on the light-facing
+  // edge, a faint highlight on the far edge) so the writing space itself
+  // reads as pressed into the glass card rather than just outlined.
+  const EMBOSS_FIELD = "shadow-[inset_0_2px_5px_rgba(0,0,0,0.4),inset_0_-1px_0_rgba(255,255,255,0.05)]";
+
   return (
     <div className="bg-ink">
       <div className="page-gutter flex min-h-[75vh] flex-col items-center justify-center gap-10 pb-24 pt-10 md:pt-14">
-        {/* Mark stands alone, quiet, above the card -- the only ornament on
-            the page. No shape, no frame around it: restraint is the point. */}
-        <div className="flex flex-col items-center gap-3">
-          <span className="block h-8 w-8 opacity-80">
-            <Logo />
-          </span>
-          <span className="font-display text-[11px] uppercase tracking-[0.45em] text-ivory-dim">
-            Atoreum <span className="text-gold">MV</span>
-          </span>
-        </div>
-
         <div className="card-entrance w-full max-w-md overflow-hidden rounded-2xl border border-ivory/15 bg-ink-2/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_55%)] p-8 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_25px_60px_-15px_rgba(0,0,0,0.5)] backdrop-blur-xl backdrop-saturate-150 md:p-10">
         <h1 className="font-display text-2xl text-ivory md:text-3xl">{heading}</h1>
         <p className="mt-2 text-sm leading-relaxed text-ivory-dim">{subtitle}</p>
@@ -172,7 +165,7 @@ export default async function LoginPage({
                     name="email"
                     required
                     autoComplete="email"
-                    className="rounded-md border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none"
+                    className={`rounded-md border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none ${EMBOSS_FIELD}`}
                   />
                 </label>
                 <SubmitButton variant="solid" className="mt-2 py-4" pendingLabel="Sending…">
@@ -185,11 +178,11 @@ export default async function LoginPage({
                   <input type="hidden" name="token" value={token} />
                   <label className="flex flex-col gap-2">
                     <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">New password (min 8 characters)</span>
-                    <PasswordField name="password" required minLength={8} autoComplete="new-password" />
+                    <PasswordField name="password" required minLength={8} autoComplete="new-password" className={EMBOSS_FIELD} />
                   </label>
                   <label className="flex flex-col gap-2">
                     <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">Confirm new password</span>
-                    <PasswordField name="confirmPassword" required minLength={8} autoComplete="new-password" />
+                    <PasswordField name="confirmPassword" required minLength={8} autoComplete="new-password" className={EMBOSS_FIELD} />
                   </label>
                   <SubmitButton variant="solid" className="mt-2 py-4" pendingLabel="Resetting…">
                     Reset password
@@ -229,7 +222,7 @@ export default async function LoginPage({
                     name="email"
                     required
                     autoComplete="email"
-                    className="rounded-md border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none"
+                    className={`rounded-md border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none ${EMBOSS_FIELD}`}
                   />
                 </label>
 
@@ -242,6 +235,7 @@ export default async function LoginPage({
                     required
                     minLength={isRegister ? 8 : undefined}
                     autoComplete={isRegister ? "new-password" : "current-password"}
+                    className={EMBOSS_FIELD}
                   />
                   {!isRegister && (
                     <Link
