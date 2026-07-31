@@ -30,8 +30,18 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
   // of at the top. Re-target Lenis itself on every route change — keyed on
   // pathname only, not search params, so in-page filter/query updates
   // (e.g. ProductGrid) don't get yanked back to the top.
+  //
+  // ScrollTrigger.refresh() belongs in this same effect: components like
+  // Footer live in the root layout and never remount across route changes,
+  // so their scroll-reveal triggers keep whatever start position GSAP
+  // computed against the *previous* page's height. Navigate from a tall
+  // page to a short one (e.g. About -> Login) and that position can become
+  // unreachable, leaving the reveal permanently stuck at opacity 0. A
+  // refresh recalculates every trigger against the new page's actual
+  // layout and fires any that are now already past their start.
   useEffect(() => {
     window.__lenis?.scrollTo(0, { immediate: true });
+    ScrollTrigger.refresh();
   }, [pathname]);
 
   useEffect(() => {
