@@ -15,7 +15,11 @@ export default function Footer() {
   // chromeHidden is the reliable signal for the latter two (see
   // lib/layout/ChromeVisibility.tsx) -- usePathname() alone can lag behind
   // a Server Action redirect that middleware further redirects.
-  if (chromeHidden || pathname === "/" || pathname.startsWith("/dashboard") || pathname === "/maintenance") return null;
+  // Also off on /login: that page composes its own self-contained scene
+  // (crest, threshold arch, wayfinding line) instead of handing off to the
+  // site chrome at the bottom -- a standard footer would just restate the
+  // same "Malé, Maldives" fact a second time in a completely different register.
+  if (chromeHidden || pathname === "/" || pathname === "/login" || pathname.startsWith("/dashboard") || pathname === "/maintenance") return null;
 
   return (
     <footer ref={ref} className="page-gutter border-t border-line bg-ink py-16">

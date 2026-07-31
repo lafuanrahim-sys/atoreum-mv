@@ -13,6 +13,7 @@ import { isAdminRole } from "@/lib/auth/userSession";
 import PageTransition from "@/components/ui/PageTransition";
 import SubmitButton from "@/components/ui/SubmitButton";
 import PasswordField from "@/components/ui/PasswordField";
+import Logo from "@/components/ui/Logo";
 
 export const metadata: Metadata = {
   title: "Sign in — Atoreum MV",
@@ -77,10 +78,40 @@ export default async function LoginPage({
         : "Sign in to see your orders, favorites, and profile.";
 
   return (
-    <div className="page-gutter flex min-h-[70vh] items-center justify-center bg-ink pb-24 pt-10 md:pt-14">
-      <div className="card-entrance w-full max-w-md overflow-hidden rounded-2xl border border-ivory/15 bg-ink-2/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_55%)] p-8 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_25px_60px_-15px_rgba(0,0,0,0.5)] backdrop-blur-xl backdrop-saturate-150 md:p-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-gold">Atoreum MV</p>
-        <h1 className="mt-3 font-display text-2xl text-ivory md:text-3xl">{heading}</h1>
+    <div className="relative isolate overflow-hidden bg-ink">
+      {/* The threshold: a hairline archway, wider and taller than the card,
+          standing in for the boutique's own doorway rather than a flat void
+          behind a floating box. Open at the bottom (no border-bottom) so it
+          reads as a doorway meeting the floor, not a picture frame. Negative
+          z-index (not DOM order alone) keeps it behind the in-flow content
+          below -- an absolutely-positioned, unpositioned-z-index sibling
+          paints *above* static content by default per CSS2.1 painting order,
+          the same pitfall the old shimmer hit earlier on this same page. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-[8%] -z-10 h-[clamp(30rem,72vh,46rem)] w-[clamp(21rem,42vw,34rem)] -translate-x-1/2 rounded-t-[999px] border border-b-0 border-ivory/10 bg-gold/[0.04]"
+        style={{
+          maskImage: "linear-gradient(to bottom, black 0%, black 70%, transparent 96%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 70%, transparent 96%)",
+        }}
+      />
+
+      <div className="page-gutter relative flex min-h-[75vh] flex-col items-center justify-center gap-8 pb-24 pt-10 md:pt-14">
+        {/* Crest: the same mark and wordmark the header uses, standing alone
+            above the card like a plaque above a doorway -- carries the brand
+            identity so the card itself no longer has to repeat "Atoreum MV"
+            in its own first line. */}
+        <div className="flex flex-col items-center gap-3">
+          <span className="block h-9 w-9 opacity-90">
+            <Logo />
+          </span>
+          <span className="font-display text-xs uppercase tracking-[0.4em] text-ivory-dim">
+            Atoreum <span className="text-gold">MV</span>
+          </span>
+        </div>
+
+        <div className="card-entrance w-full max-w-md overflow-hidden rounded-2xl border border-ivory/15 bg-ink-2/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_55%)] p-8 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_25px_60px_-15px_rgba(0,0,0,0.5)] backdrop-blur-xl backdrop-saturate-150 md:p-10">
+        <h1 className="font-display text-2xl text-ivory md:text-3xl">{heading}</h1>
         <p className="mt-2 text-sm leading-relaxed text-ivory-dim">{subtitle}</p>
 
         {isTabbedMode ? (
@@ -252,6 +283,15 @@ export default async function LoginPage({
             )}
           </div>
         </PageTransition>
+        </div>
+
+        {/* Replaces what the footer would otherwise have said here (Malé,
+            Maldives) -- a real coordinate, not a decorative flourish, so the
+            page still grounds itself in an actual place even without the
+            site chrome around it. */}
+        <p className="text-center text-[10px] uppercase tracking-[0.3em] text-ivory-dim/50">
+          Malé, Maldives · 4°10&prime;N 73°30&prime;E
+        </p>
       </div>
     </div>
   );
