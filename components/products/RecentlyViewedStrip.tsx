@@ -61,7 +61,7 @@ export default function RecentlyViewedStrip({ products }: { products: Product[] 
             href={`/products/${product.id}`}
             className="group flex w-32 shrink-0 flex-col gap-2"
           >
-            <div className="relative aspect-square overflow-hidden rounded-sm bg-photo-well">
+            <div className="relative aspect-square overflow-hidden rounded-md bg-photo-well">
               {product.images[0] ? (
                 <div className="absolute inset-3">
                   <Image src={product.images[0]} alt="" fill sizes="128px" className="object-contain" />

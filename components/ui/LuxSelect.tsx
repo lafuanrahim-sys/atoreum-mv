@@ -144,7 +144,7 @@ export default function LuxSelect({
           aria-activedescendant={open ? `${id}-opt-${activeIndex}` : undefined}
           onClick={() => (open ? setOpen(false) : openList())}
           onKeyDown={onKeyDown}
-          className="flex min-h-11 w-full min-w-44 cursor-pointer items-center justify-between gap-3 border border-line bg-transparent px-4 py-2.5 text-xs uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:border-ivory-dim focus:border-gold focus:outline-none"
+          className="flex min-h-11 w-full min-w-44 cursor-pointer items-center justify-between gap-3 rounded-md border border-line bg-transparent px-4 py-2.5 text-xs uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:border-ivory-dim focus:border-gold focus:outline-none"
         >
           <span className="truncate text-ivory">{selected?.label}</span>
           <svg
@@ -168,7 +168,7 @@ export default function LuxSelect({
             className={
               horizontal
                 ? "lux-select-panel-h absolute left-full top-0 z-40 ml-3 flex w-max max-w-[min(56rem,60vw)] flex-wrap items-center gap-2"
-                : "lux-select-panel-v absolute left-0 top-full z-40 mt-2 max-h-80 w-max min-w-full max-w-72 overflow-y-auto border border-line bg-ink-2/95 py-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.35)] backdrop-blur-md"
+                : "lux-select-panel-v absolute left-0 top-full z-40 mt-2 max-h-80 w-max min-w-full max-w-72 overflow-y-auto rounded-md border border-line bg-ink-2/95 py-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.35)] backdrop-blur-md"
             }
           >
             {options.map((opt, i) => {
@@ -186,7 +186,7 @@ export default function LuxSelect({
                   onClick={() => commit(i)}
                   className={
                     horizontal
-                      ? `flex min-h-10 cursor-pointer items-center gap-2 border px-4 py-2 text-xs uppercase tracking-[0.15em] backdrop-blur-md transition-colors duration-100 ${
+                      ? `flex min-h-10 cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-xs uppercase tracking-[0.15em] backdrop-blur-md transition-colors duration-100 ${
                           isSelected
                             ? "border-gold bg-ink-2/95 text-gold"
                             : isActive

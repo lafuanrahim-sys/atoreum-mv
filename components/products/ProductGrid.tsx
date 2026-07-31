@@ -252,7 +252,7 @@ export default function ProductGrid({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search products…"
             aria-label="Search products"
-            className="min-h-11 border border-line bg-transparent px-4 py-2.5 text-sm text-ivory placeholder:text-ivory-dim focus:border-gold focus:outline-none"
+            className="min-h-11 rounded-md border border-line bg-transparent px-4 py-2.5 text-sm text-ivory placeholder:text-ivory-dim focus:border-gold focus:outline-none"
           />
           <LuxSelect
             label="Sort by"
@@ -282,7 +282,7 @@ export default function ProductGrid({
             type="button"
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
-            className="border border-line px-5 py-2.5 text-[10px] tracking-[0.2em] text-ivory-dim uppercase transition-colors hover:border-gold hover:text-gold disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line disabled:hover:text-ivory-dim"
+            className="rounded-md border border-line px-5 py-2.5 text-[10px] tracking-[0.2em] text-ivory-dim uppercase transition-colors hover:border-gold hover:text-gold disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line disabled:hover:text-ivory-dim"
           >
             Prev
           </button>
@@ -293,7 +293,7 @@ export default function ProductGrid({
             type="button"
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === pageCount}
-            className="border border-line px-5 py-2.5 text-[10px] tracking-[0.2em] text-ivory-dim uppercase transition-colors hover:border-gold hover:text-gold disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line disabled:hover:text-ivory-dim"
+            className="rounded-md border border-line px-5 py-2.5 text-[10px] tracking-[0.2em] text-ivory-dim uppercase transition-colors hover:border-gold hover:text-gold disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line disabled:hover:text-ivory-dim"
           >
             Next
           </button>
@@ -311,7 +311,7 @@ export default function ProductGrid({
               setActive("All");
               setQuery("");
             }}
-            className="border border-line px-5 py-2.5 text-[10px] tracking-[0.2em] text-ivory-dim uppercase transition-colors hover:border-gold hover:text-gold"
+            className="rounded-md border border-line px-5 py-2.5 text-[10px] tracking-[0.2em] text-ivory-dim uppercase transition-colors hover:border-gold hover:text-gold"
           >
             Clear filters
           </button>

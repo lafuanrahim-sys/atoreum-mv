@@ -61,11 +61,11 @@ export default function ProductCard({
       // both sit inset from the glass edges instead of bleeding to the
       // grid track's own edges. No hard border -- the sheen/shadow alone
       // reads as a glass edge without a drawn outline around every tile.
-      className="group flex flex-col overflow-hidden rounded-sm bg-ink-2/40 bg-[linear-gradient(145deg,rgba(255,255,255,0.06),rgba(255,255,255,0)_55%)] p-3 shadow-[0_1px_0_0_rgba(255,255,255,0.07)_inset,0_18px_36px_-24px_rgba(0,0,0,0.45)] backdrop-blur-xl backdrop-saturate-150 sm:p-4"
+      className="group flex flex-col overflow-hidden rounded-2xl bg-ink-2/40 bg-[linear-gradient(145deg,rgba(255,255,255,0.06),rgba(255,255,255,0)_55%)] p-3 shadow-[0_1px_0_0_rgba(255,255,255,0.07)_inset,0_18px_36px_-24px_rgba(0,0,0,0.45)] backdrop-blur-xl backdrop-saturate-150 sm:p-4"
     >
       <div
         data-card-frame
-        className="relative aspect-[4/5] touch-manipulation overflow-hidden bg-photo-well rounded-sm shadow-sm transition-transform duration-200 active:scale-[0.97] md:duration-500 md:active:scale-100 md:motion-safe:group-hover:scale-[1.01]"
+        className="relative aspect-[4/5] touch-manipulation overflow-hidden rounded-xl bg-photo-well shadow-sm transition-transform duration-200 active:scale-[0.97] md:duration-500 md:active:scale-100 md:motion-safe:group-hover:scale-[1.01]"
       >
         <Link href={`/products/${product.id}`} className="absolute inset-0 block" aria-label={product.name}>
           {thumbnail ? (
@@ -116,7 +116,7 @@ export default function ProductCard({
           )}
         </Link>
 
-        <div className="absolute top-2 left-2 border border-photo-well-line bg-photo-well/70 px-1.5 py-0.5 text-[8px] font-medium tracking-[0.1em] text-photo-well-fg uppercase backdrop-blur-sm sm:top-4 sm:left-4 sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
+        <div className="absolute top-2 left-2 rounded-md border border-photo-well-line bg-photo-well/70 px-1.5 py-0.5 text-[8px] font-medium tracking-[0.1em] text-photo-well-fg uppercase backdrop-blur-sm sm:top-4 sm:left-4 sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
           {product.category}
         </div>
 
@@ -126,7 +126,7 @@ export default function ProductCard({
           </div>
         ) : (
           (isNew || product.featured) && (
-            <div className="absolute top-2 right-2 border border-gold/60 bg-ink/80 px-1.5 py-0.5 text-[8px] font-medium tracking-[0.1em] text-gold uppercase backdrop-blur-sm sm:top-4 sm:right-4 sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
+            <div className="absolute top-2 right-2 rounded-md border border-gold/60 bg-ink/80 px-1.5 py-0.5 text-[8px] font-medium tracking-[0.1em] text-gold uppercase backdrop-blur-sm sm:top-4 sm:right-4 sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
               {isNew ? "New" : "Bestseller"}
             </div>
           )
@@ -192,7 +192,7 @@ export default function ProductCard({
               addedTimer.current = setTimeout(() => setJustAdded(false), 2000);
             }}
             title={outOfStock ? "Out of stock" : "Add to cart"}
-            className={`border px-4 py-2 text-[10px] tracking-[0.2em] uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:group-hover:border-line disabled:group-hover:text-ivory-dim sm:w-auto ${
+            className={`rounded-md border px-4 py-2 text-[10px] tracking-[0.2em] uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:group-hover:border-line disabled:group-hover:text-ivory-dim sm:w-auto ${
               justAdded
                 ? "border-gold text-gold"
                 : "border-line text-ivory-dim motion-safe:group-hover:border-gold motion-safe:group-hover:text-gold"

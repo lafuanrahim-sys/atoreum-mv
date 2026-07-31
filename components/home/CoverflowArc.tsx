@@ -444,7 +444,7 @@ export default function CoverflowArc() {
               ref={(el) => {
                 cardRefs.current[i] = el;
               }}
-              className="absolute inset-0 overflow-hidden bg-ink-2"
+              className="absolute inset-0 overflow-hidden rounded-2xl bg-ink-2"
               style={{ backfaceVisibility: "hidden" }}
             >
               {/* scroll={false} -- this is a same-page navigation (this
@@ -483,7 +483,7 @@ export default function CoverflowArc() {
             }}
             href={`/products?category=${encodeURIComponent(card.label)}`}
             scroll={false}
-            className="relative block flex-none overflow-hidden bg-ink-2"
+            className="relative block flex-none overflow-hidden rounded-2xl bg-ink-2"
             style={{ width: "var(--card-size)", height: "var(--card-size)" }}
           >
             <CardMedia card={card} />

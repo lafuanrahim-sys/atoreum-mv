@@ -26,7 +26,7 @@ export default function ProductGallery({ images, name }: { images: string[]; nam
           and a wide left column makes for a very tall square that runs below
           the fold). */}
       <div
-        className="group relative aspect-square w-[min(70vh,100%)] mx-auto overflow-hidden bg-photo-well rounded-sm outline-none"
+        className="group relative aspect-square w-[min(70vh,100%)] mx-auto overflow-hidden rounded-2xl bg-photo-well outline-none"
         tabIndex={hasMultiple ? 0 : -1}
         role={hasMultiple ? "group" : undefined}
         aria-label={hasMultiple ? `${name} — image ${activeIndex + 1} of ${images.length}` : undefined}
@@ -83,7 +83,7 @@ export default function ProductGallery({ images, name }: { images: string[]; nam
               type="button"
               onClick={prev}
               aria-label="Previous image"
-              className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center border border-line bg-ink/70 text-ivory opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:border-gold hover:text-gold focus-visible:opacity-100 motion-safe:group-hover:opacity-100"
+              className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md border border-line bg-ink/70 text-ivory opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:border-gold hover:text-gold focus-visible:opacity-100 motion-safe:group-hover:opacity-100"
             >
               <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4">
                 <path d="M10 3.5L5 8l5 4.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -93,14 +93,14 @@ export default function ProductGallery({ images, name }: { images: string[]; nam
               type="button"
               onClick={next}
               aria-label="Next image"
-              className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center border border-line bg-ink/70 text-ivory opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:border-gold hover:text-gold focus-visible:opacity-100 motion-safe:group-hover:opacity-100"
+              className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md border border-line bg-ink/70 text-ivory opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:border-gold hover:text-gold focus-visible:opacity-100 motion-safe:group-hover:opacity-100"
             >
               <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4">
                 <path d="M6 3.5l5 4.5-5 4.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
 
-            <span className="absolute bottom-3 right-3 border border-line bg-ink/70 px-2 py-1 text-[10px] tabular-nums tracking-[0.1em] text-ivory-dim backdrop-blur-sm">
+            <span className="absolute bottom-3 right-3 rounded-md border border-line bg-ink/70 px-2 py-1 text-[10px] tabular-nums tracking-[0.1em] text-ivory-dim backdrop-blur-sm">
               {activeIndex + 1} / {images.length}
             </span>
           </>
@@ -116,7 +116,7 @@ export default function ProductGallery({ images, name }: { images: string[]; nam
               onClick={() => goTo(index)}
               aria-label={`Show image ${index + 1}`}
               aria-current={index === activeIndex}
-              className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-sm border bg-photo-well transition-colors ${
+              className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-md border bg-photo-well transition-colors ${
                 index === activeIndex ? "border-gold" : "border-line hover:border-ivory-dim"
               }`}
             >
