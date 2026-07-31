@@ -41,7 +41,7 @@ export default function SubmitButton({
       type="submit"
       disabled={pending}
       className={cn(
-        "flex items-center justify-center gap-2 px-6 py-3 text-xs uppercase tracking-[0.2em] transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100",
+        "flex items-center justify-center gap-2 rounded-md px-6 py-3 text-xs uppercase tracking-[0.2em] transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100",
         VARIANT_CLASS[variant],
         className
       )}

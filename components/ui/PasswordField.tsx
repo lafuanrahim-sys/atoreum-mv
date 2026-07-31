@@ -43,7 +43,7 @@ export default function PasswordField({
   const id = useId();
 
   return (
-    <div className={`flex items-center border border-line bg-transparent pr-2 focus-within:border-gold ${className ?? ""}`}>
+    <div className={`flex items-center rounded-md border border-line bg-transparent pr-2 focus-within:border-gold ${className ?? ""}`}>
       <input
         id={id}
         type={visible ? "text" : "password"}

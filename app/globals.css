@@ -164,6 +164,27 @@ body {
   color: var(--ink);
 }
 
+/* Chrome/Edge paint autofilled inputs with their own forced background
+   (usually a pale blue) and force-black text, ignoring the input's own
+   theme entirely -- background-color can't override this, only an inset
+   box-shadow can, since the browser draws its fill as a layer underneath
+   the input's own background. Left alone, an autofilled email/password
+   field visibly doesn't match whatever sits right next to it (e.g.
+   PasswordField's show/hide button), since only the <input> itself gets
+   re-painted, never its siblings. The absurdly long transition delays the
+   browser's own repaint of the fill color for as long as the input exists,
+   which is the standard trick since there's no other way to disable it. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--ivory);
+  caret-color: var(--ivory);
+  -webkit-box-shadow: 0 0 0px 1000px transparent inset;
+  box-shadow: 0 0 0px 1000px transparent inset;
+  transition: background-color 9999s ease-in-out 0s, color 9999s ease-in-out 0s;
+}
+
 /* Branded keyboard-focus ring. :focus-visible only, so mouse clicks stay
    clean; inputs that opt into focus:outline-none + border-gold keep their
    own treatment (their utility outranks this bare pseudo-class). Must be
@@ -389,30 +410,6 @@ button:not(:disabled),
 @media (prefers-reduced-motion: no-preference) {
   .card-entrance {
     animation: card-entrance-kf 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-}
-
-/* Login/register card's glass material -- a slow diagonal highlight drifts
-   across the panel on a loop, the same "light catching a glass surface"
-   cue as the header/product-card sheens elsewhere on the site, just
-   animated here since this card sits still on screen for a while (a form
-   being filled in) rather than scrolling past. Sits behind the card's own
-   content (.auth-glass-card__content below carries z-10 for that), and
-   pointer-events: none so it never intercepts form interaction. */
-@keyframes auth-card-shimmer-kf {
-  0%, 100% { transform: translate(-25%, -25%) rotate(20deg); }
-  50% { transform: translate(25%, 25%) rotate(20deg); }
-}
-.auth-glass-card::before {
-  content: "";
-  position: absolute;
-  inset: -50%;
-  background: linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, 0.07) 50%, transparent 58%);
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .auth-glass-card::before {
-    animation: auth-card-shimmer-kf 8s ease-in-out infinite;
   }
 }
 
