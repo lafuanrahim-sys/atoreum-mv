@@ -83,7 +83,17 @@ export default async function LoginPage({
 
   return (
     <div className="bg-ink">
-      <div className="page-gutter flex min-h-[75vh] flex-col items-center justify-center gap-10 pb-24 pt-10 md:pt-14">
+      {/* Exactly the viewport minus the fixed header's own reserved space
+          (main's pt-24/md:pt-28, 6rem/7rem) -- not min-h-[75vh] + its own
+          pt/pb, which left the page taller than one screen and scrollable.
+          svh (not vh/dvh) is deliberate: it's pinned to the *smallest*
+          possible mobile viewport (toolbar fully expanded), so content
+          sized against it can never overflow into a scrollbar when the
+          toolbar shows/hides -- the same reasoning already used for the
+          h-100svh sections elsewhere in this codebase. justify-center then
+          centers the card in that exact space on any screen, desktop or
+          mobile, with nothing left over to scroll. */}
+      <div className="page-gutter flex h-[calc(100svh-6rem)] flex-col items-center justify-center gap-10 md:h-[calc(100svh-7rem)]">
         <div className="card-entrance w-full max-w-md overflow-hidden rounded-2xl border border-ivory/15 bg-ink-2/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_55%)] p-8 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_25px_60px_-15px_rgba(0,0,0,0.5)] backdrop-blur-xl backdrop-saturate-150 md:p-10">
         <h1 className="font-display text-2xl text-ivory md:text-3xl">{heading}</h1>
         <p className="mt-2 text-sm leading-relaxed text-ivory-dim">{subtitle}</p>
