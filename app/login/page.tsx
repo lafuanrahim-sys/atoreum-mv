@@ -78,34 +78,15 @@ export default async function LoginPage({
         : "Sign in to see your orders, favorites, and profile.";
 
   return (
-    <div className="relative isolate overflow-hidden bg-ink">
-      {/* The threshold: a hairline archway, wider and taller than the card,
-          standing in for the boutique's own doorway rather than a flat void
-          behind a floating box. Open at the bottom (no border-bottom) so it
-          reads as a doorway meeting the floor, not a picture frame. Negative
-          z-index (not DOM order alone) keeps it behind the in-flow content
-          below -- an absolutely-positioned, unpositioned-z-index sibling
-          paints *above* static content by default per CSS2.1 painting order,
-          the same pitfall the old shimmer hit earlier on this same page. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[8%] -z-10 h-[clamp(30rem,72vh,46rem)] w-[clamp(21rem,42vw,34rem)] -translate-x-1/2 rounded-t-[999px] border border-b-0 border-ivory/10 bg-gold/[0.04]"
-        style={{
-          maskImage: "linear-gradient(to bottom, black 0%, black 70%, transparent 96%)",
-          WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 70%, transparent 96%)",
-        }}
-      />
-
-      <div className="page-gutter relative flex min-h-[75vh] flex-col items-center justify-center gap-8 pb-24 pt-10 md:pt-14">
-        {/* Crest: the same mark and wordmark the header uses, standing alone
-            above the card like a plaque above a doorway -- carries the brand
-            identity so the card itself no longer has to repeat "Atoreum MV"
-            in its own first line. */}
+    <div className="bg-ink">
+      <div className="page-gutter flex min-h-[75vh] flex-col items-center justify-center gap-10 pb-24 pt-10 md:pt-14">
+        {/* Mark stands alone, quiet, above the card -- the only ornament on
+            the page. No shape, no frame around it: restraint is the point. */}
         <div className="flex flex-col items-center gap-3">
-          <span className="block h-9 w-9 opacity-90">
+          <span className="block h-8 w-8 opacity-80">
             <Logo />
           </span>
-          <span className="font-display text-xs uppercase tracking-[0.4em] text-ivory-dim">
+          <span className="font-display text-[11px] uppercase tracking-[0.45em] text-ivory-dim">
             Atoreum <span className="text-gold">MV</span>
           </span>
         </div>
