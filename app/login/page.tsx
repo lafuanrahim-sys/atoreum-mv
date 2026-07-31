@@ -219,7 +219,7 @@ export default async function LoginPage({
                       name="name"
                       required
                       autoComplete="name"
-                      className="rounded-md border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none"
+                      className={`rounded-md border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none ${EMBOSS_FIELD}`}
                     />
                   </label>
                 )}
