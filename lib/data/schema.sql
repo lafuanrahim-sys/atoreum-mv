@@ -140,3 +140,23 @@ create table if not exists store_settings (
   updated_at timestamptz not null default now()
 );
 alter table store_settings add column if not exists maintenance_mode boolean not null default false;
+
+-- -----------------------------------------------------------------------------
+-- Row Level Security. These tables are only ever queried through this app's
+-- own backend -- a direct Postgres connection as the `postgres` role (see
+-- lib/db.ts), which owns every table here and carries BYPASSRLS, so it's
+-- completely unaffected by RLS either way. Nothing in this app ever queries
+-- through Supabase's PostgREST/anon-key API. But every public-schema table
+-- is auto-exposed via that API regardless of whether the app itself uses
+-- it -- Supabase's linter flags exactly this (rls_disabled_in_public,
+-- sensitive_columns_exposed on store_settings.account_number). Enabling RLS
+-- with zero policies closes that API off entirely (anon/authenticated have
+-- no bypass and no policy grants them anything) without touching how the
+-- app talks to the database.
+alter table products enable row level security;
+alter table orders enable row level security;
+alter table users enable row level security;
+alter table reviews enable row level security;
+alter table brands enable row level security;
+alter table messages enable row level security;
+alter table store_settings enable row level security;

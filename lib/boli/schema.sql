@@ -239,7 +239,9 @@ create or replace function boli_ledger_write(
   p_created_by_admin_id text default null,
   p_admin_reason text default null
 ) returns boli_ledger
-language plpgsql as $$
+language plpgsql
+set search_path = public
+as $$
 declare
   v_prev_hash text;
   v_sequence bigint;
@@ -322,7 +324,9 @@ $$;
 -- sweep (remaining of lots whose expiry has already passed).
 create or replace function boli_spendable_lots(p_user_id text)
 returns table (ledger_id uuid, remaining bigint, expires_at timestamptz)
-language sql stable as $$
+language sql stable
+set search_path = public
+as $$
   with credits as (
     select id, delta, expires_at,
            sum(delta) over (
@@ -350,7 +354,9 @@ create or replace function boli_redeem(
   p_boli_amount bigint,
   p_mvr_value numeric
 ) returns boli_ledger
-language plpgsql as $$
+language plpgsql
+set search_path = public
+as $$
 declare
   v_true_balance bigint;
   v_has_delivered boolean;
@@ -406,7 +412,9 @@ $$;
 -- 'expired:{ledger_id}'). Called once per user by the daily cron.
 create or replace function boli_expire_user(p_user_id text)
 returns integer
-language plpgsql as $$
+language plpgsql
+set search_path = public
+as $$
 declare
   v_lot record;
   v_count integer := 0;
@@ -432,6 +440,17 @@ begin
   return v_count;
 end;
 $$;
+
+-- An earlier iteration of this function took a different, now-superseded
+-- signature (p_outcome_tier/p_base_payout/p_decoy_outcomes instead of
+-- p_grid_tiers/p_picked_indices) -- `create or replace` only replaces a
+-- function with an EXACT signature match, so changing the parameter list
+-- left that old version behind as a distinct, dead overload rather than
+-- actually replacing it (confirmed unreachable: dive.server.ts's one call
+-- site always passes exactly 8 args, matching only the current version).
+-- Dropped outright rather than patched -- code nothing calls doesn't need
+-- a search_path fix, it needs to not exist.
+drop function if exists boli_dive_play(text, date, text, bigint, boolean, jsonb, text, text, jsonb);
 
 -- boli_dive_play: the single atomic entry point for a Boli Dive play
 -- (BOLI_SPEC.md §5, §6.3). Locks the user's boli_users row (serializing
@@ -469,7 +488,9 @@ create or replace function boli_dive_play(
   p_ip_hash text,
   p_config jsonb
 ) returns boli_dive_plays
-language plpgsql as $$
+language plpgsql
+set search_path = public
+as $$
 declare
   v_streak boli_streaks;
   v_existing boli_dive_plays;
@@ -700,7 +721,16 @@ $$;
 -- Reporting views (spec §11.4 — track supply from day one; the admin
 -- dashboard itself is Phase 3, but these are cheap and pure schema).
 -- -----------------------------------------------------------------------------
-create or replace view boli_supply as
+-- security_invoker=true (not the plain-view default) -- a plain view runs
+-- against its underlying tables with the view OWNER's privileges rather
+-- than the querying role's, which would silently let these bypass the RLS
+-- just enabled on boli_ledger below for any role that can select from the
+-- view itself. With security_invoker, access is checked as the querying
+-- role, same as a normal table -- this app's own `postgres` role still
+-- reads these fine (it bypasses RLS outright), and anon/authenticated
+-- (no bypass, no policy) get nothing, same as querying boli_ledger directly.
+create or replace view boli_supply
+with (security_invoker = true) as
 select
   coalesce(sum(delta) filter (where delta > 0), 0)::bigint as total_ever_issued,
   coalesce(sum(-delta) filter (where reason = 'redemption'), 0)::bigint as total_ever_redeemed,
@@ -709,8 +739,27 @@ select
   coalesce(sum(delta), 0)::bigint as circulating
 from boli_ledger;
 
-create or replace view boli_supply_by_source as
+create or replace view boli_supply_by_source
+with (security_invoker = true) as
 select source_type, reason, sum(delta)::bigint as total_delta, count(*) as entry_count
 from boli_ledger
 group by source_type, reason
 order by source_type, reason;
+
+-- -----------------------------------------------------------------------------
+-- Row Level Security. Same reasoning as lib/data/schema.sql's own RLS
+-- section: this app only ever talks to these tables through lib/db.ts's
+-- direct Postgres connection as the `postgres` role, which owns every
+-- table here and carries BYPASSRLS -- enabling RLS with zero policies is
+-- invisible to the app itself and closes off Supabase's auto-exposed
+-- PostgREST API (every public-schema table is reachable there by default,
+-- regardless of whether this app's own code uses it).
+-- -----------------------------------------------------------------------------
+alter table boli_users enable row level security;
+alter table boli_ledger enable row level security;
+alter table boli_dive_plays enable row level security;
+alter table boli_daily_game_budget enable row level security;
+alter table boli_streaks enable row level security;
+alter table boli_redemptions enable row level security;
+alter table boli_fraud_flags enable row level security;
+alter table boli_runtime_config enable row level security;
