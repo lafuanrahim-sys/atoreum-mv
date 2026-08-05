@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { listFxTtPayments } from "@/lib/data/fx.server";
-import { formatFxDate, formatMvr, formatPct, formatUsd } from "@/lib/fxFormat";
+import { formatFxDate, formatMvr, formatPct, formatRate, formatUsd } from "@/lib/fxFormat";
 import PageHeader from "@/components/dashboard/PageHeader";
+
+const th = "pb-2 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim";
+const thRight = "pb-2 pr-4 text-right font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim";
+const td = "py-3 pr-4 text-ivory-dim";
+const tdRight = "py-3 pr-4 text-right font-mono tabular-nums text-ivory-dim";
+const tdRightStrong = "py-3 pr-4 text-right font-mono tabular-nums text-ivory";
 
 export default async function FxTtListPage() {
   const payments = await listFxTtPayments();
@@ -12,7 +18,7 @@ export default async function FxTtListPage() {
         eyebrow="Dollar Exchange"
         title="TT Log"
         count={payments.length}
-        description="TT payments where Bank of Maldives covers part of the transfer in dollars, at its own rate."
+        description="TT payments where Bank of Maldives covers part of the transfer in dollars, at its own rate — every column from the source ledger."
         actions={
           <Link
             href="/fx/tt/new"
@@ -27,28 +33,53 @@ export default async function FxTtListPage() {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b-2 border-ivory text-left">
-              <th className="pb-2 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Date</th>
-              <th className="pb-2 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Reference</th>
-              <th className="pb-2 pr-4 text-right font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">TT Amount</th>
-              <th className="pb-2 pr-4 text-right font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Bank Support</th>
-              <th className="pb-2 pr-4 text-right font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Cash Paid</th>
-              <th className="pb-2 text-right font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Saved (incl. opp.)</th>
+              <th className={th}>Date</th>
+              <th className={th}>Reference</th>
+              <th className={th}>Purpose</th>
+              <th className={thRight}>TT Amount</th>
+              <th className={thRight}>Bank Support</th>
+              <th className={thRight}>USD via Bank</th>
+              <th className={thRight}>USD from Own</th>
+              <th className={thRight}>Bank TT Rate</th>
+              <th className={thRight}>Own USD @ Bank Rate</th>
+              <th className={thRight}>Cash Paid</th>
+              <th className={thRight}>Market Rate</th>
+              <th className={thRight}>Cost of Own USD</th>
+              <th className={thRight}>Opportunity Cost</th>
+              <th className={thRight}>Total Effective Cost</th>
+              <th className={thRight}>Cost w/ No Support</th>
+              <th className={thRight}>Cash Saved Today</th>
+              <th className={thRight}>Saved (incl. opp.)</th>
+              <th className="pb-2 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Notes</th>
             </tr>
           </thead>
           <tbody>
             {payments.map((tt) => (
               <tr key={tt.id} className="border-b border-line last:border-b-0">
-                <td className="py-3 pr-4 text-ivory-dim">{formatFxDate(tt.ttDate)}</td>
+                <td className={td}>{formatFxDate(tt.ttDate)}</td>
                 <td className="py-3 pr-4">
                   <Link href={`/fx/tt/${tt.id}/edit`} className="text-ivory transition-colors hover:text-gold-deep">
                     {tt.reference}
                   </Link>
-                  {tt.purpose && <span className="ml-2 text-xs text-ivory-dim">{tt.purpose}</span>}
                 </td>
-                <td className="py-3 pr-4 text-right font-mono tabular-nums text-ivory">{formatUsd(tt.ttAmount)}</td>
-                <td className="py-3 pr-4 text-right font-mono tabular-nums text-ivory-dim">{formatPct(tt.supportPct)}</td>
-                <td className="py-3 pr-4 text-right font-mono tabular-nums text-ivory">{formatMvr(tt.cashPaidMvr)}</td>
-                <td className="py-3 text-right font-mono tabular-nums text-gold-deep">{formatMvr(tt.totalSavedInclOpp)}</td>
+                <td className={td}>{tt.purpose || "—"}</td>
+                <td className={tdRightStrong}>{formatUsd(tt.ttAmount)}</td>
+                <td className={tdRight}>{formatPct(tt.supportPct)}</td>
+                <td className={tdRight}>{formatUsd(tt.usdViaBank)}</td>
+                <td className={tdRight}>{formatUsd(tt.usdFromOwn)}</td>
+                <td className={tdRight}>{formatRate(tt.bankRate)}</td>
+                <td className={tdRight}>{formatRate(tt.ownUsdAtBankRate)}</td>
+                <td className={tdRightStrong}>{formatMvr(tt.cashPaidMvr)}</td>
+                <td className={tdRight}>{formatRate(tt.marketRate)}</td>
+                <td className={tdRight}>{formatMvr(tt.costOwnUsdMvr)}</td>
+                <td className={tdRight}>{formatMvr(tt.opportunityCost)}</td>
+                <td className={tdRight}>{formatMvr(tt.totalEffectiveCost)}</td>
+                <td className={tdRight}>{formatMvr(tt.costNoSupport)}</td>
+                <td className={tdRight}>{formatMvr(tt.cashSavedToday)}</td>
+                <td className="py-3 pr-4 text-right font-mono tabular-nums text-gold-deep">{formatMvr(tt.totalSavedInclOpp)}</td>
+                <td className="max-w-[200px] truncate py-3 text-ivory-dim" title={tt.notes || undefined}>
+                  {tt.notes || "—"}
+                </td>
               </tr>
             ))}
           </tbody>
