@@ -20,6 +20,7 @@ export default function DashboardShell({
   user,
   isDark,
   unreadMessages,
+  fxMarketRate,
   toggleThemeAction,
   logoutAction,
   children,
@@ -27,6 +28,7 @@ export default function DashboardShell({
   user: { name: string; role: string };
   isDark: boolean;
   unreadMessages: number;
+  fxMarketRate: number;
   toggleThemeAction: () => Promise<void>;
   logoutAction: () => Promise<void>;
   children: React.ReactNode;
@@ -116,7 +118,10 @@ export default function DashboardShell({
           className="mt-4 flex items-center justify-between border-y border-line py-3 font-mono text-[10px] uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:text-gold-deep"
         >
           Dollar Exchange
-          <span aria-hidden="true">→</span>
+          <span className="flex items-center gap-2">
+            <span className="tabular-nums text-ivory">{fxMarketRate.toFixed(2)}</span>
+            <span aria-hidden="true">→</span>
+          </span>
         </Link>
 
         <div className="mt-3 flex items-center justify-between pb-4">

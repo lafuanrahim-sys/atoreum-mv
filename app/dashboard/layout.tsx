@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { isAdminRole } from "@/lib/auth/userSession";
 import { countUnreadMessages } from "@/lib/data/messages.server";
+import { getFxSettings } from "@/lib/data/fx.server";
 import { logoutAction } from "@/app/actions/auth";
 import { toggleDashboardThemeAction } from "@/app/actions/storeAdmin";
 import DashboardShell from "@/components/dashboard/DashboardShell";
@@ -25,6 +26,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const cookieStore = await cookies();
   const isDark = cookieStore.get("atoreum_dashboard_theme")?.value === "dark";
 
+  const [unreadMessages, fxSettings] = await Promise.all([countUnreadMessages(), getFxSettings()]);
+
   return (
     // -mt cancels the root main's storefront header offset (pt-24/28) —
     // the dashboard owns its full viewport, no marketing chrome above it.
@@ -33,7 +36,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <DashboardShell
         user={{ name: user.name, role: user.role }}
         isDark={isDark}
-        unreadMessages={await countUnreadMessages()}
+        unreadMessages={unreadMessages}
+        fxMarketRate={fxSettings.latestMarketRate}
         toggleThemeAction={toggleDashboardThemeAction}
         logoutAction={logoutAction}
       >
