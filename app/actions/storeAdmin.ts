@@ -37,6 +37,11 @@ export async function toggleDashboardThemeAction(): Promise<void> {
     sameSite: "lax",
   });
   revalidatePath("/dashboard", "layout");
+  // The Dollar Exchange portal (app/fx) shares this same cookie/palette but
+  // lives outside /dashboard's own layout tree, so it needs its own
+  // revalidate -- otherwise toggling from inside /fx leaves it on the stale
+  // theme until some other navigation happens to revalidate it.
+  revalidatePath("/fx", "layout");
 }
 
 /* ---------- Brands (Dashboard → Settings) ---------- */

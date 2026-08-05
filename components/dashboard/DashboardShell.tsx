@@ -105,6 +105,20 @@ export default function DashboardShell({
         <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-sand">
           {user.role === "superadmin" ? "Super Admin" : "Store Manager"}
         </p>
+
+        {/* A separate portal, not another nav item -- its own shell
+            (components/fx/FxPortalShell.tsx) at its own top-level route
+            (/fx, outside /dashboard entirely), for the two people who use
+            it. Grouped here with the other "leave this shell" actions
+            rather than mixed into DashboardNav's flat list above. */}
+        <Link
+          href="/fx"
+          className="mt-4 flex items-center justify-between border-y border-line py-3 font-mono text-[10px] uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:text-gold-deep"
+        >
+          Dollar Exchange
+          <span aria-hidden="true">→</span>
+        </Link>
+
         <div className="mt-3 flex items-center justify-between pb-4">
           <Link href="/" className="font-mono text-[10px] uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:text-gold-deep">
             ← View store

@@ -5,6 +5,9 @@ import { USER_SESSION_COOKIE, isAdminRole, verifyUserSessionToken } from "@/lib/
  * Route protection for the unified account system:
  * - /account/*   any signed-in user (customer or admin)
  * - /dashboard/* admins only
+ * - /fx/*        admins only — the Dollar Exchange portal, a separate
+ *   top-level route (its own shell, see components/fx/FxPortalShell.tsx)
+ *   rather than a page nested under /dashboard.
  * - /admin/*     retired — permanently redirected to the new locations, so
  *   old bookmarks keep working but no separate admin URL exists anymore.
  * See lib/auth/userSession.ts for the caveats on this auth approach.
@@ -21,7 +24,7 @@ import { USER_SESSION_COOKIE, isAdminRole, verifyUserSessionToken } from "@/lib/
  * bypassed that way.
  */
 
-const MAINTENANCE_EXEMPT_PREFIXES = ["/login", "/dashboard", "/maintenance"];
+const MAINTENANCE_EXEMPT_PREFIXES = ["/login", "/dashboard", "/fx", "/maintenance"];
 
 // Maintenance mode lives in Postgres (store_settings), but this file runs
 // on the Edge runtime (see lib/auth/userSession.ts's own comment: no Node
@@ -88,7 +91,7 @@ export async function middleware(request: NextRequest) {
     request.cookies.get(USER_SESSION_COOKIE)?.value
   );
 
-  if (pathname.startsWith("/dashboard")) {
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/fx")) {
     if (!session || !isAdminRole(session.role)) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("from", pathname);

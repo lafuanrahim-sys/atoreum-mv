@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { Pool, types } from "pg";
 
 /**
  * Shared server-only Postgres connection pool — used by both lib/data/*
@@ -14,6 +14,20 @@ import { Pool } from "pg";
  * Never import this from a "use client" file — DATABASE_URL carries full
  * database credentials and must never reach the browser.
  */
+
+// `pg` parses the Postgres `date` type (OID 1082) into a JS Date at
+// midnight *UTC* for that calendar day by default. A JS Date is a moment
+// in time, not a calendar date -- calling .toISOString() on it later
+// re-reads that instant through whatever timezone the runtime is on,
+// which can land on the previous day (confirmed: inserting date
+// '2026-08-05' came back as `2026-08-04T19:00:00.000Z` in this
+// environment). Every date-only column in this schema (fx_exchanges.
+// trade_date, fx_tt_payments.tt_date, boli_dive_plays.play_date, boli_
+// streaks.last_play_date, ...) is already typed as a plain string
+// everywhere it's read in this codebase -- this makes that true at
+// runtime too, by leaving the wire-format "YYYY-MM-DD" text exactly as
+// Postgres sent it instead of parsing it into a Date at all.
+types.setTypeParser(1082, (value) => value);
 
 function getEnv(name: string): string {
   const value = process.env[name];

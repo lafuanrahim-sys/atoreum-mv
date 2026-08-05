@@ -122,3 +122,87 @@ export type Order = {
 };
 
 export type SortOption = "featured" | "newest" | "price-asc" | "price-desc";
+
+/* -----------------------------------------------------------------------
+ * Dollar exchange tracker (Dashboard -> Dollar Exchange). Ported from the
+ * standalone Atoreum FX app -- see lib/data/schema.sql's fx_* tables for
+ * the generated-column formulas these mirror. Every derived field here is
+ * read back from the database, never recomputed in TypeScript.
+ * --------------------------------------------------------------------- */
+
+export type FxSettings = {
+  ceilingRate: number;
+  bankTtRate: number;
+  latestMarketRate: number;
+  updatedAt: string;
+  updatedBy: string | null;
+};
+
+/** USD bought on the parallel market. */
+export type FxExchange = {
+  id: string;
+  tradeDate: string;
+  counterparty: string;
+  usdAmount: number;
+  buyRate: number;
+  marketRate: number;
+  /** Snapshotted at the time of purchase -- changing fxSettings later doesn't retroactively alter past rows. */
+  ceilingRate: number;
+  /** Set once this USD is resold -- null while still held. */
+  sellRate: number | null;
+  notes: string;
+  createdAt: string;
+  createdBy: string | null;
+
+  mvrPaid: number;
+  costAtCeiling: number;
+  profitVsCeiling: number;
+  unrealizedVsMarket: number;
+  /** Null until sellRate is set. */
+  realizedProfit: number | null;
+};
+
+/** A TT (telegraphic transfer) paid with partial Bank of Maldives dollar support. */
+export type FxTtPayment = {
+  id: string;
+  ttDate: string;
+  reference: string;
+  purpose: string;
+  ttAmount: number;
+  /** Share of the TT the bank supplies at its own rate, as a fraction (0.499853, not 49.9853). */
+  supportPct: number;
+  bankRate: number;
+  marketRate: number;
+  notes: string;
+  createdAt: string;
+  createdBy: string | null;
+
+  usdViaBank: number;
+  usdFromOwn: number;
+  cashPaidMvr: number;
+  ownUsdAtBankRate: number;
+  costOwnUsdMvr: number;
+  opportunityCost: number;
+  totalEffectiveCost: number;
+  costNoSupport: number;
+  cashSavedToday: number;
+  totalSavedInclOpp: number;
+};
+
+/** Summary figures from the fx_dashboard view -- see its own comment in schema.sql for the usd_used/usd_balance fix inherited from the source spreadsheet. */
+export type FxDashboardSummary = {
+  usdBought: number;
+  usdUsed: number;
+  usdBalance: number;
+  avgBuyRate: number | null;
+  mvrPaid: number;
+  profitVsCeiling: number;
+  profitVsMarket: number;
+  realizedProfit: number;
+  ttTotal: number;
+  cashPaid: number;
+  costNoSupport: number;
+  cashSaved: number;
+  savedInclOpp: number;
+  totalValueCreated: number;
+};

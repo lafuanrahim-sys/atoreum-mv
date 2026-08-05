@@ -141,6 +141,143 @@ create table if not exists store_settings (
 );
 alter table store_settings add column if not exists maintenance_mode boolean not null default false;
 
+-- =============================================================================
+-- Dollar exchange tracker (admin-only, Dashboard -> Dollar Exchange). Ported
+-- from the standalone Atoreum FX app (originally its own Next.js/Supabase
+-- project) directly into this schema/dashboard instead of staying a separate
+-- deployment -- same idea, same math, one fewer app to host and sign into.
+-- Logs USD bought on the Maldivian parallel market (fx_exchanges) and TT
+-- (telegraphic transfer) payments where Bank of Maldives covers part of the
+-- transfer in dollars at its own rate (fx_tt_payments). uuid ids (not the
+-- rest of this file's app-generated text ids) because these are ledger-style
+-- transaction rows, like lib/boli/schema.sql's boli_ledger, not
+-- app-addressable resources.
+--
+-- Every derived figure below is a Postgres generated column, not
+-- TypeScript arithmetic -- if a number appears on screen, it came from the
+-- database. This is the single most important rule carried over from the
+-- original spec: it's what makes the numbers trustworthy for real money.
+-- =============================================================================
+
+create extension if not exists pgcrypto; -- gen_random_uuid() -- idempotent even if lib/boli/schema.sql already created it
+
+create table if not exists fx_settings (
+  id boolean primary key default true check (id),
+  ceiling_rate numeric(10, 4) not null default 20.0000,
+  bank_tt_rate numeric(10, 4) not null default 15.4200,
+  latest_market_rate numeric(10, 4) not null default 21.6000,
+  updated_at timestamptz not null default now(),
+  updated_by text
+);
+insert into fx_settings (id) values (true) on conflict do nothing;
+
+create table if not exists fx_exchanges (
+  id uuid primary key default gen_random_uuid(),
+  trade_date date not null,
+  counterparty text not null,
+  usd_amount numeric(14, 4) not null check (usd_amount > 0),
+  buy_rate numeric(10, 4) not null check (buy_rate > 0),
+  market_rate numeric(10, 4) not null check (market_rate > 0),
+  ceiling_rate numeric(10, 4) not null default 20.0000,
+  sell_rate numeric(10, 4) check (sell_rate > 0),
+  notes text not null default '',
+  created_at timestamptz not null default now(),
+  created_by text,
+
+  mvr_paid numeric(18, 4) generated always as (usd_amount * buy_rate) stored,
+  cost_at_ceiling numeric(18, 4) generated always as (usd_amount * ceiling_rate) stored,
+  profit_vs_ceiling numeric(18, 4) generated always as
+    (usd_amount * ceiling_rate - usd_amount * buy_rate) stored,
+  unrealized_vs_market numeric(18, 4) generated always as
+    (usd_amount * (market_rate - buy_rate)) stored,
+  -- null until sell_rate is set -- a purchase that hasn't been resold yet.
+  realized_profit numeric(18, 4) generated always as
+    (usd_amount * (sell_rate - buy_rate)) stored
+);
+create index if not exists fx_exchanges_trade_date_idx on fx_exchanges (trade_date desc);
+
+-- support_pct is the share of the TT the BANK supplies at its own rate; the
+-- remainder is drawn from the company's own USD account at the market rate.
+create table if not exists fx_tt_payments (
+  id uuid primary key default gen_random_uuid(),
+  tt_date date not null,
+  reference text not null,
+  purpose text not null default '',
+  tt_amount numeric(14, 4) not null check (tt_amount > 0),
+  support_pct numeric(9, 6) not null check (support_pct >= 0 and support_pct <= 1),
+  bank_rate numeric(10, 4) not null check (bank_rate > 0),
+  market_rate numeric(10, 4) not null check (market_rate > 0),
+  notes text not null default '',
+  created_at timestamptz not null default now(),
+  created_by text,
+
+  usd_via_bank numeric(18, 4) generated always as (tt_amount * support_pct) stored,
+  usd_from_own numeric(18, 4) generated always as (tt_amount * (1 - support_pct)) stored,
+  cash_paid_mvr numeric(18, 4) generated always as (tt_amount * support_pct * bank_rate) stored,
+  own_usd_at_bank_rate numeric(18, 4) generated always as
+    (tt_amount * (1 - support_pct) * bank_rate) stored,
+  cost_own_usd_mvr numeric(18, 4) generated always as
+    (tt_amount * (1 - support_pct) * market_rate) stored,
+  opportunity_cost numeric(18, 4) generated always as
+    (tt_amount * (1 - support_pct) * (market_rate - bank_rate)) stored,
+  total_effective_cost numeric(18, 4) generated always as
+    (tt_amount * support_pct * bank_rate + tt_amount * (1 - support_pct) * market_rate) stored,
+  cost_no_support numeric(18, 4) generated always as (tt_amount * market_rate) stored,
+  -- algebraically equal to cost_no_support - total_effective_cost
+  cash_saved_today numeric(18, 4) generated always as
+    (tt_amount * support_pct * (market_rate - bank_rate)) stored,
+  -- algebraically equal to cash_saved_today + opportunity_cost
+  total_saved_incl_opp numeric(18, 4) generated always as
+    (tt_amount * (market_rate - bank_rate)) stored
+);
+create index if not exists fx_tt_payments_tt_date_idx on fx_tt_payments (tt_date desc);
+
+-- security_invoker: without it this view runs as its owner (postgres) and
+-- bypasses RLS on the tables below -- anyone who could query the view would
+-- see the totals regardless of the RLS enabled further down this file.
+--
+-- NOTE inherited from the original app: usd_used subtracts usd_from_own, not
+-- usd_via_bank. The source spreadsheet subtracted the bank's own share,
+-- which overstated how much the company's own USD account was depleted --
+-- only usd_from_own actually leaves that account.
+create or replace view fx_dashboard
+with (security_invoker = true) as
+with ex as (
+  select
+    coalesce(sum(usd_amount), 0) as usd_bought,
+    coalesce(sum(mvr_paid), 0) as mvr_paid,
+    coalesce(sum(profit_vs_ceiling), 0) as profit_vs_ceiling,
+    coalesce(sum(unrealized_vs_market), 0) as profit_vs_market,
+    coalesce(sum(realized_profit), 0) as realized_profit
+  from fx_exchanges
+),
+tt as (
+  select
+    coalesce(sum(tt_amount), 0) as tt_total,
+    coalesce(sum(usd_from_own), 0) as usd_from_own,
+    coalesce(sum(cash_paid_mvr), 0) as cash_paid,
+    coalesce(sum(cost_no_support), 0) as cost_no_support,
+    coalesce(sum(cash_saved_today), 0) as cash_saved,
+    coalesce(sum(total_saved_incl_opp), 0) as saved_incl_opp
+  from fx_tt_payments
+)
+select
+  ex.usd_bought,
+  tt.usd_from_own as usd_used,
+  ex.usd_bought - tt.usd_from_own as usd_balance,
+  case when ex.usd_bought > 0 then ex.mvr_paid / ex.usd_bought end as avg_buy_rate,
+  ex.mvr_paid,
+  ex.profit_vs_ceiling,
+  ex.profit_vs_market,
+  ex.realized_profit,
+  tt.tt_total,
+  tt.cash_paid,
+  tt.cost_no_support,
+  tt.cash_saved,
+  tt.saved_incl_opp,
+  ex.profit_vs_market + tt.saved_incl_opp as total_value_created
+from ex, tt;
+
 -- -----------------------------------------------------------------------------
 -- Row Level Security. These tables are only ever queried through this app's
 -- own backend -- a direct Postgres connection as the `postgres` role (see
@@ -160,3 +297,6 @@ alter table reviews enable row level security;
 alter table brands enable row level security;
 alter table messages enable row level security;
 alter table store_settings enable row level security;
+alter table fx_settings enable row level security;
+alter table fx_exchanges enable row level security;
+alter table fx_tt_payments enable row level security;
