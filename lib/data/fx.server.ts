@@ -52,6 +52,20 @@ export async function saveFxSettings(input: {
   return rowToFxSettings(rows[0]);
 }
 
+/** Narrower than saveFxSettings -- only touches the market rate, for the
+ * Telegram auto-fetch cron. Leaves ceilingRate/bankTtRate (business
+ * decisions, not scraped) untouched. */
+export async function updateFxLatestMarketRate(rate: number, updatedBy: string): Promise<FxSettings> {
+  const { rows } = await pool().query<FxSettingsRow>(
+    `update fx_settings
+       set latest_market_rate = $1, updated_by = $2, updated_at = now()
+     where id = true
+     returning *`,
+    [rate, updatedBy]
+  );
+  return rowToFxSettings(rows[0]);
+}
+
 /* -------------------------------- exchanges ------------------------------- */
 
 type FxExchangeRow = {
