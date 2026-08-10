@@ -1,4 +1,5 @@
 import fs from "fs";
+import { after } from "next/server";
 import path from "path";
 import type { Order } from "@/lib/types";
 import { buildInvoice, formatMoney } from "@/lib/invoice";
@@ -50,11 +51,21 @@ export function notifyNewOrder(order: Order) {
 
   console.log(line);
 
-  // Not awaited: this is called on the checkout path, and the customer should
-  // not wait on Telegram to see their confirmation page. sendTelegramMessage
-  // never rejects, so the floating promise cannot surface as an unhandled
-  // rejection.
-  void sendTelegramMessage(renderOrderTelegramMessage(order));
+  // after(), not a bare floating promise. The customer should not wait on
+  // Telegram to see their confirmation, but on serverless a promise left
+  // running when the response is sent can be killed with the function --
+  // "fire and forget" quietly becomes "fire and maybe never happen", and the
+  // owner silently stops being told about orders. after() hands the work to
+  // the platform, which keeps the invocation alive until it finishes.
+  //
+  // Wrapped, because after() throws outside a request scope and this is also
+  // reachable from scripts and tests.
+  const send = () => sendTelegramMessage(renderOrderTelegramMessage(order));
+  try {
+    after(send);
+  } catch {
+    void send();
+  }
 
   try {
     const logPath = path.join(process.cwd(), "data", "notifications.log");
