@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getOrderById, updateOrderStatus } from "@/lib/data/orders.server";
 import { getUserById, getUserByEmail } from "@/lib/data/users.server";
+import { sendOrderReceiptEmail } from "@/lib/email";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { isAdminRole } from "@/lib/auth/userSession";
 import { creditPurchaseEarn, reverseOrder } from "@/lib/boli/ledger.server";
@@ -57,14 +58,52 @@ async function runBoliHook(orderId: string, previousStatus: OrderStatus, nextSta
   }
 }
 
+/**
+ * Emails the customer their receipt the first time an order is confirmed.
+ *
+ * Guarded on the transition, not on the destination status: Confirmed ->
+ * Shipped -> back to Confirmed must not send a second receipt, and neither
+ * must an admin clicking Confirm twice.
+ *
+ * Failures are logged, never thrown. SMTP being down is not a reason to leave
+ * an order stuck unconfirmed with its stock un-deducted -- the confirmation is
+ * the real event, the email is a notification about it. The same reasoning the
+ * Sangu hook above already uses.
+ */
+async function sendReceiptOnConfirm(orderId: string, previousStatus: OrderStatus, nextStatus: OrderStatus) {
+  if (nextStatus !== "Confirmed" || previousStatus === "Confirmed") return;
+  try {
+    const order = await getOrderById(orderId);
+    if (!order?.customer.email) return;
+    const result = await sendOrderReceiptEmail({
+      to: order.customer.email,
+      name: order.customer.name,
+      order,
+    });
+    if ("error" in result) {
+      console.error(`[receipt] ${order.orderNumber} -> ${order.customer.email} failed:`, result.error);
+    } else {
+      console.log(`[receipt] ${order.orderNumber} sent to ${order.customer.email}`);
+    }
+  } catch (err) {
+    console.error(`[receipt] order ${orderId} receipt failed:`, err);
+  }
+}
+
 export async function changeOrderStatus(orderId: string, status: OrderStatus) {
   // Server actions are public endpoints — role-check inside, not just at the page.
   const user = await getCurrentUser();
   if (!user || !isAdminRole(user.role)) redirect("/login");
 
   const previous = await getOrderById(orderId);
+  // updateOrderStatus is also what deducts stock, through the movement
+  // ledger, on the transition into Confirmed/Shipped/Completed -- and puts it
+  // back if a committed order is later cancelled.
   await updateOrderStatus(orderId, status);
-  if (previous) await runBoliHook(orderId, previous.status, status);
+  if (previous) {
+    await runBoliHook(orderId, previous.status, status);
+    await sendReceiptOnConfirm(orderId, previous.status, status);
+  }
 
   revalidatePath("/dashboard/orders");
   revalidatePath(`/dashboard/orders/${orderId}`);

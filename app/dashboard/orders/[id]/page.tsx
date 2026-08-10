@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderById } from "@/lib/data/orders.server";
 import { changeOrderStatus } from "@/app/actions/orders";
@@ -31,6 +32,12 @@ export default async function DashboardOrderDetailPage({
           <p className="mt-2 font-mono text-xs text-ivory-dim">
             Placed {new Date(order.createdAt).toLocaleString()}
           </p>
+          <Link
+            href={`/invoice/${order.id}`}
+            className="mt-3 inline-block font-mono text-[11px] uppercase tracking-[0.15em] text-gold-deep hover:underline"
+          >
+            Tax invoice →
+          </Link>
         </div>
 
         {order.status === "Completed" ? (

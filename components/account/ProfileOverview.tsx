@@ -69,9 +69,12 @@ export default function ProfileOverview({ data }: { data: ProfileOverviewData })
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Membership card. The gradient + hairline + inset top highlight is the
-          same glass treatment the sign-in card uses, so the two premium
-          surfaces on the site speak to each other. */}
+      {/* Membership card: a raised glass panel — gradient, hairline, inset top
+          highlight. The sign-in card used to match it and no longer does; it
+          was deliberately re-cut as a recess with its controls standing out of
+          it. Left as-is here on purpose: this card holds no inputs, so it has
+          nothing to stand proud of it, and a recess with nothing raised inside
+          reads as a dent rather than as depth. */}
       <div className="relative overflow-hidden rounded-2xl border border-ivory/15 bg-ink-2/50 bg-[linear-gradient(150deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_55%)] p-8 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_24px_56px_-32px_rgba(0,0,0,0.65)] md:p-10">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
@@ -129,7 +132,7 @@ export default function ProfileOverview({ data }: { data: ProfileOverviewData })
                 <div className="h-full bg-gold" style={{ width: `${progressPct}%` }} />
               </div>
               <p className="mt-3 text-xs text-ivory-dim">
-                {toNext.toLocaleString()} more lifetime Sangu from purchases to reach{" "}
+                {toNext.toLocaleString()} more lifetime Sangu to reach{" "}
                 <span className="text-ivory">{TIER_LABEL[nextTier]}</span> and earn{" "}
                 {TIER_MULTIPLIER[nextTier]}×.
               </p>
@@ -148,7 +151,7 @@ export default function ProfileOverview({ data }: { data: ProfileOverviewData })
         <Figure
           label="Sangu earned"
           value={lifetimeEarned.toLocaleString()}
-          sub="From purchases, all time"
+          sub="All time, every source"
         />
         <Figure label="Favorites" value={String(data.favoritesCount)} sub="Saved for later" />
       </div>

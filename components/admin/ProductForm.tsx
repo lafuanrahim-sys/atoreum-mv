@@ -1,9 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import type { Product } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
+
+const STOCK_LABEL: Record<string, string> = {
+  "in-stock": "In Stock",
+  "low-stock": "Low Stock",
+  "out-of-stock": "Out of Stock",
+};
 
 function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
@@ -25,6 +32,11 @@ export default function ProductForm({
   /** Brand options from the brands store (Dashboard → Settings to add more). */
   brands: string[];
 }) {
+  // Set by createProductAction/updateProductAction when a save is rejected
+  // for something the admin can fix -- a listing price under the minimum,
+  // a discount that would breach it, a band out of order. Read here rather
+  // than passed down, so neither page has to thread it through.
+  const saveError = useSearchParams().get("error");
   const [existingImages, setExistingImages] = useState(product?.images ?? []);
   const [newFiles, setNewFiles] = useState<{ file: File; url: string }[]>([]);
   const [dragOver, setDragOver] = useState(false);
@@ -67,6 +79,11 @@ export default function ProductForm({
 
   return (
     <form action={action} className="flex max-w-2xl flex-col gap-10">
+      {saveError && (
+        <p role="alert" className="border border-red-400/50 bg-red-400/5 px-4 py-3 text-sm text-red-400">
+          {saveError}
+        </p>
+      )}
       <FormSection eyebrow="01" title="Identity">
         <div className="grid grid-cols-2 gap-5">
           <TextField label="Name" name="name" defaultValue={product?.name} required />
@@ -95,18 +112,83 @@ export default function ProductForm({
       </FormSection>
 
       <FormSection eyebrow="03" title="Pricing & Stock">
+        {/* The price band, floor first and reading left to right in the order
+            the numbers relate to each other: minimum, then the listing price
+            that has to clear it, then the median and ceiling it is judged
+            against. Only two of these are ever charged from — the listing
+            price, and the discount applied to it. Median and maximum are
+            reference figures for whoever is setting the price. */}
         <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-          <TextField label="Price" name="price" type="number" step="0.01" defaultValue={product?.price} required />
+          <TextField
+            label="Minimum"
+            name="priceMin"
+            type="number"
+            step="0.01"
+            min={0}
+            defaultValue={product?.priceMin ?? 0}
+            hint="Never sell below this"
+          />
+          <TextField
+            label="Listing price"
+            name="price"
+            type="number"
+            step="0.01"
+            min={product?.priceMin ?? 0}
+            defaultValue={product?.price}
+            required
+            hint="What the site charges"
+          />
+          <TextField
+            label="Median"
+            name="priceMedian"
+            type="number"
+            step="0.01"
+            min={0}
+            defaultValue={product?.priceMedian ?? ""}
+            hint="Reference only"
+          />
+          <TextField
+            label="Maximum"
+            name="priceMax"
+            type="number"
+            step="0.01"
+            min={0}
+            defaultValue={product?.priceMax ?? ""}
+            hint="Reference only"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+          <TextField
+            label="Discount %"
+            name="discountPercent"
+            type="number"
+            step="0.01"
+            min={0}
+            max={95}
+            defaultValue={product?.discountPercent ?? 0}
+            hint={
+              product && product.discountPercent > 0
+                ? `Now selling at ${product.currency} ${product.priceEffective.toLocaleString("en-US")}`
+                : "0 = no offer"
+            }
+          />
           <TextField label="On-hand stock" name="stockOnHand" type="number" step="1" defaultValue={product?.stockOnHand ?? 0} />
           <SelectField label="Currency" name="currency" defaultValue={product?.currency ?? "MVR"}>
             <option value="MVR" className="bg-ink-2">MVR</option>
             <option value="USD" className="bg-ink-2">USD</option>
           </SelectField>
-          <SelectField label="Stock Status" name="stockStatus" defaultValue={product?.stockStatus ?? "in-stock"}>
-            <option value="in-stock" className="bg-ink-2">In Stock</option>
-            <option value="low-stock" className="bg-ink-2">Low Stock</option>
-            <option value="out-of-stock" className="bg-ink-2">Out of Stock</option>
-          </SelectField>
+          {/* Stock status is no longer a choice -- the database derives it from
+              units on hand (0 out, 1-2 low, 3+ in). A dropdown here would let
+              a product claim "In Stock" with nothing on the shelf, which is
+              exactly the drift this replaced. Shown read-only so the rule is
+              visible where the number is edited. */}
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Stock status</span>
+            <span className="px-1 py-2 font-mono text-sm text-ivory">
+              {product ? STOCK_LABEL[product.stockStatus] : "From units on hand"}
+            </span>
+            <span className="text-[10px] leading-tight text-ivory-dim/70">Automatic: 0 out, 1-2 low, 3+ in</span>
+          </div>
         </div>
         <label className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.15em] text-ivory">
           <input type="checkbox" name="featured" defaultChecked={product?.featured} className="accent-gold-deep" />
@@ -253,14 +335,26 @@ function TextField({
   defaultValue,
   type = "text",
   step,
+  min,
+  max,
   required,
+  hint,
 }: {
   label: string;
   name: string;
   defaultValue?: string | number;
   type?: string;
   step?: string;
+  /**
+   * Native bounds, for immediate feedback while typing. Convenience only:
+   * the binding limits are the check constraints on the products table and
+   * the validation in updateProductAction, both of which a crafted POST has
+   * to get past and this attribute does not.
+   */
+  min?: string | number;
+  max?: string | number;
   required?: boolean;
+  hint?: string;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
@@ -269,10 +363,13 @@ function TextField({
         type={type}
         name={name}
         step={step}
+        min={min}
+        max={max}
         defaultValue={defaultValue}
         required={required}
         className="border-b border-line bg-transparent px-1 py-2 font-mono text-sm text-ivory focus:border-gold-deep focus:outline-none"
       />
+      {hint && <span className="text-[10px] leading-tight text-ivory-dim/70">{hint}</span>}
     </label>
   );
 }

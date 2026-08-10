@@ -15,7 +15,11 @@ export default function AddToCartButton({ product }: { product: Product }) {
       {
         productId: product.id,
         name: product.name,
-        price: product.price,
+        // The discounted price, never the listing one -- see the note on
+        // Product.priceEffective. Checkout re-derives this from the database
+        // anyway, so a mismatch here would surface as a price that changes
+        // between the cart and the order.
+        price: product.priceEffective,
         currency: product.currency,
         image: product.images[0] ?? null,
       },

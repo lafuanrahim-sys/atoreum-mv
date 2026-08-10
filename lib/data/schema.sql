@@ -42,6 +42,95 @@ create table if not exists products (
   updated_at timestamptz not null default now()
 );
 
+-- Price band. `price` is the LISTING price -- the number the storefront
+-- shows and the number an order is priced from -- and the three columns
+-- around it are the band it has to sit in:
+--
+--   price_min     the floor. What the store will not sell below (landed
+--                 cost plus the margin the owner refuses to give up). The
+--                 check constraint below is the actual guarantee; the admin
+--                 form's `min` attribute is only a courtesy.
+--   price_median  the intended shelf price, for reference when pricing
+--                 against the band. Advisory: nothing is charged from it.
+--   price_max     the ceiling, likewise advisory.
+--
+-- All three are nullable-by-default-0 rather than required, so every row
+-- that existed before this column did stays valid: price_min 0 makes the
+-- constraint vacuously true until someone sets a real floor.
+alter table products add column if not exists price_min numeric(12, 2) not null default 0;
+alter table products add column if not exists price_median numeric(12, 2);
+alter table products add column if not exists price_max numeric(12, 2);
+
+-- Percentage off the listing price, 0 when not on offer. Capped at 95 so a
+-- slipped decimal cannot hand the shop away; negative is meaningless.
+alter table products add column if not exists discount_percent numeric(5, 2) not null default 0;
+
+-- What the customer actually pays. GENERATED, not computed in TypeScript,
+-- for the same reason every other money figure in this schema is: there is
+-- exactly one definition of the discounted price and the database owns it,
+-- so the storefront, the cart and the order total cannot drift from each
+-- other or from what the admin thinks the discount was.
+alter table products
+  add column if not exists price_effective numeric(12, 2)
+  generated always as (round(price * (1 - discount_percent / 100), 2)) stored;
+
+-- The constraints. These are the enforcement -- form validation is a
+-- convenience that a crafted POST walks straight past.
+do $$ begin
+  alter table products add constraint products_discount_range
+    check (discount_percent >= 0 and discount_percent <= 95);
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  alter table products add constraint products_price_at_least_min
+    check (price >= price_min);
+exception when duplicate_object then null; end $$;
+
+-- Band ordering, only where the optional ends are actually set.
+do $$ begin
+  alter table products add constraint products_price_band_ordered
+    check (
+      (price_max is null or price_max >= price_min)
+      and (price_median is null or price_median >= price_min)
+      and (price_median is null or price_max is null or price_median <= price_max)
+    );
+exception when duplicate_object then null; end $$;
+
+-- Stock status is DERIVED, not typed in.
+--
+-- It used to be a free column an admin set by hand, which meant it drifted the
+-- moment stock moved: an order deducted the last two units and the product
+-- still advertised itself as In Stock until someone remembered to change the
+-- dropdown. It is now a generated column over stock_on_hand, so it is a fact
+-- about the shelf rather than an opinion recorded at some point in the past:
+--
+--   0 units      -> out-of-stock
+--   1-2 units    -> low-stock          (the owner's threshold)
+--   3 or more    -> in-stock
+--
+-- Postgres cannot ALTER an existing column into a generated one, so the old
+-- column is dropped and re-added. Nothing is lost: every value it could have
+-- held is recomputed from stock_on_hand, which is itself maintained by the
+-- stock_movements ledger.
+do $$ begin
+  if exists (
+    select 1 from information_schema.columns
+     where table_name = 'products' and column_name = 'stock_status'
+       and is_generated = 'NEVER'
+  ) then
+    alter table products drop column stock_status;
+  end if;
+end $$;
+
+alter table products add column if not exists stock_status text
+  generated always as (
+    case
+      when stock_on_hand <= 0 then 'out-of-stock'
+      when stock_on_hand <= 2 then 'low-stock'
+      else 'in-stock'
+    end
+  ) stored;
+
 create index if not exists products_category_idx on products (category);
 create index if not exists products_featured_idx on products (featured) where featured;
 
@@ -88,6 +177,33 @@ create table if not exists users (
 );
 alter table users add column if not exists password_reset_token_hash text;
 alter table users add column if not exists password_reset_token_expires_at timestamptz;
+
+-- Invoice numbering.
+--
+-- A tax invoice number has to be unique for the life of the business. Order
+-- numbers cannot supply one: they are ATM-<date>-NNNN and the counter resets
+-- every day, so deriving from them would issue ATO-INV-0001 again tomorrow
+-- and again the day after. This is its own monotonic sequence, assigned by
+-- DEFAULT at insert so no code path can create an order without one.
+--
+-- Cancelled orders keep their number rather than releasing it. A number that
+-- was issued and then reused would let two different documents claim the same
+-- reference; gaps in the run are ordinary and explainable, collisions are not.
+create sequence if not exists invoice_seq as bigint start 1;
+alter table orders add column if not exists invoice_seq bigint;
+alter table orders alter column invoice_seq set default nextval('invoice_seq');
+
+-- Existing rows predate the column. Numbered by creation order so the run
+-- matches the order the sales actually happened in.
+update orders o
+   set invoice_seq = n.rn
+  from (select id, row_number() over (order by created_at, id) as rn from orders where invoice_seq is null) n
+ where o.id = n.id and o.invoice_seq is null;
+
+-- Keep the sequence ahead of anything backfilled above.
+select setval('invoice_seq', greatest((select coalesce(max(invoice_seq), 0) from orders), 1));
+
+create unique index if not exists orders_invoice_seq_idx on orders (invoice_seq);
 
 create table if not exists reviews (
   id text primary key,

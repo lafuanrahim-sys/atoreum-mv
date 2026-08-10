@@ -26,7 +26,20 @@ export default function DashboardReveal({
     if (!el || prefersReducedMotion()) return;
     const items = el.children;
     if (items.length === 0) return;
-    gsap.from(items, { opacity: 0, y: 10, duration: 0.35, stagger: 0.06, ease: "power1.out" });
+    // fromTo, not from. gsap.from() takes the element's CURRENT values as the
+    // end state, and React runs effects twice in development -- the second
+    // pass started from whatever opacity the first pass had reached and
+    // treated that as "finished", leaving the headline figures permanently
+    // faint. An explicit end state is idempotent however many times it runs.
+    const tween = gsap.fromTo(
+      items,
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.35, stagger: 0.06, ease: "power1.out", clearProps: "opacity,transform" }
+    );
+    return () => {
+      tween.kill();
+      gsap.set(items, { opacity: 1, y: 0, clearProps: "opacity,transform" });
+    };
   }, []);
 
   return (

@@ -33,6 +33,18 @@
   --photo-well-fg: #121915;
   --photo-well-fg-dim: #5f665f;
   --photo-well-line: rgba(18, 25, 21, 0.14);
+
+  /* Relief tokens: the shade and the highlight that make a surface read as
+     pressed in or standing proud. They MUST be theme-scoped rather than
+     fixed rgba, because relief is relative to the surface it sits on -- the
+     same 40%-black rim that reads as a crisp recess wall on a near-black
+     page reads as a dirty grey smear on a white one. Only the strengths
+     change between themes; the polarity never does, so the light always
+     comes from above in both. */
+  --relief-shade: rgba(0, 0, 0, 0.14);
+  --relief-light: rgba(255, 255, 255, 0.95);
+  --relief-recess-fill: rgba(0, 0, 0, 0.045);
+  --relief-raise-fill: rgba(255, 255, 255, 0.7);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -49,6 +61,10 @@
     --sand: #6c7770;
     --line: rgba(233, 186, 166, 0.12);
     --logo-flower: #6c7770;
+    --relief-shade: rgba(0, 0, 0, 0.55);
+    --relief-light: rgba(255, 255, 255, 0.1);
+    --relief-recess-fill: rgba(0, 0, 0, 0.26);
+    --relief-raise-fill: rgba(255, 255, 255, 0.05);
   }
 }
 
@@ -65,6 +81,10 @@
   --sand: #c5c9c4;
   --line: rgba(233, 186, 166, 0.12);
   --logo-flower: #e9baa6;
+  --relief-shade: rgba(0, 0, 0, 0.14);
+  --relief-light: rgba(255, 255, 255, 0.95);
+  --relief-recess-fill: rgba(0, 0, 0, 0.045);
+  --relief-raise-fill: rgba(255, 255, 255, 0.7);
 }
 
 .theme-dark {
@@ -79,6 +99,10 @@
   --moss: #545c57;
   --sand: #6c7770;
   --line: rgba(233, 186, 166, 0.12);
+  --relief-shade: rgba(0, 0, 0, 0.55);
+  --relief-light: rgba(255, 255, 255, 0.1);
+  --relief-recess-fill: rgba(0, 0, 0, 0.26);
+  --relief-raise-fill: rgba(255, 255, 255, 0.05);
 }
 
 /* Admin dashboard palette — pinned to the reference art direction: warm
@@ -236,6 +260,11 @@ button:not(:disabled),
 /* thin, quiet scrollbar — luxury sites never ship the browser default */
 ::-webkit-scrollbar {
   width: 6px;
+  /* Height too, not just width. Without it a horizontal scrollbar fell back
+     to the browser default (~15px of light track) -- which is the pale bar
+     that appeared across the bottom of the admin sidebar whenever hovering a
+     nav item nudged its content wide enough to overflow. */
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -514,5 +543,448 @@ button:not(:disabled),
   }
   .maintenance-ripple-delay {
     animation-delay: 2s;
+  }
+}
+
+/* ── Relief: recessed panels and raised controls (app/login/page.tsx) ──
+   A sign-in card stamped INTO the page, with the controls inside it standing
+   back OUT of it. Two opposite reliefs nested one inside the other, which is
+   what makes either read at all: a recess is only legible against a surface,
+   and the raised controls are that surface's reference.
+
+   The polarity, in both directions, assumes light from directly above:
+     recessed  top edge shaded by the wall above it, bottom edge catching
+               light, fill darker than the page, and NO outer drop shadow —
+               nothing casts a shadow onto a surface it is sunk into
+     raised    exactly reversed: lit top lip, shaded underside, fill lighter
+               than what it sits on, and a real cast shadow beneath it
+
+   In @layer components, not unlayered, and that placement is load-bearing:
+   an unlayered rule beats everything in @layer base, including the autofill
+   fix above, which would let Chrome's own yellow fill back through on an
+   autofilled email field. Components sits above base but below utilities, so
+   per-element utilities (focus:border-gold and friends) still win. */
+@layer components {
+  .relief-recess {
+    background-color: var(--relief-recess-fill);
+    border: 1px solid var(--relief-shade);
+    border-bottom-color: var(--relief-light);
+    box-shadow:
+      inset 0 2px 3px var(--relief-shade),
+      inset 0 16px 30px -16px var(--relief-shade),
+      inset 0 -1px 0 var(--relief-light),
+      0 1px 0 var(--relief-light);
+  }
+  .relief-raised {
+    background-color: var(--relief-raise-fill);
+    box-shadow:
+      inset 0 1px 0 var(--relief-light),
+      inset 0 -2px 4px -1px var(--relief-shade),
+      0 2px 4px var(--relief-shade),
+      0 1px 1px var(--relief-shade);
+  }
+  /* Same relief, more of it, and no fill of its own — the primary button
+     brings its own colour and only needs the height. */
+  .relief-raised-strong {
+    box-shadow:
+      inset 0 1px 0 var(--relief-light),
+      inset 0 -2px 4px -1px var(--relief-shade),
+      0 3px 7px -1px var(--relief-shade),
+      0 1px 2px var(--relief-shade);
+  }
+}
+
+/* ── Sangu Dive: the water column (BoliDiveGame.tsx) ──────────────────
+   Built to a reference photograph: looking up through open water at a
+   broken, glittering surface, with sunlight fanning down through it and
+   striking a lit floor below. Three things in that photo do the work, and
+   all three are reproduced here rather than approximated:
+
+     1. the surface is TEXTURED -- torn, irregular, brightest where the
+        swell happens to be flat, not an even wash of light
+     2. the shafts DIVERGE from a single point beyond the frame; parallel
+        shafts read as stage lighting, never as the sun
+     3. the water is LIT ALL THE WAY DOWN to a floor, rather than fading
+        out into black
+
+   None of it is an image: a photograph would be a large asset, would not
+   be ours to ship, and could not be recoloured to sit under the game's UI.
+   It is a conic gradient for the shafts, an SVG turbulence texture for the
+   surface, and tiled caustics for the floor.
+
+   Everything lives behind the board's own z-10 stacking context, and a
+   pool of dark is composited back over the middle of the screen -- see
+   the note on it in BoliDiveGame.tsx. The reference photo is beautiful
+   and almost entirely unreadable as a UI background; the dark pool is what
+   reconciles the two.
+
+   Every animated property is transform or opacity, on layers that are
+   already promoted. This runs full-screen on phones while GSAP drives the
+   reveal timeline, so a backdrop that forced layout or repaint per frame
+   is exactly where that would fall over. The motion is slow and out of
+   phase on purpose: water reads as water because nothing in it is on the
+   same beat. */
+
+/* The shafts pivot around the sun itself, not around their own centres --
+   the whole fan sweeps as one, which is what the surface moving above it
+   would actually do. transform-origin is set to the same point the conic
+   gradient radiates from. */
+@keyframes dive-godray-a-kf {
+  0%, 100% { transform: rotate(-0.85deg) scale(1); opacity: 0.72; }
+  50%      { transform: rotate(0.85deg) scale(1.03); opacity: 1; }
+}
+@keyframes dive-godray-b-kf {
+  0%, 100% { transform: rotate(0.7deg) scale(1.04); opacity: 0.4; }
+  50%      { transform: rotate(-0.7deg) scale(1); opacity: 0.78; }
+}
+@keyframes dive-surface-kf {
+  0%   { transform: translate3d(-3%, 0, 0) scale(1.05); }
+  50%  { transform: translate3d(3%, -1.5%, 0) scale(1.12); }
+  100% { transform: translate3d(-3%, 0, 0) scale(1.05); }
+}
+@keyframes dive-surface-b-kf {
+  0%   { transform: translate3d(2%, -1%, 0) scale(1.14); }
+  50%  { transform: translate3d(-2.5%, 1%, 0) scale(1.06); }
+  100% { transform: translate3d(2%, -1%, 0) scale(1.14); }
+}
+@keyframes dive-sun-kf {
+  0%, 100% { transform: translateX(-50%) scale(0.96); opacity: 0.8; }
+  50%      { transform: translateX(-50%) scale(1.06); opacity: 1; }
+}
+@keyframes dive-floor-a-kf {
+  0%   { transform: translate3d(-4%, 0, 0) scale(1.1); }
+  50%  { transform: translate3d(4%, 1%, 0) scale(1.24); }
+  100% { transform: translate3d(-4%, 0, 0) scale(1.1); }
+}
+@keyframes dive-floor-b-kf {
+  0%   { transform: translate3d(3%, 1%, 0) scale(1.2); }
+  50%  { transform: translate3d(-4%, -1%, 0) scale(1.08); }
+  100% { transform: translate3d(3%, 1%, 0) scale(1.2); }
+}
+
+/* -- The surface ---------------------------------------------------------
+   Fractal noise, stretched ~4:1 horizontally so its structures come out as
+   long torn bands rather than clouds, used as a mask over a bright cyan
+   wash. Two copies at different scales drifting against each other: a
+   single layer reads as a static texture no matter how it moves, because
+   the shapes never change relative to one another.
+
+   The noise is generated by the browser from an inline SVG filter rather
+   than shipped as an image -- it rasterizes once and is only ever
+   transformed afterwards, so it costs nothing per frame. */
+.dive-surface {
+  position: absolute;
+  inset: -8% -14% auto -14%;
+  height: 42%;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 40%, rgba(0, 0, 0, 0.45) 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 40%, rgba(0, 0, 0, 0.45) 68%, transparent 100%);
+}
+.dive-surface-layer {
+  position: absolute;
+  inset: -12%;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+/* Centred on the sun rather than an even top-to-bottom wash: the surface is
+   brightest where the light actually comes through it and falls away to the
+   left, which is what stops the top of the frame reading as a uniform strip
+   of glitter. */
+.dive-surface-a {
+  background: radial-gradient(
+    128% 165% at 66% 0%,
+    rgba(240, 254, 255, 0.98) 0%,
+    rgba(168, 238, 255, 0.55) 40%,
+    rgba(88, 176, 212, 0.16) 74%,
+    rgba(60, 130, 165, 0.05) 100%
+  );
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='700' height='260'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.011 0.042' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='gamma' exponent='3.4' amplitude='2.6'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='700' height='260' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='700' height='260'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.011 0.042' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='gamma' exponent='3.4' amplitude='2.6'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='700' height='260' filter='url(%23n)'/%3E%3C/svg%3E");
+  -webkit-mask-size: 780px 290px;
+  mask-size: 780px 290px;
+}
+.dive-surface-b {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.7) 0%, rgba(178, 240, 255, 0.28) 52%, transparent 100%);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='200'%3E%3Cfilter id='m' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.075' numOctaves='3' seed='29' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='gamma' exponent='5' amplitude='3'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='520' height='200' filter='url(%23m)'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='200'%3E%3Cfilter id='m' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.075' numOctaves='3' seed='29' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='gamma' exponent='5' amplitude='3'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='520' height='200' filter='url(%23m)'/%3E%3C/svg%3E");
+  -webkit-mask-size: 430px 170px;
+  mask-size: 430px 170px;
+}
+
+/* -- The shafts ----------------------------------------------------------
+   A repeating conic gradient centred on the sun, which is the whole trick:
+   its wedges radiate from that point, so they spread with distance exactly
+   as light does. Parallel bars cannot do this, and the divergence is the
+   single strongest cue that the light has a source rather than a direction.
+
+   The radial mask is the distance falloff -- shafts are bright where they
+   leave the surface and dissolve before the floor, so the fan never ends
+   on a visible edge. */
+.dive-godray {
+  position: absolute;
+  inset: -34% -22% auto -22%;
+  height: 132%;
+  transform-origin: 66% 0%;
+  mix-blend-mode: screen;
+  /* Wide enough that the fan crosses most of the frame. At 58% the shafts
+     only ever lit the right-hand third and the rest of the water was a dead
+     zone — in the reference the light reaches nearly edge to edge, and the
+     spread is most of what sells the distance. */
+  -webkit-mask-image: radial-gradient(98% 104% at 66% 0%, #000 0%, rgba(0, 0, 0, 0.82) 28%, rgba(0, 0, 0, 0.4) 56%, transparent 92%);
+  mask-image: radial-gradient(98% 104% at 66% 0%, #000 0%, rgba(0, 0, 0, 0.82) 28%, rgba(0, 0, 0, 0.4) 56%, transparent 92%);
+  will-change: transform, opacity;
+}
+.dive-godray-a {
+  background: repeating-conic-gradient(
+    from 152deg at 66% 0%,
+    rgba(206, 250, 255, 0) 0deg,
+    rgba(206, 250, 255, 0.16) 1.5deg,
+    rgba(206, 250, 255, 0) 3.6deg,
+    rgba(206, 250, 255, 0) 6.4deg
+  );
+  filter: blur(5px);
+}
+.dive-godray-b {
+  background: repeating-conic-gradient(
+    from 149deg at 66% 0%,
+    rgba(255, 255, 255, 0) 0deg,
+    rgba(255, 255, 255, 0.13) 0.7deg,
+    rgba(255, 255, 255, 0) 2.4deg,
+    rgba(255, 255, 255, 0) 11.3deg
+  );
+  filter: blur(2.5px);
+}
+/* Where the shafts land.
+   Literally the same cone as .dive-godray-a — same origin, same start angle,
+   same period, same sway on the same clock — masked to show only its bottom.
+   That is the point: the bright patches on the floor are made BY the shafts,
+   so they have to sit directly under them and sway with them. Lighting the
+   floor from an independent tiled pattern is what gives the whole scene
+   away, because the eye reads the two as unrelated and the illusion of a
+   single light source collapses.
+
+   Heavier blur than the shafts themselves: light that has travelled the full
+   depth and struck a surface is diffuse, and at the floor the cone's wedges
+   have diverged wide enough that a crisp edge would read as a stripe. */
+.dive-godray-floor {
+  background: repeating-conic-gradient(
+    from 152deg at 66% 0%,
+    rgba(186, 244, 255, 0) 0deg,
+    rgba(186, 244, 255, 0.3) 1.5deg,
+    rgba(186, 244, 255, 0) 3.6deg,
+    rgba(186, 244, 255, 0) 6.4deg
+  );
+  filter: blur(17px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 63%, rgba(0, 0, 0, 0.45) 79%, #000 92%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 63%, rgba(0, 0, 0, 0.45) 79%, #000 92%, #000 100%);
+}
+
+/* -- The floor -----------------------------------------------------------
+   Caustics again, but squashed vertically and widened, so the same tile
+   reads as a plane seen at a glancing angle rather than a wall. This is
+   what stops the bottom of the screen being a void: in the reference the
+   light reaches the sand, and losing that is what made the earlier version
+   feel like a dark room with a lamp in it. */
+.dive-floor {
+  position: absolute;
+  inset: auto -18% 0 -18%;
+  height: 34%;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.5) 44%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.5) 44%, #000 100%);
+}
+/* Large tiles and heavy blur, both load-bearing. The first pass used 300px
+   tiles at 6px blur and the floor came out as a row of hard dark blocks with
+   lit edges — a repeat small enough to be recognised as a repeat reads as
+   pattern, not as light, and at that size the gaps between the pools became
+   shapes in their own right. */
+.dive-floor-layer {
+  position: absolute;
+  inset: -25%;
+  mix-blend-mode: screen;
+  filter: blur(14px);
+  will-change: transform;
+}
+/* Turned down from where it was. These tiles are the TEXTURE of the sand now,
+   not the light on it — the light comes from .dive-godray-floor, which is
+   aligned to the shafts. At full strength the two competed and the floor
+   read as two different lightings of the same surface. */
+.dive-floor-a {
+  background-image:
+    radial-gradient(ellipse 44% 34% at 28% 46%, rgba(158, 236, 255, 0.19), transparent 72%),
+    radial-gradient(ellipse 32% 26% at 74% 62%, rgba(124, 216, 250, 0.15), transparent 74%),
+    radial-gradient(ellipse 26% 38% at 55% 20%, rgba(96, 196, 234, 0.12), transparent 76%);
+  background-size: 560px 180px;
+}
+/* A single broad wash under the mottling, so the floor reads as a lit plane
+   with caustics playing over it rather than as detached bright patches
+   floating in the dark. */
+.dive-floor-wash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 100% at 50% 118%, rgba(126, 214, 246, 0.26) 0%, rgba(80, 168, 208, 0.1) 42%, transparent 74%);
+}
+.dive-floor-b {
+  background-image:
+    repeating-linear-gradient(
+      79deg,
+      rgba(186, 244, 255, 0) 0px,
+      rgba(186, 244, 255, 0.075) 28px,
+      rgba(186, 244, 255, 0) 62px,
+      rgba(186, 244, 255, 0) 155px
+    ),
+    radial-gradient(ellipse 38% 30% at 62% 40%, rgba(140, 224, 252, 0.12), transparent 74%);
+  background-size: auto, 830px 250px;
+}
+
+/* Taking a shell: the order badge lands with a slight overshoot instead of
+   appearing at full size on one frame, and a ring is pushed outward from the
+   rim like displaced water. The ring's static opacity is 0, so under reduced
+   motion it never shows rather than sitting on screen as a stray outline. */
+@keyframes dive-badge-in-kf {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes dive-pick-ring-kf {
+  from { opacity: 0.75; transform: scale(0.94); }
+  to   { opacity: 0; transform: scale(1.62); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dive-badge-in {
+    animation: dive-badge-in-kf 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .dive-pick-ring {
+    animation: dive-pick-ring-kf 0.62s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .dive-surface-a {
+    animation: dive-surface-kf 23s ease-in-out infinite;
+  }
+  .dive-surface-b {
+    animation: dive-surface-b-kf 31s ease-in-out infinite;
+  }
+  .dive-godray-a {
+    animation: dive-godray-a-kf 17s ease-in-out infinite;
+  }
+  .dive-godray-b {
+    animation: dive-godray-b-kf 23s ease-in-out infinite;
+  }
+  /* Same keyframes and the same duration as .dive-godray-a, deliberately —
+     both start with the document, so they stay in phase forever and the
+     landing spots track the shafts exactly. Any other duration here and the
+     two would drift apart over minutes, which is worse than never having
+     aligned them. */
+  .dive-godray-floor {
+    animation: dive-godray-a-kf 17s ease-in-out infinite;
+  }
+  .dive-sun {
+    animation: dive-sun-kf 13s ease-in-out infinite;
+  }
+  .dive-floor-a {
+    animation: dive-floor-a-kf 29s ease-in-out infinite;
+  }
+  .dive-floor-b {
+    animation: dive-floor-b-kf 37s ease-in-out infinite;
+  }
+}
+
+/* Phones do the same scene with cheaper optics. Blur is the expensive part
+   of all of this -- it is the one property here that cannot be handed to the
+   compositor -- and radii are in device pixels, so a phone pays roughly the
+   desktop cost over a third of the area with a fraction of the GPU. Halved
+   radii and one less blended layer are invisible at this size and measurably
+   cheaper. */
+@media (max-width: 640px) {
+  .dive-godray-a {
+    filter: blur(3px);
+  }
+  .dive-godray-b {
+    display: none;
+  }
+  .dive-godray-floor {
+    filter: blur(9px);
+  }
+  .dive-floor-layer {
+    filter: blur(8px);
+  }
+  /* Tile sizes are in pixels, so a 390px screen was getting half a tile
+     across its whole width -- the same texture, but magnified until the
+     ripples read as soft blobs instead of a broken surface. Scaled to keep
+     roughly the feature count per screen-width that desktop has, which is
+     what the eye actually reads as "detail". */
+  .dive-surface-a {
+    -webkit-mask-size: 460px 172px;
+    mask-size: 460px 172px;
+  }
+  .dive-surface-b {
+    -webkit-mask-size: 265px 105px;
+    mask-size: 265px 105px;
+  }
+  .dive-floor-a {
+    background-size: 330px 112px;
+  }
+  .dive-floor-b {
+    background-size: auto, 480px 150px;
+  }
+}
+
+/* ── Printing a tax invoice ───────────────────────────────────────────
+   Target is ONE A5 landscape sheet (210 x 148mm).
+
+   Short, because the invoice route deliberately lives outside /dashboard.
+   Nested inside that shell it printed across three sheets whatever the CSS
+   said -- the shell is min-h-screen with fixed-position chrome, and a fixed
+   element repeats on every printed page. Moving the document out removed the
+   cause instead of papering over it.
+
+   The @page rule that sets the paper is rendered by the route itself, not
+   here: nested inside @media print Chrome parses it but will not size the
+   sheet from it, and hoisted to the top level here it would force every
+   printable page on the site onto A5.
+
+   The root font-size drop scales every rem-based Tailwind size (text-sm,
+   p-10, the lot) by one ratio, rather than re-specifying the document. */
+@media print {
+  body:has(.invoice-print) header,
+  body:has(.invoice-print) footer,
+  body:has(.invoice-print) .print\:hidden {
+    display: none !important;
+  }
+  /* The invoice's own header and footer are inside <article>. */
+  body:has(.invoice-print) .invoice-document header {
+    display: flex !important;
+  }
+  body:has(.invoice-print) .invoice-document footer {
+    display: block !important;
+  }
+
+  html:has(.invoice-print) {
+    font-size: 9.5px;
+  }
+
+  body:has(.invoice-print) main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  /* Stated in mm, matching the paper: A5 landscape is 210mm wide less the
+     8mm margins. Left to the viewport width the document laid out at 1200px
+     against a ~733px page and the overflow became extra sheets. */
+  .invoice-print,
+  .invoice-document {
+    width: 194mm !important;
+    max-width: 194mm !important;
+    margin: 0 !important;
+  }
+  .invoice-document {
+    border: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* A tax invoice with its rules and totals dropped out because the browser
+     stripped backgrounds is not a document. */
+  body:has(.invoice-print) {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

@@ -74,7 +74,7 @@ export default function RecentlyViewedStrip({ products }: { products: Product[] 
             </div>
             <div>
               <p className="truncate text-xs text-ivory transition-colors group-hover:text-gold">{product.name}</p>
-              <p className="text-[11px] text-ivory-dim tabular-nums">{formatPrice(product.price, product.currency)}</p>
+              <p className="text-[11px] text-ivory-dim tabular-nums">{formatPrice(product.priceEffective, product.currency)}</p>
             </div>
           </Link>
         ))}

@@ -43,6 +43,7 @@ export default function ProductCard({
   const [justAdded, setJustAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const outOfStock = product.stockStatus === "out-of-stock";
+  const onOffer = product.discountPercent > 0;
   const thumbnail = product.images[0] ?? null;
   const isNew = Date.now() - new Date(product.createdAt).getTime() < NEW_WINDOW_MS;
 
@@ -168,13 +169,38 @@ export default function ProductCard({
             target, instead of wrapping to two lines in a squeezed row.
             sm+ reverts to the original single-row layout unchanged. */}
         <div className="mt-auto flex flex-col items-stretch gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
-          <span className="flex items-baseline justify-center gap-1.5 sm:justify-start">
-            <span className="text-[10px] tracking-[0.15em] text-ivory-dim uppercase">
-              {product.currency}
+          {/* On offer, the struck-through listing price leads and the price
+              actually charged follows it at full size — the saving is only
+              legible next to what it replaced. priceEffective comes from the
+              database's generated column, so this can never disagree with
+              what checkout charges. */}
+          {/* Charged price first and largest, with the price it replaced
+              struck through beside it. Old-price-first is the more common
+              order, but a card in a 4-up grid is ~250px wide and that layout
+              wrapped to three lines here; leading with the big number keeps
+              it to one and still reads as a saving, because the saving is
+              only legible next to what it replaced either way.
+              priceEffective is the database's generated column, so this can
+              never disagree with what checkout charges. */}
+          <span className="flex flex-wrap items-baseline justify-center gap-x-2 sm:justify-start">
+            <span className="flex items-baseline gap-1.5">
+              <span className="text-[10px] tracking-[0.15em] text-ivory-dim uppercase">
+                {product.currency}
+              </span>
+              <span className="font-display text-3xl font-semibold not-italic text-gold tabular-nums">
+                {product.priceEffective.toLocaleString("en-US")}
+              </span>
             </span>
-            <span className="font-display text-3xl font-semibold not-italic text-gold tabular-nums">
-              {product.price.toLocaleString("en-US")}
-            </span>
+            {onOffer && (
+              <>
+                <s className="text-sm text-ivory-dim/70 tabular-nums">
+                  {product.price.toLocaleString("en-US")}
+                </s>
+                <span className="rounded-sm bg-gold/15 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.1em] text-gold uppercase">
+                  -{Math.round(product.discountPercent)}%
+                </span>
+              </>
+            )}
           </span>
           <button
             type="button"
@@ -183,7 +209,7 @@ export default function ProductCard({
               addItem({
                 productId: product.id,
                 name: product.name,
-                price: product.price,
+                price: product.priceEffective,
                 currency: product.currency,
                 image: thumbnail,
               });

@@ -79,7 +79,7 @@ export default function DashboardShell({
         />
       </form>
 
-      <div className="flex-1 overflow-y-auto py-2">
+      <div className="flex-1 overflow-x-hidden overflow-y-auto py-2">
         <DashboardNav unreadMessages={unreadMessages} onNavigate={() => setDrawerOpen(false)} />
       </div>
 

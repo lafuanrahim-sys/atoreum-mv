@@ -65,7 +65,7 @@ export default function Footer() {
       </div>
 
       <div className="mt-16 flex flex-col items-start justify-between gap-4 border-t border-line pt-8 text-xs text-ivory-dim/60 md:flex-row md:items-center">
-        <span>© {new Date().getFullYear()} Atoreum MV. All rights reserved.</span>
+        <span>© {new Date().getFullYear()} Atoreum MV by Aranzo. All rights reserved.</span>
         <span>Official Lebelage launch in the Maldives.</span>
       </div>
     </footer>

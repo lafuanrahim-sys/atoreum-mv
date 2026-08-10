@@ -76,22 +76,15 @@ export default async function LoginPage({
         ? "Track your orders, keep favorites, and check out faster."
         : "Sign in to see your orders, favorites, and profile.";
 
-  // Debossed field treatment -- an inset shadow (dark on the light-facing
-  // edge, a faint highlight on the far edge) so the writing space itself
-  // reads as pressed into the glass card rather than just outlined.
-  const EMBOSS_FIELD = "shadow-[inset_0_2px_5px_rgba(0,0,0,0.4),inset_0_-1px_0_rgba(255,255,255,0.05)]";
-
-  // Card lift. The drop shadow's spread (-32) is deliberately larger than
-  // half its blur (56/2 = 28), which keeps the shadow rect inset ~4px
-  // INSIDE the card's own footprint on every side -- so it only ever reads
-  // as a soft pool grounded beneath the card, never as a halo tracing its
-  // edges. An earlier 60px-blur/-15px-spread version did the opposite:
-  // against a near-black page (--ink #121915) a black shadow reaching ~15px
-  // past the card on all four sides had nothing to fall off into, so it
-  // rendered as a visible dirty ring rather than depth. On a dark theme the
-  // border and the 1px inset top highlight are what actually define the
-  // card; the shadow only has to ground it.
-  const CARD_LIFT = "shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_24px_56px_-32px_rgba(0,0,0,0.65)]";
+  // Relief lives in globals.css (see the "Relief" block there), driven by
+  // theme-scoped tokens rather than fixed rgba. That indirection is the whole
+  // point: the first pass hardcoded a 40%-black rim and a 30%-black top wash,
+  // which read as a crisp recess on the near-black dark theme and as a dirty
+  // grey smear across a white card in the light one. Relief is relative to
+  // the surface it sits on, so it has to move with the palette.
+  const CARD_DEBOSS = "relief-recess";
+  const FIELD_RAISED = "relief-raised";
+  const BUTTON_RAISED = "relief-raised-strong";
 
   return (
     <div className="bg-ink">
@@ -106,7 +99,18 @@ export default async function LoginPage({
           centers the card in that exact space on any screen, desktop or
           mobile, with nothing left over to scroll. */}
       <div className="page-gutter flex h-[calc(100svh-6rem)] flex-col items-center justify-center gap-10 md:h-[calc(100svh-7rem)]">
-        <div className={`card-entrance w-full max-w-md overflow-hidden rounded-2xl border border-ivory/15 bg-ink-2/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_55%)] p-8 ${CARD_LIFT} backdrop-blur-xl backdrop-saturate-150 md:p-10`}>
+        {/* The fill is darker than the page and darkest at the top, which is
+            what a recess looks like: the upper wall shades its own floor. It
+            replaces a lighter-than-the-page glass panel lit from the top-left
+            -- that gradient was the emboss, and leaving it in would have
+            fought every shadow below it.
+
+            backdrop-blur is gone with it. The page behind this card is a flat
+            --ink fill, so there was never anything to blur; it only ever cost
+            a compositor layer, and a recess is not a pane of glass anyway. */}
+        <div
+          className={`card-entrance w-full max-w-md overflow-hidden rounded-2xl p-8 ${CARD_DEBOSS} md:p-10`}
+        >
         <h1 className="font-display text-2xl text-ivory md:text-3xl">{heading}</h1>
         <p className="mt-2 text-sm leading-relaxed text-ivory-dim">{subtitle}</p>
 
@@ -187,10 +191,10 @@ export default async function LoginPage({
                     name="email"
                     required
                     autoComplete="email"
-                    className={`rounded-md border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none ${EMBOSS_FIELD}`}
+                    className={`rounded-md border border-line px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none ${FIELD_RAISED}`}
                   />
                 </label>
-                <SubmitButton variant="solid" className="mt-2 py-4" pendingLabel="Sending…">
+                <SubmitButton variant="solid" className={`mt-2 py-4 ${BUTTON_RAISED}`} pendingLabel="Sending…">
                   Send reset link
                 </SubmitButton>
               </form>
@@ -200,13 +204,13 @@ export default async function LoginPage({
                   <input type="hidden" name="token" value={token} />
                   <label className="flex flex-col gap-2">
                     <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">New password (min 8 characters)</span>
-                    <PasswordField name="password" required minLength={8} autoComplete="new-password" className={EMBOSS_FIELD} />
+                    <PasswordField name="password" required minLength={8} autoComplete="new-password" className={FIELD_RAISED} />
                   </label>
                   <label className="flex flex-col gap-2">
                     <span className="text-xs uppercase tracking-[0.15em] text-ivory-dim">Confirm new password</span>
-                    <PasswordField name="confirmPassword" required minLength={8} autoComplete="new-password" className={EMBOSS_FIELD} />
+                    <PasswordField name="confirmPassword" required minLength={8} autoComplete="new-password" className={FIELD_RAISED} />
                   </label>
-                  <SubmitButton variant="solid" className="mt-2 py-4" pendingLabel="Resetting…">
+                  <SubmitButton variant="solid" className={`mt-2 py-4 ${BUTTON_RAISED}`} pendingLabel="Resetting…">
                     Reset password
                   </SubmitButton>
                 </form>
@@ -231,7 +235,7 @@ export default async function LoginPage({
                       name="name"
                       required
                       autoComplete="name"
-                      className={`rounded-md border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none ${EMBOSS_FIELD}`}
+                      className={`rounded-md border border-line px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none ${FIELD_RAISED}`}
                     />
                   </label>
                 )}
@@ -244,7 +248,7 @@ export default async function LoginPage({
                     name="email"
                     required
                     autoComplete="email"
-                    className={`rounded-md border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none ${EMBOSS_FIELD}`}
+                    className={`rounded-md border border-line px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none ${FIELD_RAISED}`}
                   />
                 </label>
 
@@ -257,7 +261,7 @@ export default async function LoginPage({
                     required
                     minLength={isRegister ? 8 : undefined}
                     autoComplete={isRegister ? "new-password" : "current-password"}
-                    className={EMBOSS_FIELD}
+                    className={FIELD_RAISED}
                   />
                   {!isRegister && (
                     <Link
@@ -271,7 +275,7 @@ export default async function LoginPage({
 
                 <SubmitButton
                   variant="solid"
-                  className="mt-2 py-4"
+                  className={`mt-2 py-4 ${BUTTON_RAISED}`}
                   pendingLabel={isRegister ? "Creating account…" : "Signing in…"}
                 >
                   {isRegister ? "Create Account" : "Sign In"}

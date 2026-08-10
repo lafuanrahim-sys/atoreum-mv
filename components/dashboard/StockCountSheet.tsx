@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useToast } from "@/components/dashboard/ToastProvider";
 import { applyStockCountAction } from "@/app/actions/stock";
 import type { CountSheetRow } from "@/lib/data/stock.server";
+import StockBadge from "@/components/products/StockBadge";
 
 /**
  * The stocktake, on one screen: every product with what the system believes
@@ -155,7 +156,8 @@ export default function StockCountSheet({ rows, todayIso }: { rows: CountSheetRo
               <th className="pb-2 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Product</th>
               <th className="pb-2 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">SKU</th>
               <th className="pb-2 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Category</th>
-              <th className="pb-2 pr-4 text-right font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">System</th>
+              <th className="pb-2 pr-4 text-right font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">In Hand</th>
+              <th className="pb-2 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Status</th>
               <th className="pb-2 pr-4 text-right font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Counted</th>
               <th className="pb-2 text-right font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Difference</th>
             </tr>
@@ -168,7 +170,20 @@ export default function StockCountSheet({ rows, todayIso }: { rows: CountSheetRo
                   <td className="py-2.5 pr-4 text-ivory">{r.name}</td>
                   <td className="py-2.5 pr-4 font-mono text-xs text-ivory-dim">{r.sku}</td>
                   <td className="py-2.5 pr-4 text-xs text-ivory-dim">{r.category}</td>
-                  <td className="py-2.5 pr-4 text-right font-mono tabular-nums text-ivory-dim">{r.systemQty}</td>
+                  <td
+                    className={`py-2.5 pr-4 text-right font-mono tabular-nums ${
+                      r.stockStatus === "out-of-stock"
+                        ? "text-red-400"
+                        : r.stockStatus === "low-stock"
+                          ? "text-sand"
+                          : "text-ivory"
+                    }`}
+                  >
+                    {r.systemQty}
+                  </td>
+                  <td className="py-2.5 pr-4">
+                    <StockBadge status={r.stockStatus} />
+                  </td>
                   <td className="py-2.5 pr-4 text-right">
                     <input
                       type="number"

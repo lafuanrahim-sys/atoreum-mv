@@ -13,6 +13,7 @@ import { recordMovement } from "@/lib/data/stock.server";
 type OrderRow = {
   id: string;
   order_number: string;
+  invoice_seq: string | number | null;
   items: OrderItem[];
   user_id: string | null;
   subtotal: string;
@@ -31,6 +32,7 @@ function rowToOrder(row: OrderRow): Order {
   return {
     id: row.id,
     orderNumber: row.order_number,
+    invoiceSeq: Number(row.invoice_seq ?? 0),
     items: row.items,
     ...(row.user_id ? { userId: row.user_id } : {}),
     subtotal: Number(row.subtotal),

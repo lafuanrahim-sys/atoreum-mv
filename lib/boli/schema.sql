@@ -325,7 +325,27 @@ begin
 
   update boli_users
     set boli_balance_cached = boli_balance_cached + p_delta,
-        boli_lifetime_earned = boli_lifetime_earned + (case when p_reason = 'purchase_earn' then p_delta else 0 end),
+        -- Every source of NEW sangu counts toward lifetime earned, which is
+        -- what decides tier. This used to be purchase_earn alone, and the
+        -- result was a customer holding a real balance sitting at Faru with a
+        -- progress bar flat on zero -- most visibly when the store granted
+        -- sangu by hand, which credited the balance and moved the tier not at
+        -- all.
+        --
+        -- Excluded, deliberately:
+        --   redemption           spending sangu must not demote you
+        --   expired              nor must letting it lapse
+        --   redemption_reversal  returns sangu you already earned once, so
+        --                        counting it here would credit it twice
+        -- refund_clawback IS included precisely because it is negative: it is
+        -- how a cancelled order takes back what its purchase_earn gave, and
+        -- admin_adjustment cuts both ways for the same reason.
+        boli_lifetime_earned = boli_lifetime_earned + (
+          case
+            when p_reason in ('purchase_earn', 'game_earn', 'streak_chest', 'admin_adjustment', 'refund_clawback')
+            then p_delta
+            else 0
+          end),
         has_delivered_order = has_delivered_order or (p_reason = 'purchase_earn'),
         updated_at = now()
     where user_id = p_user_id;
@@ -792,6 +812,34 @@ select source_type, reason, sum(delta)::bigint as total_delta, count(*) as entry
 from boli_ledger
 group by source_type, reason
 order by source_type, reason;
+
+-- -----------------------------------------------------------------------------
+-- Recompute boli_lifetime_earned from the ledger.
+--
+-- boli_lifetime_earned is a cache, and the ledger is the truth -- the same
+-- relationship boli_balance_cached has, and the same one boli-verify-balances
+-- asserts. Recomputing it here means widening what counts as "earned" (see
+-- boli_ledger_write above) applies to history the moment the schema is
+-- applied, rather than only to sangu credited from then on, and it needs no
+-- separate migration step anyone can forget to run on production.
+--
+-- Safe to re-run: it is a pure function of the ledger, so applying the schema
+-- twice lands on the same numbers. Also self-healing, which is the point of
+-- keeping it here rather than in a one-shot script.
+-- -----------------------------------------------------------------------------
+update boli_users u
+   set boli_lifetime_earned = coalesce(
+         (select sum(l.delta)
+            from boli_ledger l
+           where l.user_id = u.user_id
+             and l.reason in ('purchase_earn', 'game_earn', 'streak_chest', 'admin_adjustment', 'refund_clawback')),
+         0)
+ where u.boli_lifetime_earned is distinct from coalesce(
+         (select sum(l.delta)
+            from boli_ledger l
+           where l.user_id = u.user_id
+             and l.reason in ('purchase_earn', 'game_earn', 'streak_chest', 'admin_adjustment', 'refund_clawback')),
+         0);
 
 -- -----------------------------------------------------------------------------
 -- Row Level Security. Same reasoning as lib/data/schema.sql's own RLS

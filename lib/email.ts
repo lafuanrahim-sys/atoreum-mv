@@ -1,3 +1,6 @@
+import { STORE_DETAILS } from "@/lib/storeDetails";
+import { buildInvoice, formatMoney, invoiceNumber } from "@/lib/invoice";
+import type { Order } from "@/lib/types";
 import nodemailer, { type Transporter } from "nodemailer";
 
 /**
@@ -106,5 +109,118 @@ export async function sendPasswordResetEmail(params: {
     return { ok: true };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to send password reset email." };
+  }
+}
+
+/**
+ * The customer's receipt, sent when an order is confirmed.
+ *
+ * Built from buildInvoice(), the same function the dashboard's tax invoice
+ * page renders from, so the customer's copy and the copy filed for GST are
+ * arithmetically the same document -- two independent calculations of the
+ * same money is exactly how a receipt ends up disagreeing with a return.
+ *
+ * Table-based layout with inline styles because that is what mail clients
+ * render reliably; Outlook in particular ignores most of a stylesheet.
+ */
+/**
+ * The receipt's HTML, separated from the sending of it so the figures can be
+ * asserted on directly. An email whose GST disagrees with the filed invoice is
+ * exactly the kind of defect that is invisible until a customer or an auditor
+ * finds it, and it cannot be checked at all if the only way to produce the
+ * markup is to send a message.
+ */
+export function renderOrderReceiptHtml(params: { name: string; order: Order; orderUrl?: string }): string {
+  const invoice = buildInvoice(params.order);
+  const money = (v: number) => escapeHtml(formatMoney(v, invoice.currency));
+
+  const rows = invoice.lines
+    .map(
+      (l) => `
+        <tr>
+          <td style="padding:8px 24px 8px 0;border-bottom:1px solid #eee;">${escapeHtml(l.name)}
+            <span style="color:#888;">× ${l.quantity}</span>
+          </td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;width:1%;">
+            ${money(l.lineGross)}
+          </td>
+        </tr>`
+    )
+    .join("");
+
+  const discountRow =
+    invoice.discount > 0
+      ? `<tr><td style="padding:4px 24px 4px 0;color:#666;">Sangu redeemed</td>
+         <td style="padding:4px 0;text-align:right;color:#666;">-${money(invoice.discount)}</td></tr>`
+      : "";
+
+  return `
+        <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a;">
+          <p>Hi ${escapeHtml(params.name)},</p>
+          <p>Your order <strong>${escapeHtml(params.order.orderNumber)}</strong> is confirmed. Here's your receipt.</p>
+
+          <table style="width:100%;border-collapse:collapse;margin:24px 0;font-size:14px;">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:0 24px 8px 0;border-bottom:2px solid #1a1a1a;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#666;">Item</th>
+                <th style="text-align:right;padding-bottom:8px;border-bottom:2px solid #1a1a1a;white-space:nowrap;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#666;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+            <tfoot>
+              <tr><td style="padding:12px 24px 4px 0;color:#666;">Subtotal (incl. GST)</td>
+                  <td style="padding:12px 0 4px;text-align:right;color:#666;">${money(invoice.grossSubtotal)}</td></tr>
+              ${discountRow}
+              <tr><td style="padding:4px 24px 4px 0;color:#666;">Taxable value</td>
+                  <td style="padding:4px 0;text-align:right;color:#666;">${money(invoice.netTotal)}</td></tr>
+              <tr><td style="padding:4px 24px 4px 0;color:#666;">GST @ ${invoice.gstRatePercent}%</td>
+                  <td style="padding:4px 0;text-align:right;color:#666;">${money(invoice.gstTotal)}</td></tr>
+              <tr><td style="padding:10px 24px 0 0;border-top:1px solid #1a1a1a;font-weight:bold;">Total paid</td>
+                  <td style="padding:10px 0 0;border-top:1px solid #1a1a1a;text-align:right;font-weight:bold;">${money(invoice.grossTotal)}</td></tr>
+            </tfoot>
+          </table>
+
+          <p style="font-size:13px;color:#666;">
+            Delivering to:<br />${escapeHtml(params.order.customer.address)}
+          </p>
+          ${
+            params.orderUrl
+              ? `<p style="margin:20px 0;"><a href="${params.orderUrl}" style="background:#8a6d3b;color:#fff;padding:12px 24px;text-decoration:none;border-radius:2px;display:inline-block;">View your order</a></p>`
+              : ""
+          }
+          <p style="font-size:12px;color:#888;">
+            Prices are GST-inclusive; the GST shown is the tax contained within the total.
+            Invoice reference ${escapeHtml(invoiceNumber(params.order))}.
+          </p>
+          <!-- The supplier's registered name and TIN are mandatory particulars
+               on a Maldivian tax invoice. This email is the copy the customer
+               keeps, so it carries them too -- otherwise the only compliant
+               document is the one that never leaves the dashboard. -->
+          <p style="font-size:12px;color:#888;border-top:1px solid #eee;padding-top:12px;margin-top:16px;">
+            ${escapeHtml(STORE_DETAILS.taxpayerName)} (trading as ${escapeHtml(STORE_DETAILS.tradingName)})<br />
+            ${STORE_DETAILS.addressLines.map((l) => escapeHtml(l)).join("<br />")}<br />
+            ${STORE_DETAILS.tin ? `TIN ${escapeHtml(STORE_DETAILS.tin)}<br />` : ""}
+            ${escapeHtml(STORE_DETAILS.email)}
+          </p>
+        </div>
+      `;
+}
+
+export async function sendOrderReceiptEmail(params: {
+  to: string;
+  name: string;
+  order: Order;
+  orderUrl?: string;
+}): Promise<{ ok: true } | { error: string }> {
+  try {
+    await getTransporter().sendMail({
+      from: getFromAddress(),
+      to: params.to,
+      subject: `Your Atoreum MV receipt · ${params.order.orderNumber}`,
+      html: renderOrderReceiptHtml(params),
+    });
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to send receipt email." };
   }
 }

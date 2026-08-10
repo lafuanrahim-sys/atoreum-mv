@@ -667,11 +667,22 @@ export async function applyStockCount(input: {
 }
 
 /** Everything the count sheet needs: every product with what the system currently believes it holds. */
-export type CountSheetRow = { productId: string; name: string; sku: string; category: string; systemQty: number };
+export type CountSheetRow = {
+  productId: string;
+  name: string;
+  sku: string;
+  category: string;
+  /** Live units on hand -- the same number the storefront sells against, and
+   *  the one order confirmations deduct from through the movement ledger. */
+  systemQty: number;
+  /** Derived by the database from systemQty (0 out, 1-2 low, 3+ in). */
+  stockStatus: "in-stock" | "low-stock" | "out-of-stock";
+};
 
 export async function getCountSheet(): Promise<CountSheetRow[]> {
   const { rows } = await pool().query(
-    `select id, name, sku, category, stock_on_hand from products order by category asc, name asc`
+    `select id, name, sku, category, stock_on_hand, stock_status
+       from products order by category asc, name asc`
   );
   return rows.map((r) => ({
     productId: r.id,
@@ -679,5 +690,6 @@ export async function getCountSheet(): Promise<CountSheetRow[]> {
     sku: r.sku,
     category: r.category,
     systemQty: Number(r.stock_on_hand),
+    stockStatus: r.stock_status as CountSheetRow["stockStatus"],
   }));
 }

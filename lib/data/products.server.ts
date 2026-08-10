@@ -16,6 +16,11 @@ type ProductRow = {
   brand: string;
   category: string;
   price: string; // numeric columns come back as strings from `pg`
+  price_min: string;
+  price_median: string | null;
+  price_max: string | null;
+  discount_percent: string;
+  price_effective: string;
   currency: string;
   description: string;
   headlines: [string, string, string];
@@ -38,6 +43,11 @@ function rowToProduct(row: ProductRow): Product {
     brand: row.brand,
     category: row.category as Category,
     price: Number(row.price),
+    priceMin: Number(row.price_min),
+    priceMedian: row.price_median === null ? null : Number(row.price_median),
+    priceMax: row.price_max === null ? null : Number(row.price_max),
+    discountPercent: Number(row.discount_percent),
+    priceEffective: Number(row.price_effective),
     currency: row.currency as Product["currency"],
     description: row.description,
     headlines: row.headlines,
@@ -92,8 +102,9 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   const id = await nextSequentialId(input.category);
   const { rows } = await pool().query<ProductRow>(
     `insert into products
-      (id, sku, name, size, brand, category, price, currency, description, headlines, ingredients, how_to_use, images, stock_status, stock_on_hand, featured)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      (id, sku, name, size, brand, category, price, price_min, price_median, price_max, discount_percent,
+       currency, description, headlines, ingredients, how_to_use, images, stock_on_hand, featured)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
      returning *`,
     [
       id,
@@ -103,13 +114,16 @@ export async function createProduct(input: ProductInput): Promise<Product> {
       input.brand,
       input.category,
       input.price,
+      input.priceMin,
+      input.priceMedian,
+      input.priceMax,
+      input.discountPercent,
       input.currency,
       input.description,
       JSON.stringify(input.headlines),
       input.ingredients,
       input.howToUse,
       JSON.stringify(input.images),
-      input.stockStatus,
       input.stockOnHand,
       input.featured,
     ]
@@ -124,9 +138,10 @@ export async function updateProduct(id: string, patch: Partial<ProductInput>): P
   const merged: ProductInput = { ...existing, ...patch };
   const { rows } = await pool().query<ProductRow>(
     `update products set
-      sku = $2, name = $3, size = $4, brand = $5, category = $6, price = $7, currency = $8,
-      description = $9, headlines = $10, ingredients = $11, how_to_use = $12, images = $13,
-      stock_status = $14, stock_on_hand = $15, featured = $16, updated_at = now()
+      sku = $2, name = $3, size = $4, brand = $5, category = $6, price = $7,
+      price_min = $8, price_median = $9, price_max = $10, discount_percent = $11, currency = $12,
+      description = $13, headlines = $14, ingredients = $15, how_to_use = $16, images = $17,
+      stock_on_hand = $18, featured = $19, updated_at = now()
      where id = $1
      returning *`,
     [
@@ -137,18 +152,36 @@ export async function updateProduct(id: string, patch: Partial<ProductInput>): P
       merged.brand,
       merged.category,
       merged.price,
+      merged.priceMin,
+      merged.priceMedian,
+      merged.priceMax,
+      merged.discountPercent,
       merged.currency,
       merged.description,
       JSON.stringify(merged.headlines),
       merged.ingredients,
       merged.howToUse,
       JSON.stringify(merged.images),
-      merged.stockStatus,
       merged.stockOnHand,
       merged.featured,
     ]
   );
   return rows[0] ? rowToProduct(rows[0]) : null;
+}
+
+/**
+ * Write one product's discount and nothing else.
+ *
+ * Separate from updateProduct() on purpose: that one round-trips the whole
+ * row, so using it for a single number from the products table would rewrite
+ * every other column from whatever the caller happened to have loaded, and
+ * quietly clobber a concurrent edit. price_effective recomputes itself.
+ */
+export async function setProductDiscount(id: string, percent: number): Promise<void> {
+  await pool().query(
+    "update products set discount_percent = $2, updated_at = now() where id = $1",
+    [id, percent]
+  );
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {

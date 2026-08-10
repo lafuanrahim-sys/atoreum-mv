@@ -27,12 +27,75 @@ import { DIVE_GRID_SIZE, DIVE_PICK_COUNT, DIVE_PAYOUT_TABLE, type DiveOutcomeTie
  */
 
 const BG_DEEP = "#03070c";
-const BG_MID = "#0a2230";
+/**
+ * The water column, surface to floor. The screen used to be a near-flat
+ * near-black with a gold blob and a cyan blob blurred over it, and the two
+ * met in the middle as a muddy olive haze — it read as a dark room, not as
+ * the sea. These are a real depth ramp instead: lit water at the surface,
+ * the colour draining out of it with depth, black at the bottom.
+ */
+const WATER_TOP = "#12556d";
+const WATER_MID = "#0a3a4e";
+const WATER_LOW = "#05202e";
+const WATER_DEEP = "#02101a";
+const ABYSS = "#010a11";
 const INK = "#f5efe4";
 const INK_DIM = "#a79f8f";
 const LINE = "rgba(245,239,228,0.16)";
 const GOLD = "#f4c542";
 const GOLD_DEEP = "#c99a2e";
+
+/** The sphere's own shading, constant in every state. */
+const OCCLUSION = "rgba(0,0,0,0.6)";
+const SHEEN = "rgba(190,240,255,0.11)";
+const DEPTH_SHADOW = "rgba(0,0,0,0.45)";
+const CLEAR = "rgba(244,197,66,0)";
+
+/**
+ * Body of an unrevealed shell. Five stops rather than two: a sphere reads as
+ * a sphere because the light falls off unevenly across it, and a two-stop
+ * gradient falls off linearly, which is why the old balls looked like flat
+ * discs with a smudge on them.
+ */
+const BALL_BODY = "radial-gradient(circle at 34% 26%, #4a7887 0%, #2c5567 20%, #183542 46%, #0b1b24 74%, #050e15 100%)";
+
+/**
+ * The same sphere, drained of hue, for a shell that has been opened. The
+ * closed shell is teal because it is a thing sitting in water; an open one
+ * has to carry its tier colour, and tier colour is the whole reveal — you
+ * are meant to know how good it was before reading the number. Layering a
+ * 16%-alpha tint over the teal body just produced nine teal balls with
+ * differently coloured rings, which reads as "the board" rather than as
+ * grey/green/blue/purple/gold.
+ */
+const BALL_BODY_OPEN = "radial-gradient(circle at 34% 26%, #39424a 0%, #242d34 20%, #151d23 46%, #0a1015 74%, #05090c 100%)";
+
+/**
+ * Every state returns the same six shadow layers, in the same order, with the
+ * same inset flags — only colour and alpha change.
+ *
+ * This is not tidiness, it is the entire reason the selection glow animates
+ * at all. CSS interpolates two box-shadow lists only when they match in
+ * length AND in inset-ness layer by layer; when they don't, the property
+ * jumps to its final value on the first frame. The old unselected state was a
+ * single `0 0 0 transparent` against a two-layer inset+outer selected state,
+ * so the gold bloom snapped on instantly mid-click and the 300ms transition
+ * did nothing whatsoever. Measured in the browser, not inferred.
+ *
+ * The ring is a spread shadow rather than a thicker border for the same
+ * reason in miniature: growing a border from 1.5px to 2px both snapped and
+ * shifted the icon inside it by a quarter pixel.
+ */
+function ballShadow(ring: string, bloom: string, tint: string): string {
+  return [
+    `inset 0 -9px 18px ${OCCLUSION}`, // the sphere's dark underside
+    `inset 0 7px 13px ${SHEEN}`, // light wrapping over the top
+    `inset 0 0 15px ${tint}`, // state colour, bled in from the rim
+    `0 0 0 1.5px ${ring}`,
+    `0 0 26px ${bloom}`,
+    `0 10px 22px ${DEPTH_SHADOW}`,
+  ].join(", ");
+}
 
 type TodayResponse = {
   loggedIn: boolean;
@@ -617,7 +680,17 @@ export default function BoliDiveGame({
     // hit of the day can take a real moment. A visible spinner at least
     // confirms something is happening.
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: BG_DEEP }} role="status" aria-label="Loading Sangu Dive">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        // Same water ramp as the game itself, so the spinner sits in the
+        // water the board is about to appear in rather than on a flat black
+        // panel that then jumps.
+        style={{
+          background: `linear-gradient(to bottom, ${WATER_TOP} 0%, ${WATER_MID} 22%, ${WATER_LOW} 52%, ${WATER_DEEP} 78%, ${ABYSS} 100%)`,
+        }}
+        role="status"
+        aria-label="Loading Sangu Dive"
+      >
         <span
           aria-hidden="true"
           className="h-8 w-8 animate-spin rounded-full border-2 border-transparent"
@@ -634,24 +707,90 @@ export default function BoliDiveGame({
       ref={stageRef}
       className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
       style={{
-        background: `radial-gradient(120% 90% at 50% -10%, ${BG_MID} 0%, ${BG_DEEP} 55%, #010305 100%)`,
+        background: `linear-gradient(to bottom, ${WATER_TOP} 0%, ${WATER_MID} 22%, ${WATER_LOW} 52%, ${WATER_DEEP} 78%, ${ABYSS} 100%)`,
         color: INK,
       }}
     >
-      {/* Ambient backdrop — warm gold glow, a cooler deep-water glow, and drifting bubbles. Decorative only. */}
+      {/* The water column. Decorative throughout — every layer is
+          aria-hidden and sits below the board's z-10. See the
+          "Sangu Dive: the water column" block in globals.css for why each
+          layer is built the way it is. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        {/* The sun, off the top edge at 66% — the point every shaft below
+            radiates from, and deliberately off-centre: light dead overhead
+            gives a symmetrical fan, which looks like a diagram. */}
         <div
-          className="absolute left-1/2 top-[10%] h-[440px] w-[440px] -translate-x-1/2 rounded-full blur-[110px]"
-          style={{ background: "rgba(244,197,66,0.14)" }}
+          className="dive-sun absolute left-[66%] top-[-30%] h-[62%] w-[86%] -translate-x-1/2 rounded-[50%] blur-[60px]"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(240,254,255,0.62) 0%, rgba(158,236,255,0.3) 38%, rgba(80,180,220,0.1) 66%, transparent 82%)",
+          }}
         />
-        <div
-          className="absolute -bottom-24 right-[-10%] h-[380px] w-[380px] rounded-full blur-[120px]"
-          style={{ background: "rgba(76,201,240,0.1)" }}
-        />
+
+        {/* Surface, shafts, floor. Order matters: the surface is above the
+            shafts so the shafts appear to emerge from underneath it. */}
+        <div className="dive-godray dive-godray-a" />
+        <div className="dive-godray dive-godray-b" />
+
+        <div className="dive-surface">
+          <div className="dive-surface-layer dive-surface-a" />
+          <div className="dive-surface-layer dive-surface-b" />
+        </div>
+
+        <div className="dive-floor">
+          <div className="dive-floor-wash" />
+          <div className="dive-floor-layer dive-floor-a" />
+          <div className="dive-floor-layer dive-floor-b" />
+        </div>
+
+        {/* The shafts landing on that floor. Shares .dive-godray's geometry
+            on purpose — same element box, same cone, same sway — so the lit
+            patches cannot drift out of line with the shafts above them. */}
+        <div className="dive-godray dive-godray-floor" />
+
         <div ref={bubblesRef} className="absolute inset-0" />
+
+        {/* A pool of dark composited back over the middle of the screen.
+            Not decoration — load-bearing. The board's whole visual language
+            is faint tier glows on unlit spheres, and the supporting copy is
+            a dim warm grey; both were designed against near-black, and lit
+            water underneath them costs the copy about a third of its
+            contrast. So the water is dimmed down the centre column, which
+            also frames the play area and leaves the caustics and shafts
+            reading at the edges where nothing has to be legible. */}
         <div
-          className="absolute bottom-0 left-0 h-40 w-full"
-          style={{ background: `linear-gradient(to top, ${BG_DEEP}, transparent)` }}
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(66% 66% at 50% 40%, rgba(1,7,13,0.9) 0%, rgba(1,7,13,0.62) 42%, transparent 80%)",
+          }}
+        />
+        {/* Scrim under the header. The surface is at its brightest precisely
+            where the header sits, and measured against it "My Sangu" came out
+            at 1.05:1 — the same luminance as its own background, which is to
+            say invisible. Brightening the text doesn't rescue it; nothing
+            legible sits on water that bright, so the water is darkened
+            instead. Standard treatment for text over an image, and it reads
+            as intent rather than as damage. */}
+        <div
+          className="absolute inset-x-0 top-0"
+          style={{
+            // Height inline rather than via a utility class: this is the only
+            // place in the file that would have needed `h-32`, and it came out
+            // of the build with no rule behind it, so the element rendered
+            // 0px tall and the scrim silently did nothing. Every other layer
+            // in this backdrop sizes itself inline anyway.
+            height: "9rem",
+            background: "linear-gradient(to bottom, rgba(1,10,16,0.91) 0%, rgba(1,10,16,0.47) 52%, transparent 100%)",
+          }}
+        />
+        {/* An edge vignette to close the frame in. There used to be a solid
+            fade to black across the bottom too; it has gone, because the
+            floor is lit now and blacking it out is precisely what made the
+            old version read as a dark room rather than as the sea. */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "radial-gradient(122% 82% at 50% 40%, transparent 44%, rgba(1,6,11,0.62) 100%)" }}
         />
       </div>
 
@@ -777,23 +916,66 @@ export default function BoliDiveGame({
                     style={{ opacity: enteredRef.current ? undefined : 0 }}
                   >
                     <div
-                      className="relative h-16 w-16 transition-[transform,opacity,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:h-24 sm:w-24"
+                      // 340ms here and on the button below: the lift, the glow
+                      // and the icon's turn are one gesture, and at 500 vs 300
+                      // the glow finished while the ball was still growing,
+                      // which is what made the pick feel like two events.
+                      className="relative h-16 w-16 transition-[transform,opacity,filter] duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:h-24 sm:w-24"
                       style={{
-                        transform: isSelected && phase === "picking" ? "scale(1.07)" : "scale(1)",
-                        // Once three are down, the rest recede rather than
-                        // simply going disabled — the picked set should be
-                        // readable at a glance, before anything is revealed.
-                        opacity: phase === "picking" && !isSelected && atCapacity ? 0.35 : 1,
+                        // Your three stay raised once the board opens, and the
+                        // six you didn't take drop back. Without this the
+                        // result is nine identically-lit balls and the only
+                        // thing marking your own picks is an 8px caption —
+                        // the tier colours read as "what the board held",
+                        // never as "what you chose". Matched picks sit a
+                        // little higher again, since those are what actually
+                        // paid.
+                        transform:
+                          isSelected && (phase === "picking" || phase === "revealed")
+                            ? isMatched && phase === "revealed"
+                              ? "scale(1.1)"
+                              : "scale(1.07)"
+                            : "scale(1)",
+                        opacity:
+                          !isSelected && ((phase === "picking" && atCapacity) || phase === "revealed") ? 0.35 : 1,
+                        // Slight desaturation on the unpicked, so their tier
+                        // colour still reads but never competes with yours.
+                        filter: !isSelected && phase === "revealed" ? "saturate(0.55)" : "none",
                       }}
                     >
-                      {phase === "picking" && !isSelected && (
+                      {/* Idle halo. Mounted for the whole picking phase and
+                          faded out by CSS when chosen, rather than unmounted
+                          on selection — pulling it out of the DOM mid-pulse
+                          made the halo vanish on the same frame the click
+                          landed, which read as a flicker. GSAP drives the
+                          inner element; the outer only fades. Two elements so
+                          neither has to know about the other. */}
+                      {phase === "picking" && (
                         <span
-                          ref={(el) => {
-                            idleGlowRefs.current[index] = el;
-                          }}
                           aria-hidden="true"
-                          className="pointer-events-none absolute inset-[-12%] rounded-full blur-lg"
-                          style={{ background: "rgba(244,197,66,0.3)", opacity: 0 }}
+                          className="pointer-events-none absolute inset-[-12%] transition-opacity duration-300 ease-out motion-reduce:transition-none"
+                          style={{ opacity: isSelected ? 0 : 1 }}
+                        >
+                          <span
+                            ref={(el) => {
+                              idleGlowRefs.current[index] = el;
+                            }}
+                            className="absolute inset-0 rounded-full blur-lg"
+                            style={{ background: "rgba(244,197,66,0.3)", opacity: 0 }}
+                          />
+                        </span>
+                      )}
+
+                      {/* One-shot ring pushed outward as the shell is taken,
+                          like water displaced. Keyed on the pick order so it
+                          re-fires if the same ball is deselected and chosen
+                          again. */}
+                      {isSelected && phase === "picking" && (
+                        <span
+                          key={`ring-${pickOrder}`}
+                          aria-hidden="true"
+                          className="dive-pick-ring pointer-events-none absolute inset-0 rounded-full"
+                          style={{ border: `1.5px solid ${GOLD}`, opacity: 0 }}
                         />
                       )}
                       <button
@@ -808,19 +990,28 @@ export default function BoliDiveGame({
                               ? `Ball ${index + 1}, selected`
                               : `Choose ball ${index + 1}`
                         }
-                        className="relative flex h-full w-full items-center justify-center rounded-full transition-[box-shadow,opacity,border-color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-default enabled:active:scale-[0.94]"
+                        className="relative flex h-full w-full items-center justify-center rounded-full transition-[box-shadow,opacity,transform] duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-default enabled:active:scale-[0.95]"
                         style={{
-                          background: revealed && style
-                            ? `radial-gradient(circle at 35% 28%, ${style.soft}, #0a161c 72%)`
-                            : "radial-gradient(circle at 35% 28%, #24404c, #0a161c 75%)",
-                          border: `${isSelected && !revealed ? 2 : 1.5}px solid ${revealed && style ? style.color : isSelected ? GOLD : LINE}`,
-                          boxShadow: revealed && style
-                            ? `0 0 20px ${style.glow}`
-                            : isSelected
-                              // Inner rim plus outer bloom: the ring reads as
-                              // lit from the shell rather than outlined.
-                              ? `inset 0 0 12px rgba(244,197,66,0.25), 0 0 22px rgba(244,197,66,0.55)`
-                              : "0 0 0 rgba(0,0,0,0)",
+                          // Tier tint sits over the sphere body rather than
+                          // replacing it, so a revealed shell keeps its
+                          // shading instead of flattening into a coloured
+                          // wash — style.soft is translucent, and on its own
+                          // it let the water read straight through the ball.
+                          // Two washes rather than one: the first sits under
+                          // the highlight, the second lower and wider, so the
+                          // tier colour covers the ball instead of pooling in
+                          // one corner — while the neutral body underneath
+                          // keeps the shading that makes it a sphere.
+                          background:
+                            revealed && style
+                              ? `radial-gradient(circle at 34% 26%, ${style.soft}, transparent 60%), radial-gradient(circle at 52% 64%, ${style.soft}, transparent 78%), ${BALL_BODY_OPEN}`
+                              : BALL_BODY,
+                          boxShadow:
+                            revealed && style
+                              ? ballShadow(style.color, style.glow, style.soft)
+                              : isSelected
+                                ? ballShadow(GOLD, "rgba(244,197,66,0.5)", "rgba(244,197,66,0.22)")
+                                : ballShadow(LINE, CLEAR, CLEAR),
                           outlineColor: GOLD,
                           color: INK,
                           opacity: phase === "revealing" && !revealed ? 0.85 : 1,
@@ -829,18 +1020,38 @@ export default function BoliDiveGame({
                         {pickOrder > 0 && phase === "picking" && (
                           <span
                             aria-hidden="true"
-                            className="pointer-events-none absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold tabular-nums sm:h-6 sm:w-6 sm:text-xs"
+                            className="dive-badge-in pointer-events-none absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold tabular-nums sm:h-6 sm:w-6 sm:text-xs"
                             style={{ background: GOLD, color: BG_DEEP, boxShadow: `0 0 12px ${GOLD}66` }}
                           >
                             {pickOrder}
                           </span>
                         )}
 
-                        {/* Shine highlight — a soft arc near the top so the ball reads as dimensional, not a flat disc. */}
+                        {/* Three lights, which is what separates a sphere
+                            from a disc with a smudge on it: a broad diffuse
+                            highlight where the light hits, a small hard
+                            specular inside it for the wet look, and a cool
+                            crescent along the bottom edge — light bouncing
+                            back up off the water. The crescent is the one
+                            doing most of the work; without it the lower half
+                            of the ball has no edge and the shape dies. */}
                         <span
                           aria-hidden="true"
-                          className="pointer-events-none absolute left-[18%] top-[12%] h-[28%] w-[42%] rounded-full blur-[5px]"
-                          style={{ background: "rgba(245,239,228,0.14)" }}
+                          className="pointer-events-none absolute left-[16%] top-[10%] h-[30%] w-[44%] -rotate-[18deg] rounded-full blur-[6px]"
+                          style={{ background: "rgba(235,250,255,0.18)" }}
+                        />
+                        <span
+                          aria-hidden="true"
+                          className="pointer-events-none absolute left-[27%] top-[17%] h-[8%] w-[11%] rounded-full blur-[1px]"
+                          style={{ background: "rgba(255,255,255,0.55)" }}
+                        />
+                        <span
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-0 rounded-full"
+                          style={{
+                            background:
+                              "radial-gradient(circle at 50% 116%, rgba(150,228,255,0.34) 0%, rgba(150,228,255,0.1) 26%, transparent 46%)",
+                          }}
                         />
                         <span data-face className="relative flex flex-col items-center">
                           {revealed && style ? (
@@ -868,7 +1079,7 @@ export default function BoliDiveGame({
                             <svg
                               viewBox="0 0 20 20"
                               aria-hidden="true"
-                              className="h-7 w-7 transition-[color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:h-9 sm:w-9"
+                              className="h-7 w-7 transition-[color,transform] duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:h-9 sm:w-9"
                               style={{
                                 color: isSelected ? GOLD : INK_DIM,
                                 // A quarter turn as it is chosen: the shell
@@ -890,7 +1101,18 @@ export default function BoliDiveGame({
                         </span>
                       </button>
                     </div>
-                    <span className="text-[8px] uppercase tracking-[0.1em] sm:text-[9px]" style={{ color: isMatched ? TIER_STYLE[result!.outcomeTier].color : INK_DIM }}>
+                    <span
+                      className={`text-[8px] uppercase tracking-[0.1em] transition-colors duration-500 sm:text-[9px] ${
+                        isMatched ? "font-semibold" : ""
+                      }`}
+                      style={{
+                        // "Your pick" was rendering in the same dim grey as
+                        // an empty caption slot, which made the one pick that
+                        // didn't match nearly invisible next to the two that
+                        // did.
+                        color: isMatched ? TIER_STYLE[result!.outcomeTier].color : isSelected ? INK : INK_DIM,
+                      }}
+                    >
                       {revealed
                         ? isSelected
                           ? isMatched

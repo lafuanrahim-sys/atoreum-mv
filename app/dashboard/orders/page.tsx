@@ -133,6 +133,12 @@ export default async function DashboardOrdersPage({
                   <Link href={`/dashboard/orders/${o.id}`} className="font-mono text-xs uppercase tracking-[0.12em] text-gold-deep hover:underline">
                     View
                   </Link>
+                  <Link
+                    href={`/invoice/${o.id}`}
+                    className="font-mono text-xs uppercase tracking-[0.12em] text-ivory-dim hover:text-gold-deep hover:underline"
+                  >
+                    Invoice
+                  </Link>
                 </div>
               </td>
             </tr>

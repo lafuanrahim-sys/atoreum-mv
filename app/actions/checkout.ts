@@ -4,6 +4,7 @@ import path from "path";
 import crypto from "crypto";
 import { headers } from "next/headers";
 import { createOrder } from "@/lib/data/orders.server";
+import { getProductById } from "@/lib/data/products.server";
 import { notifyNewOrder } from "@/lib/notify";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { parseBoliAmount, redeemForOrder } from "@/lib/boli/ledger.server";
@@ -55,6 +56,41 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
   if (!Array.isArray(items) || items.length === 0) {
     return { ok: false, error: "Your cart is empty." };
   }
+
+  // Re-price every line from the database before anything is totalled.
+  //
+  // What arrives here is cart JSON the browser posted, `price` included, and
+  // until now the subtotal was computed straight from it — so a customer who
+  // edited the payload paid whatever they typed. Adding discounts made that
+  // impossible to leave alone: "the discounted price is what we charge" can
+  // only be true if the server decides the price, and the only authority on
+  // the discounted price is products.price_effective, a generated column.
+  //
+  // Quantities still come from the client (they are the customer's to choose);
+  // prices, names and currency no longer do.
+  const priced: OrderItem[] = [];
+  for (const item of items) {
+    const quantity = Math.floor(Number(item.quantity));
+    if (!Number.isFinite(quantity) || quantity < 1 || quantity > 999) {
+      return { ok: false, error: "That quantity isn't valid. Please review your cart." };
+    }
+    const product = await getProductById(String(item.productId ?? ""));
+    if (!product) {
+      return { ok: false, error: "One of the items in your cart is no longer available. Please review your cart." };
+    }
+    if (product.stockStatus === "out-of-stock") {
+      return { ok: false, error: `${product.name} is out of stock. Please remove it from your cart.` };
+    }
+    priced.push({
+      productId: product.id,
+      name: product.name,
+      price: product.priceEffective,
+      currency: product.currency,
+      quantity,
+      image: product.images[0] ?? null,
+    });
+  }
+  items = priced;
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const currency = items[0].currency;

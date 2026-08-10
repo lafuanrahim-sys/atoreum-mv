@@ -36,7 +36,24 @@ export type Product = {
   size: string;
   brand: string;
   category: Category;
+  /** Listing price — what the site shows and what an order is priced from. */
   price: number;
+  /** Floor. The listing price can never be saved below this (DB-enforced). */
+  priceMin: number;
+  /** Intended shelf price. Advisory reference only — nothing is charged from it. */
+  priceMedian: number | null;
+  /** Ceiling. Advisory reference only. */
+  priceMax: number | null;
+  /** Percent off the listing price; 0 when not on offer. */
+  discountPercent: number;
+  /**
+   * What the customer actually pays. Read-only here because it is a Postgres
+   * generated column (`round(price * (1 - discount_percent / 100), 2)`) — the
+   * discounted price has exactly one definition and the database owns it, so
+   * the card, the cart and the order total cannot drift apart. Never send it
+   * on a write; Postgres rejects that outright.
+   */
+  priceEffective: number;
   currency: Currency;
   /** Short summary shown on cards and near the top of the detail page. */
   description: string;
@@ -48,6 +65,11 @@ export type Product = {
   howToUse: string;
   /** At least one image; first is the primary/thumbnail. */
   images: string[];
+  /**
+   * Derived by the database from stockOnHand (0 -> out, 1-2 -> low, 3+ -> in).
+   * Read-only: it is a generated column, so Postgres rejects any write that
+   * supplies it. Change stockOnHand instead.
+   */
   stockStatus: StockStatus;
   /** Units physically on hand — shown in the admin products table. */
   stockOnHand: number;
@@ -56,8 +78,16 @@ export type Product = {
   updatedAt: string;
 };
 
-/** Shape accepted when creating a product — server assigns id/timestamps. */
-export type ProductInput = Omit<Product, "id" | "createdAt" | "updatedAt">;
+/**
+ * Shape accepted when creating a product — server assigns id/timestamps.
+ * `priceEffective` is omitted as well: it is a generated column, and Postgres
+ * refuses any statement that supplies a value for one, so leaving it in the
+ * input type would only invite a write that fails at runtime.
+ */
+export type ProductInput = Omit<
+  Product,
+  "id" | "createdAt" | "updatedAt" | "priceEffective" | "stockStatus"
+>;
 
 export type OrderStatus =
   | "Pending Verification"
@@ -87,6 +117,12 @@ export type OrderCustomer = {
 export type Order = {
   id: string;
   orderNumber: string;
+  /**
+   * Monotonic invoice counter, assigned by the database at insert. Separate
+   * from orderNumber because that one resets daily and a tax invoice number
+   * must never repeat. Renders as ATO-INV-0001 -- see lib/invoice.ts.
+   */
+  invoiceSeq: number;
   items: OrderItem[];
   /**
    * The signed-in account that placed this order, if any — set once at

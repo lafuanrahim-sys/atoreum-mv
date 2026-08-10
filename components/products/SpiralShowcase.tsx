@@ -338,9 +338,9 @@ export default function SpiralShowcase({ products }: { products: Product[] }) {
                   <span className="font-display text-base uppercase tracking-[0.06em] text-ivory">
                     {product.name}
                   </span>
-                  {product.price > 0 && (
+                  {product.priceEffective > 0 && (
                     <span className="text-xs tracking-[0.15em] text-gold tabular-nums">
-                      {product.currency} {product.price.toLocaleString("en-US")}
+                      {product.currency} {product.priceEffective.toLocaleString("en-US")}
                     </span>
                   )}
                 </div>
@@ -369,9 +369,9 @@ export default function SpiralShowcase({ products }: { products: Product[] }) {
               <span className="font-display text-base uppercase tracking-[0.06em] text-ivory">
                 {product.name}
               </span>
-              {product.price > 0 && (
+              {product.priceEffective > 0 && (
                 <span className="text-xs tracking-[0.15em] text-gold tabular-nums">
-                  {product.currency} {product.price.toLocaleString("en-US")}
+                  {product.currency} {product.priceEffective.toLocaleString("en-US")}
                 </span>
               )}
             </div>
