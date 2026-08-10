@@ -82,15 +82,26 @@ export default function BoliChip() {
       title={`${balance.toLocaleString()} Sangu`}
       className="flex h-9 items-center gap-1.5 px-1.5 text-ivory-dim transition-colors hover:text-gold"
     >
+      {/* A spiral shell, for sangu — the conch. The previous mark was an oval
+          with a vertical slit, which is specifically a COWRIE, and stopped
+          being right the moment the currency was renamed from Boli (cowrie)
+          to Sangu (conch).
+
+          A literal conch was tried first and abandoned: its identifying
+          features are the spire, the whorls and the flared aperture, none of
+          which survive at the 16px this renders at — the drawings read as a
+          leaf or a scribble. A spiral is what a shell reduces to at icon
+          size, and it stays unambiguous. The stroke is heavier than the rest
+          of the header's icons on purpose; at 1.4 the inner curl closed up
+          into a blob. */}
       <svg viewBox="0 0 20 20" aria-hidden="true" className="h-4 w-4 shrink-0">
         <path
-          d="M10 2.5c4 0 6.5 4 6.5 8s-2.5 7-6.5 7-6.5-3-6.5-7 2.5-8 6.5-8Z"
+          d="M16.8 10a6.8 6.8 0 1 1-6.8-6.8 5.2 5.2 0 0 1 5.2 5.2 3.9 3.9 0 0 1-3.9 3.9 2.9 2.9 0 0 1-2.9-2.9 2.1 2.1 0 0 1 2.1-2.1"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinejoin="round"
+          strokeWidth="1.9"
+          strokeLinecap="round"
         />
-        <path d="M10 6.5v7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
       </svg>
       <span className="text-xs tabular-nums">{balance.toLocaleString()}</span>
     </Link>
