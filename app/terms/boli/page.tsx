@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import BackLink from "@/components/ui/BackLink";
 import {
   PURCHASE_EARN_BOLI,
   PURCHASE_EARN_PER_MVR,
@@ -51,21 +52,36 @@ const SECTIONS: { title: string; body: string }[] = [
 export default function BoliTermsPage() {
   return (
     <div className="page-gutter bg-ink pt-10 pb-28 md:pt-14">
-      <div className="mx-auto max-w-2xl">
-        <p className="text-xs uppercase tracking-[0.3em] text-gold">Sangu</p>
-        <h1 className="mt-6 font-display text-3xl text-ivory md:text-4xl">Terms</h1>
-        <p className="mt-4 text-sm text-ivory-dim">
-          These terms govern Sangu, Atoreum MV&apos;s in-store loyalty currency. They sit alongside, not in place
-          of, our general store terms.
-        </p>
+      {/* Wider than the old single column, since the sections now sit two
+          across; the heading block keeps its own reading width so the intro
+          doesn't stretch into an uncomfortably long measure. */}
+      <div className="mx-auto max-w-5xl">
+        <BackLink fallbackHref="/account?tab=boli" label="Back" />
 
-        <div className="mt-10 flex flex-col gap-8">
+        <div className="mt-6 max-w-2xl">
+          <p className="text-xs uppercase tracking-[0.3em] text-gold">Sangu</p>
+          <h1 className="mt-6 font-display text-3xl text-ivory md:text-4xl">Terms</h1>
+          <p className="mt-4 text-sm text-ivory-dim">
+            These terms govern Sangu, Atoreum MV&apos;s in-store loyalty currency. They sit alongside, not in place
+            of, our general store terms.
+          </p>
+        </div>
+
+        {/* Two across from sm up. Boxes in a row stretch to a shared height
+            (grid's default) so the borders line up rather than stepping with
+            each section's text length. There are an odd number of sections,
+            so the last one spans the full width instead of leaving a gap. */}
+        <div className="mt-10 grid gap-6 sm:grid-cols-2">
           {SECTIONS.map((section) => (
-            <div key={section.title} className="border border-line p-8">
+            <div key={section.title} className="border border-line p-8 sm:last:col-span-2">
               <h2 className="font-display text-lg text-ivory">{section.title}</h2>
               <p className="mt-3 text-sm leading-relaxed text-ivory-dim">{section.body}</p>
             </div>
           ))}
+        </div>
+
+        <div className="mt-12 border-t border-line pt-8">
+          <BackLink fallbackHref="/account?tab=boli" label="Back" />
         </div>
       </div>
     </div>
