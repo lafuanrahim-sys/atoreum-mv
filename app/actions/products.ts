@@ -1,6 +1,5 @@
 "use server";
 
-import path from "path";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -39,8 +38,11 @@ async function saveUploadedImages(formData: FormData): Promise<string[]> {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       throw new Error(`${file.name} must be a JPG, PNG, or WEBP.`);
     }
-    const ext = path.extname(file.name) || "";
-    const safeName = `${Date.now()}-${crypto.randomUUID()}${ext}`;
+    // Derived from the whitelist rather than path.extname(), which on an
+    // attacker-supplied filename can yield separators or traversal that
+    // would then be concatenated into the object key.
+    const extMatch = /\.(jpe?g|png|webp)$/i.exec(file.name);
+    const safeName = `${Date.now()}-${crypto.randomUUID()}${extMatch ? extMatch[0].toLowerCase() : ""}`;
     const bytes = Buffer.from(await file.arrayBuffer());
     const url = await uploadPublicFile({
       bucket: PRODUCT_IMAGES_BUCKET,

@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { isAdminRole } from "@/lib/auth/userSession";
-import path from "path";
 import crypto from "crypto";
 import {
   addShipmentFile,
@@ -113,6 +112,24 @@ const ALLOWED_ATTACHMENT_TYPES = [
 ];
 const ALLOWED_ATTACHMENT_EXT = /\.(jpe?g|png|webp|heic|heif|pdf|csv|xlsx?)$/i;
 
+/** Shipment ids are uuids; anything else must never reach a storage key. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Derives a storage-safe extension from an uploaded filename.
+ *
+ * SECURITY: the filename is attacker-supplied. path.extname() alone can
+ * return something containing separators or traversal ("..") depending on
+ * the input, and that value was being concatenated straight into the object
+ * key — so a crafted name could place the object outside its shipment's
+ * prefix. Matching against the same whitelist the upload already validates
+ * means the key can only ever end in a known-good extension, or none.
+ */
+function safeExtension(fileName: string): string {
+  const match = ALLOWED_ATTACHMENT_EXT.exec(fileName);
+  return match ? match[0].toLowerCase() : "";
+}
+
 export type ImportOutcome = {
   fileName: string;
   imported: number;
@@ -126,6 +143,7 @@ export async function uploadShipmentFileAction(
   formData: FormData
 ): Promise<{ imports: ImportOutcome[] }> {
   const admin = await requireAdmin();
+  if (!UUID.test(shipmentId)) throw new Error("Invalid shipment.");
   const files = formData.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
   if (files.length === 0) throw new Error("Choose at least one file to attach.");
 
@@ -142,11 +160,12 @@ export async function uploadShipmentFileAction(
   const imports: ImportOutcome[] = [];
 
   for (const file of files) {
-    const ext = path.extname(file.name) || "";
     // Namespaced by shipment and randomly named: the original filename is
     // kept for display only, never used as the storage key, so a supplier's
-    // filename can't collide with another's or shape the path.
-    const storagePath = `${shipmentId}/${Date.now()}-${crypto.randomUUID()}${ext}`;
+    // filename can't collide with another's or shape the path. Both halves
+    // are validated above (shipmentId as a uuid, the extension against the
+    // upload whitelist), so nothing attacker-controlled reaches the key.
+    const storagePath = `${shipmentId}/${Date.now()}-${crypto.randomUUID()}${safeExtension(file.name)}`;
     const bytes = Buffer.from(await file.arrayBuffer());
     const contentType = file.type || "application/octet-stream";
 

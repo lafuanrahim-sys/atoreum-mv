@@ -27,12 +27,33 @@ import {
   checkResendVerificationRateLimit,
 } from "@/lib/auth/rateLimit";
 
-/** Origin to build absolute links (verification emails) against — derived from the request rather than a hardcoded env var, so it's correct in dev, staging, and prod without config. */
+/**
+ * Canonical site origin, used to build the links inside verification and
+ * password-reset emails.
+ *
+ * SECURITY: this deliberately does NOT trust the request's Host header.
+ * It used to, which is a host-header-injection account takeover: an attacker
+ * requests a password reset for a victim's address while sending
+ * `Host: attacker.example`, and the victim receives a genuine email, from
+ * the real sending address, containing a VALID reset token pointed at the
+ * attacker's server. Opening it hands over the token, and with it the
+ * account. The same applies to verification links.
+ *
+ * The origin now comes from configuration (SITE_URL), falling back to the
+ * known production domain. A request host is only honoured when it is
+ * plainly a local dev address, which no remote attacker can present.
+ */
+const CANONICAL_SITE_URL = "https://atoreum.mv";
+const LOCAL_HOST = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
+
 async function getBaseUrl(): Promise<string> {
-  const h = await headers();
-  const host = h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "production" ? "https" : "http");
-  return `${proto}://${host}`;
+  const configured = process.env.SITE_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, "");
+
+  const host = (await headers()).get("host") ?? "";
+  if (LOCAL_HOST.test(host)) return `http://${host}`;
+
+  return CANONICAL_SITE_URL;
 }
 
 // No CDN/reverse-proxy of record for this deployment — best-effort only,
@@ -77,9 +98,7 @@ export async function loginAction(formData: FormData): Promise<void> {
   // admin-only dashboard (middleware would bounce them back to /login,
   // reading as a broken login).
   const safeFrom =
-    from.startsWith("/") && !from.startsWith("//") && !(from.startsWith("/dashboard") && !isAdminRole(user.role))
-      ? from
-      : null;
+    isSameSitePath(from) && !(from.startsWith("/dashboard") && !isAdminRole(user.role)) ? from : null;
   redirect(safeFrom ?? homeFor(user.role));
 }
 
@@ -192,12 +211,34 @@ export async function logoutAction(): Promise<void> {
   redirect("/");
 }
 
+/**
+ * Constrains a caller-supplied return path to somewhere on this site.
+ *
+ * SECURITY: `back` arrives in the form body, so without this an attacker
+ * could hand a victim a form whose back field is an external URL and have
+ * the site bounce them there after a genuine, successful action — the
+ * redirect carries this domain's credibility to a phishing page.
+ *
+ * Requiring exactly one leading slash rejects the protocol-relative
+ * `//evil.example` form, which browsers treat as absolute, and the backslash
+ * variant with it: several browsers normalise a leading `/\` to `//` and
+ * follow it off-site, so checking only for `//` leaves that bypass open.
+ * loginAction's `from` goes through the same test.
+ */
+function isSameSitePath(raw: string): boolean {
+  return raw.startsWith("/") && raw[1] !== "/" && raw[1] !== "\\";
+}
+
+function safeBackPath(raw: string, fallback: string): string {
+  return isSameSitePath(raw) ? raw : fallback;
+}
+
 export async function updateProfileAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   const name = String(formData.get("name") ?? "").trim();
-  const back = String(formData.get("back") ?? "/account?tab=profile");
+  const back = safeBackPath(String(formData.get("back") ?? ""), "/account?tab=profile");
   const withParam = (param: string) => `${back}${back.includes("?") ? "&" : "?"}${param}`;
   if (!name) redirect(withParam("profile=invalid"));
 
@@ -213,7 +254,7 @@ export async function changePasswordAction(formData: FormData): Promise<void> {
 
   const current = String(formData.get("currentPassword") ?? "");
   const next = String(formData.get("newPassword") ?? "");
-  const back = String(formData.get("back") ?? "/account?tab=profile");
+  const back = safeBackPath(String(formData.get("back") ?? ""), "/account?tab=profile");
   const withParam = (param: string) => `${back}${back.includes("?") ? "&" : "?"}${param}`;
 
   if (next.length < 8) redirect(withParam("password=short"));
