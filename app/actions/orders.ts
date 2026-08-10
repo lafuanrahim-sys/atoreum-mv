@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getOrderById, updateOrderStatus } from "@/lib/data/orders.server";
+import { getOrderById, updateOrderStatus, deleteOrder } from "@/lib/data/orders.server";
 import { getUserById, getUserByEmail } from "@/lib/data/users.server";
 import { sendOrderReceiptEmail } from "@/lib/email";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
@@ -110,5 +110,47 @@ export async function changeOrderStatus(orderId: string, status: OrderStatus) {
   revalidatePath("/dashboard/preorders");
   revalidatePath("/dashboard");
   // Customers see status (and gain review rights on completion) on these.
+  revalidatePath("/account");
+}
+
+/**
+ * Deletes an order and undoes what it did.
+ *
+ * The revert runs FIRST, and it runs by cancelling the order through the
+ * normal path rather than by reversing things by hand:
+ *
+ *   - stock goes back on the shelf, through the movement ledger
+ *   - purchase Sangu is clawed back, and a redemption is returned
+ *
+ * Reusing the Cancelled transition matters. It is the same code that runs
+ * every time a real order is cancelled, so it stays correct by being used;
+ * a bespoke unwind here would be a second path that quietly drifts out of
+ * step with the first. An order that is already Cancelled has been reverted
+ * already and is simply removed.
+ *
+ * Irreversible, and deliberately not offered for anything but a mistake:
+ * a genuine order that was placed and refunded should be Cancelled and KEPT,
+ * because the money moved and the record of it is the point. Deleting is for
+ * test rows and orders created in error.
+ */
+export async function deleteOrderAction(orderId: string) {
+  const user = await getCurrentUser();
+  if (!user || !isAdminRole(user.role)) redirect("/login");
+
+  const order = await getOrderById(orderId);
+  if (!order) return;
+
+  if (order.status !== "Cancelled") {
+    await updateOrderStatus(orderId, "Cancelled");
+    await runBoliHook(orderId, order.status, "Cancelled");
+  }
+  await deleteOrder(orderId);
+
+  revalidatePath("/dashboard/orders");
+  revalidatePath("/dashboard/preorders");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/stock");
+  revalidatePath("/dashboard/products");
+  revalidatePath("/products");
   revalidatePath("/account");
 }

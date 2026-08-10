@@ -191,6 +191,37 @@ export async function hasCompletedPurchase(email: string, productId: string): Pr
   return rows[0]?.exists ?? false;
 }
 
+/**
+ * Removes an order permanently.
+ *
+ * Only the row: reverting the order's EFFECTS (stock back on the shelf, Sangu
+ * clawed back) is done by the caller through the ordinary Cancelled
+ * transition before this runs -- see deleteOrderAction. Doing it that way
+ * means deletion reuses the reversal logic that is already exercised every
+ * time a real order is cancelled, rather than growing a second, less-trodden
+ * path that has to be kept in step with it.
+ *
+ * The order's stock_movements go with it (`on delete cascade` on the product
+ * reference does not apply here, so they are removed explicitly): once the
+ * order is gone the ledger entries reference nothing, and a movement whose
+ * source cannot be inspected is worse than no movement at all.
+ */
+export async function deleteOrder(id: string): Promise<boolean> {
+  const client = await pool().connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("delete from stock_movements where source_type = 'order' and source_id = $1", [id]);
+    const { rowCount } = await client.query("delete from orders where id = $1", [id]);
+    await client.query("COMMIT");
+    return (rowCount ?? 0) > 0;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 export async function updateOrderStatus(id: string, status: OrderStatus): Promise<Order | null> {
   // Needs the order's *previous* status to know whether this transition
   // crosses into or out of "stock committed" territory -- e.g. a bank
@@ -213,7 +244,21 @@ export async function updateOrderStatus(id: string, status: OrderStatus): Promis
   if (!wasCommitted && isCommitted) {
     await adjustStockForItems(before.items, -1, before.id);
   } else if (wasCommitted && status === "Cancelled") {
-    await adjustStockForItems(before.items, 1, before.id);
+    // Only give back what was actually taken. Orders placed before the stock
+    // movement ledger existed are Confirmed/Completed but never debited
+    // anything, and restoring them invented stock that had never left the
+    // shelf -- observed for real: cancelling three legacy orders pushed the
+    // catalogue 16 units above its true count. The ledger is the record of
+    // what happened, so it is what decides whether there is anything to
+    // reverse.
+    const { rows: deducted } = await pool().query<{ n: string }>(
+      `select count(*) as n from stock_movements
+        where source_type = 'order' and source_id = $1 and reason = 'sale'`,
+      [before.id]
+    );
+    if (Number(deducted[0]?.n ?? 0) > 0) {
+      await adjustStockForItems(before.items, 1, before.id);
+    }
   }
 
   return rowToOrder(rows[0]);

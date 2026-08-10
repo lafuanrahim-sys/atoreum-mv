@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getAllOrders } from "@/lib/data/orders.server";
-import { changeOrderStatus } from "@/app/actions/orders";
+import { changeOrderStatus, deleteOrderAction } from "@/app/actions/orders";
 import type { OrderStatus } from "@/lib/types";
 import OrderStatusBadge from "@/components/dashboard/OrderStatusBadge";
 import AdminActionButton from "@/components/dashboard/AdminActionButton";
@@ -139,6 +139,19 @@ export default async function DashboardOrdersPage({
                   >
                     Invoice
                   </Link>
+                  <AdminActionButton
+                    action={async () => {
+                      "use server";
+                      await deleteOrderAction(o.id);
+                    }}
+                    label="Delete"
+                    pendingLabel="Deleting…"
+                    variant="danger"
+                    toastMessage={`${o.orderNumber} deleted and reverted.`}
+                    confirmTitle="Delete this order?"
+                    confirmMessage={`${o.orderNumber} will be removed permanently. Its stock goes back on the shelf and any Sangu it earned is taken back. Cancel it instead if the sale was real — a refunded order should be kept as a record.`}
+                    confirmLabel="Delete"
+                  />
                 </div>
               </td>
             </tr>
