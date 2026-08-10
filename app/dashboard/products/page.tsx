@@ -121,9 +121,9 @@ export default async function DashboardProductsPage({
         </FilterField>
         <FilterField label="Category">
           <select name="category" defaultValue={category} className={FILTER_INPUT}>
-            <option value="">All</option>
+            <option value="" className={OPTION}>All</option>
             {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
+              <option key={c} value={c} className={OPTION}>
                 {c}
               </option>
             ))}
@@ -131,24 +131,24 @@ export default async function DashboardProductsPage({
         </FilterField>
         <FilterField label="Stock">
           <select name="stock" defaultValue={stock} className={FILTER_INPUT}>
-            <option value="">All</option>
-            <option value="in-stock">In stock</option>
-            <option value="low-stock">Low stock</option>
-            <option value="out-of-stock">Out of stock</option>
+            <option value="" className={OPTION}>All</option>
+            <option value="in-stock" className={OPTION}>In stock</option>
+            <option value="low-stock" className={OPTION}>Low stock</option>
+            <option value="out-of-stock" className={OPTION}>Out of stock</option>
           </select>
         </FilterField>
         <FilterField label="Offer">
           <select name="offer" defaultValue={offer} className={FILTER_INPUT}>
-            <option value="">All</option>
-            <option value="on">On offer</option>
-            <option value="off">Not discounted</option>
+            <option value="" className={OPTION}>All</option>
+            <option value="on" className={OPTION}>On offer</option>
+            <option value="off" className={OPTION}>Not discounted</option>
           </select>
         </FilterField>
         <FilterField label="Featured">
           <select name="featured" defaultValue={featured} className={FILTER_INPUT}>
-            <option value="">All</option>
-            <option value="yes">Featured</option>
-            <option value="no">Not featured</option>
+            <option value="" className={OPTION}>All</option>
+            <option value="yes" className={OPTION}>Featured</option>
+            <option value="no" className={OPTION}>Not featured</option>
           </select>
         </FilterField>
         <FilterField label="Price from">
@@ -277,6 +277,12 @@ export default async function DashboardProductsPage({
     </div>
   );
 }
+
+/* Native <select> popups take their colours from the option elements, not
+   from the select -- without these the list rendered as near-white text on
+   the OS popup's white background. Tokens, so it stays right in both the
+   light and dark dashboard themes. */
+const OPTION = "bg-ink-2 text-ivory";
 
 const FILTER_INPUT =
   "border-b border-line bg-transparent px-1 py-2 font-mono text-xs text-ivory placeholder:text-ivory-dim/70 focus:border-gold-deep focus:outline-none";

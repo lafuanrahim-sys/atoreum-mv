@@ -1,19 +1,60 @@
 import fs from "fs";
 import path from "path";
 import type { Order } from "@/lib/types";
+import { buildInvoice, formatMoney } from "@/lib/invoice";
+import { escapeTelegramHtml, sendTelegramMessage } from "@/lib/telegram";
 
 /**
- * Order notification hook for the store owner. No email service is
- * configured in this project, so this logs to the console and appends a
- * line to data/notifications.log — swap the body of this function for a
- * real email/SMS send (e.g. Resend, SendGrid) once one is wired up; nothing
- * else in the app needs to change since callers only depend on this one
- * function.
+ * Order notification hook for the store owner: a Telegram message, plus a
+ * console line and an append to data/notifications.log as a local trail.
+ *
+ * The file write is best-effort and stays that way — Vercel's filesystem is
+ * read-only, so in production it simply fails and is ignored while the
+ * Telegram send does the real work.
  */
+
+/** The message the owner actually reads, at a glance, on their phone. */
+export function renderOrderTelegramMessage(order: Order): string {
+  const invoice = buildInvoice(order);
+  const esc = escapeTelegramHtml;
+  const lines = order.items
+    .map((i) => `• ${esc(i.name)} × ${i.quantity}`)
+    .join("\n");
+
+  // Deliberately includes the GST split. The owner files these, and knowing
+  // the tax on a sale at the moment it lands is more useful than knowing it
+  // at the end of the month.
+  return [
+    `🧾 <b>New order ${esc(order.orderNumber)}</b>`,
+    "",
+    lines,
+    "",
+    `Subtotal: ${esc(formatMoney(invoice.grossSubtotal, invoice.currency))}`,
+    invoice.discount > 0 ? `Sangu: −${esc(formatMoney(invoice.discount, invoice.currency))}` : null,
+    `GST 8%: ${esc(formatMoney(invoice.gstTotal, invoice.currency))}`,
+    `<b>Total: ${esc(formatMoney(invoice.grossTotal, invoice.currency))}</b>`,
+    "",
+    `👤 ${esc(order.customer.name)}`,
+    `📞 ${esc(order.customer.phone)}`,
+    `📍 ${esc(order.customer.address)}`,
+    `💳 ${order.paymentMethod === "cash" ? "Cash on delivery" : "Bank transfer"}`,
+    "",
+    `Awaiting confirmation in the dashboard.`,
+  ]
+    .filter((l) => l !== null)
+    .join("\n");
+}
+
 export function notifyNewOrder(order: Order) {
   const line = `[${order.createdAt}] New order ${order.orderNumber} · ${order.customer.name} (${order.customer.email}, ${order.customer.phone}) · ${order.currency} ${order.subtotal.toLocaleString("en-US")} · ${order.items.length} item(s)`;
 
   console.log(line);
+
+  // Not awaited: this is called on the checkout path, and the customer should
+  // not wait on Telegram to see their confirmation page. sendTelegramMessage
+  // never rejects, so the floating promise cannot surface as an unhandled
+  // rejection.
+  void sendTelegramMessage(renderOrderTelegramMessage(order));
 
   try {
     const logPath = path.join(process.cwd(), "data", "notifications.log");

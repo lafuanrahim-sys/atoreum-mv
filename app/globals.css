@@ -929,21 +929,24 @@ button:not(:disabled),
 }
 
 /* ── Printing a tax invoice ───────────────────────────────────────────
-   Target is ONE A5 landscape sheet (210 x 148mm).
+   Target is ONE A5 landscape sheet. The @page rule that sets the paper is
+   rendered by the invoice route itself: nested in @media print Chrome parses
+   it but will not size the sheet from it, and at the top level here it would
+   force every printable page on the site onto A5.
 
-   Short, because the invoice route deliberately lives outside /dashboard.
-   Nested inside that shell it printed across three sheets whatever the CSS
-   said -- the shell is min-h-screen with fixed-position chrome, and a fixed
-   element repeats on every printed page. Moving the document out removed the
-   cause instead of papering over it.
+   The document is RE-THEMED for paper rather than printed as it appears on
+   screen. The dashboard palette is dark, and printing it put a black slab on
+   the page -- heavy on toner, poor contrast on anything but a good printer,
+   and wrong for a document that goes to MIRA and to customers. Overriding the
+   palette tokens on the invoice's own container flips the whole document to
+   ink-on-white in one place, because every colour utility in it (bg-ink,
+   text-ivory, border-line) already resolves through those variables.
 
-   The @page rule that sets the paper is rendered by the route itself, not
-   here: nested inside @media print Chrome parses it but will not size the
-   sheet from it, and hoisted to the top level here it would force every
-   printable page on the site onto A5.
-
-   The root font-size drop scales every rem-based Tailwind size (text-sm,
-   p-10, the lot) by one ratio, rather than re-specifying the document. */
+   Width is 100%, not a fixed mm figure. Pinning it to 194mm assumed the 8mm
+   margin in the @page rule, and Chrome's print dialog lets the user pick
+   "Default" margins instead -- at which point the document was wider than the
+   printable area and the right-hand TOTAL column was sliced off. Letting the
+   page box decide the width means it fits whatever margins are chosen. */
 @media print {
   body:has(.invoice-print) header,
   body:has(.invoice-print) footer,
@@ -962,29 +965,50 @@ button:not(:disabled),
     font-size: 9.5px;
   }
 
-  body:has(.invoice-print) main {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  /* Stated in mm, matching the paper: A5 landscape is 210mm wide less the
-     8mm margins. Left to the viewport width the document laid out at 1200px
-     against a ~733px page and the overflow became extra sheets. */
-  .invoice-print,
-  .invoice-document {
-    width: 194mm !important;
-    max-width: 194mm !important;
-    margin: 0 !important;
-  }
-  .invoice-document {
-    border: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* A tax invoice with its rules and totals dropped out because the browser
-     stripped backgrounds is not a document. */
   body:has(.invoice-print) {
     background: #fff !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+  body:has(.invoice-print) main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .invoice-print {
+    /* Paper palette. Descendants inherit these, so every bg-ink/text-ivory/
+       border-line in the document re-resolves to ink on white. */
+    --ink: #ffffff;
+    --ink-2: #ffffff;
+    --charcoal: #e5e5e5;
+    --ivory: #111111;
+    --ivory-dim: #555555;
+    --line: rgba(0, 0, 0, 0.22);
+    --gold: #6b5b2e;
+    --gold-deep: #6b5b2e;
+    --sand: #6b5b2e;
+    color: #111111 !important;
+  }
+  .invoice-print,
+  .invoice-document {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+  .invoice-document {
+    background: #fff !important;
+    border: 0 !important;
+    /* A hair of inside padding so figures in the last column don't sit hard
+       against the paper margin -- the totals are the first thing anyone
+       checks, and text touching the trim edge reads as a printing fault. */
+    padding: 0 2mm 0 0 !important;
+    box-shadow: none !important;
+  }
+  /* Table rules need to survive "Background graphics" being switched off in
+     the print dialog, which is the default -- borders are drawn as colour,
+     not as a background, so they do. */
+  .invoice-document th,
+  .invoice-document td {
+    border-color: rgba(0, 0, 0, 0.22) !important;
   }
 }

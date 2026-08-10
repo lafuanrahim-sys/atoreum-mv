@@ -52,6 +52,14 @@ export default function InlineDiscountField({
       <input type="hidden" name="back" value={back} />
       <div className="flex items-center gap-1">
         <input
+          // A form-filling browser extension stamps fdprocessedid="..." onto
+          // this input before React hydrates, so the server HTML and the DOM
+          // disagree on an attribute this code never wrote. Nothing here can
+          // prevent that, and the mismatch is cosmetic -- the value, the
+          // handlers and the submitted form are unaffected. Suppressing is
+          // scoped to this element's own attributes, so a real mismatch in
+          // any child would still be reported.
+          suppressHydrationWarning
           name="discountPercent"
           type="number"
           min={0}
