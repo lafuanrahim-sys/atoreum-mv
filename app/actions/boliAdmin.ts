@@ -30,14 +30,18 @@ export async function unsuspendGameAccessAction(userId: string) {
 /** Manual balance adjustment from the admin dashboard — always attributed, always a reason (BOLI_SPEC.md §6.6). */
 export async function adminAdjustBalanceAction(userId: string, delta: number, reason: string) {
   const admin = await requireAdmin();
-  if (!Number.isInteger(delta) || delta === 0) throw new Error("Adjustment must be a non-zero whole number of Boli.");
+  if (!Number.isInteger(delta) || delta === 0) throw new Error("Adjustment must be a non-zero whole number of Sangu.");
   if (Math.abs(delta) > ADMIN_ADJUSTMENT_APPROVAL_THRESHOLD) {
     throw new Error(
-      `Adjustments over ${ADMIN_ADJUSTMENT_APPROVAL_THRESHOLD.toLocaleString()} Boli need a second admin — split this into smaller adjustments.`
+      `Adjustments over ${ADMIN_ADJUSTMENT_APPROVAL_THRESHOLD.toLocaleString()} Sangu need a second admin. Split this into smaller adjustments.`
     );
   }
   await adminAdjustment({ userId, delta: BigInt(delta), adminId: admin.id, reason });
   revalidatePath("/dashboard/boli");
+  // Sangu is shown and adjusted from the customers pages too, so both have to
+  // re-render or the balance there stays stale after an adjustment.
+  revalidatePath("/dashboard/customers");
+  revalidatePath(`/dashboard/customers/${userId}`);
 }
 
 export async function setRuntimeConfigAction(key: RuntimeConfigKey, value: boolean | number) {

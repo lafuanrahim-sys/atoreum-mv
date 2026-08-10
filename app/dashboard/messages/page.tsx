@@ -33,7 +33,7 @@ export default async function DashboardMessagesPage({
         eyebrow="Inbox"
         title="Messages"
         count={inbox.length}
-        description={unread > 0 ? `Notes and suggestions sent from the contact page — ${unread} unread.` : "Notes and suggestions sent from the contact page."}
+        description={unread > 0 ? `Notes and suggestions sent from the contact page. ${unread} unread.` : "Notes and suggestions sent from the contact page."}
       />
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-line">

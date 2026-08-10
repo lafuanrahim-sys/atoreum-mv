@@ -24,7 +24,7 @@ function statusMessage(order: { status: string; paymentMethod?: string; paymentP
       "Your order is Pending Verification. We'll confirm it as soon as we've verified your bank transfer" +
       (order.paymentProofPath
         ? " and payment proof."
-        : " — if you haven't uploaded your receipt yet, you can reply to your confirmation email with it, or contact us directly.")
+        : ". If you haven't uploaded your receipt yet, you can reply to your confirmation email with it, or contact us directly.")
     );
   }
   if (order.status === "Cancelled") {

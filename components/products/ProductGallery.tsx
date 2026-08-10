@@ -29,7 +29,7 @@ export default function ProductGallery({ images, name }: { images: string[]; nam
         className="group relative aspect-square w-[min(70vh,100%)] mx-auto overflow-hidden rounded-2xl bg-photo-well outline-none"
         tabIndex={hasMultiple ? 0 : -1}
         role={hasMultiple ? "group" : undefined}
-        aria-label={hasMultiple ? `${name} — image ${activeIndex + 1} of ${images.length}` : undefined}
+        aria-label={hasMultiple ? `${name}, image ${activeIndex + 1} of ${images.length}` : undefined}
         onKeyDown={(e) => {
           if (!hasMultiple) return;
           if (e.key === "ArrowLeft") {

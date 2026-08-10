@@ -20,7 +20,7 @@ export async function GET() {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (err) {
-    // Boli not provisioned yet — chip simply doesn't render rather than erroring.
+    // Sangu not provisioned yet — chip simply doesn't render rather than erroring.
     console.error("[boli] /api/boli/balance failed:", err);
     return NextResponse.json({ loggedIn: true, balance: null }, { headers: { "Cache-Control": "no-store" } });
   }

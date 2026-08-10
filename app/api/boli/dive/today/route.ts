@@ -4,7 +4,7 @@ import { getTodaysPlay, checkDiveEligibility, hasSeenDiveIntro, getStreak } from
 import { msUntilNextMaleMidnight } from "@/lib/boli/diveEngine";
 
 /**
- * Bootstraps the Boli Dive UI on mount/reload: today's play if it already
+ * Bootstraps the Sangu Dive UI on mount/reload: today's play if it already
  * happened (so a reload shows the same settled result, never a re-roll —
  * BOLI_SPEC.md §6.4), eligibility, streak state, and the intro-card flag.
  * Never rolls anything — see POST /api/boli/dive/play for that.
@@ -38,7 +38,7 @@ export async function GET() {
   } catch (err) {
     console.error("[boli] /api/boli/dive/today failed:", err);
     return NextResponse.json(
-      { loggedIn: true, eligible: false, ineligibleReason: "Boli Dive isn't available right now — check back soon.", play: null },
+      { loggedIn: true, eligible: false, ineligibleReason: "Sangu Dive isn't available right now. Check back soon.", play: null },
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );
   }

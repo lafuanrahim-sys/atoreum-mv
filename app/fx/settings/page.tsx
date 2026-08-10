@@ -55,7 +55,7 @@ export default async function FxSettingsPage({
             required
             className="border-b border-line bg-transparent px-1 py-2 font-mono text-sm text-ivory focus:border-gold-deep focus:outline-none"
           />
-          <span className="text-[11px] text-ivory-dim/80">Today&apos;s parallel-market rate — update this each time it moves.</span>
+          <span className="text-[11px] text-ivory-dim/80">Today&apos;s parallel-market rate. Update this each time it moves.</span>
         </label>
 
         {saved === "1" && (

@@ -10,7 +10,7 @@ import OrbitArcRing from "@/components/home/OrbitArcRing";
 export default function ArcOrbitHero() {
   return (
     <section className="relative flex h-100svh w-full items-center justify-center overflow-hidden bg-ink">
-      <h1 className="sr-only">Atoreum MV — Lebelage launch in the Maldives</h1>
+      <h1 className="sr-only">Atoreum MV: Lebelage launch in the Maldives</h1>
 
       <OrbitArcRing />
 
@@ -27,7 +27,7 @@ export default function ArcOrbitHero() {
             Atoreum
           </span>
           <span className="mt-1 text-[10px] uppercase tracking-[0.35em] text-gold sm:text-xs">
-            MV — Lebelage launch
+            MV · Lebelage launch
           </span>
         </span>
       </div>

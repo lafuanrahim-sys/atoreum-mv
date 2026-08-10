@@ -54,7 +54,7 @@ export default function AdminActionButton({
         await action();
         if (toastMessage) showToast(toastMessage, "success");
       } catch (err) {
-        showToast(err instanceof Error ? err.message : "Something went wrong — try again.", "error");
+        showToast(err instanceof Error ? err.message : "Something went wrong. Try again.", "error");
       }
     });
   };

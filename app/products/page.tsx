@@ -8,7 +8,7 @@ import { getAllProducts } from "@/lib/data/products.server";
 import { getRatingSummaries } from "@/lib/data/reviews.server";
 
 export const metadata: Metadata = {
-  title: "Atoreum MV Curated Skincare — Maldives launch",
+  title: "Atoreum MV Curated Skincare | Maldives launch",
   description:
     "Discover Atoreum MV's curated Lebelage launch collection for the Maldives.",
 };

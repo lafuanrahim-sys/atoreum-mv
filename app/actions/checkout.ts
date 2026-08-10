@@ -91,14 +91,14 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
     });
   }
 
-  // Resolved once, unconditionally — not just when redeeming Boli. Account
+  // Resolved once, unconditionally — not just when redeeming Sangu. Account
   // linkage must never depend on the shipping-form email matching the
   // login email (they're allowed to differ, e.g. ordering for someone
   // else): a signed-in checkout is always attributed to the session's
   // account id, regardless of what contact email was typed.
   const currentUser = await getCurrentUser();
 
-  // Boli redemption is opt-in and account-only: the checkout form only
+  // Sangu redemption is opt-in and account-only: the checkout form only
   // renders the widget for a signed-in user, but a guest could still post
   // the field, so this is re-validated server-side regardless of what the
   // client sent (spec §6.4 — never trust the client).
@@ -106,7 +106,7 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
   let boliRedeemedAmount: number | undefined;
   let boliDiscountMvr: number | undefined;
   // Generated up front (rather than left to createOrder's own default) so
-  // the same id can be handed to the Boli ledger's redemption idempotency
+  // the same id can be handed to the Sangu ledger's redemption idempotency
   // key (`redeem:{orderId}`) before the order row itself exists — see
   // lib/data/orders.server.ts createOrder() for why this is a param.
   const orderId = `ord-${Date.now().toString(36)}-${crypto.randomBytes(3).toString("hex")}`;
@@ -114,10 +114,10 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
   if (boliRedeemRaw) {
     const amount = parseBoliAmount(boliRedeemRaw);
     if (amount === null) {
-      return { ok: false, error: "That Boli amount isn't valid." };
+      return { ok: false, error: "That Sangu amount isn't valid." };
     }
     if (!currentUser) {
-      return { ok: false, error: "Sign in to redeem Boli." };
+      return { ok: false, error: "Sign in to redeem Sangu." };
     }
     const result = await redeemForOrder({
       userId: currentUser.id,

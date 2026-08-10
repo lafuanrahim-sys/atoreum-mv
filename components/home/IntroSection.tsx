@@ -84,7 +84,7 @@ export default function IntroSection() {
           </h2>
 
           <p className="intro-focus mt-8 max-w-2xl text-base leading-relaxed text-ivory-dim md:text-lg">
-            Every formula is selected for Atoreum MV&apos;s first launch — active
+            Every formula is selected for Atoreum MV&apos;s first launch: active
             Korean ingredients, elegant textures, and formulas made to perform
             under Maldives light and humidity.
           </p>

@@ -18,7 +18,7 @@ export default async function FxExchangeListPage() {
         eyebrow="Dollar Exchange"
         title="Exchange Log"
         count={exchanges.length}
-        description="USD bought on the parallel market — every column from the source ledger."
+        description="USD bought on the parallel market, with every column from the source ledger."
         actions={
           <Link
             href="/fx/exchange/new"
@@ -98,7 +98,7 @@ export default async function FxExchangeListPage() {
           </tbody>
         </table>
       </div>
-      {exchanges.length === 0 && <p className="mt-6 text-sm text-ivory-dim">No purchases logged yet — log the first one above.</p>}
+      {exchanges.length === 0 && <p className="mt-6 text-sm text-ivory-dim">No purchases logged yet. Log the first one above.</p>}
     </div>
   );
 }

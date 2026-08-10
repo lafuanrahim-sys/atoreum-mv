@@ -62,7 +62,7 @@ export default function FxExchangeForm({
           type="number"
           step="0.01"
           defaultValue={exchange?.sellRate ?? undefined}
-          hint="Leave blank while this USD is still held — set it once it's resold to record a realized profit."
+          hint="Leave blank while this USD is still held. Set it once it's resold to record a realized profit."
         />
       </FormSection>
 
@@ -83,7 +83,7 @@ export default function FxExchangeForm({
             />
             <ComputedField
               label="Realized Profit"
-              value={exchange.realizedProfit !== null ? formatMvr(Math.abs(exchange.realizedProfit)) : "— not sold —"}
+              value={exchange.realizedProfit !== null ? formatMvr(Math.abs(exchange.realizedProfit)) : "Not sold"}
               tone={exchange.realizedProfit !== null && exchange.realizedProfit < 0 ? "loss" : "gain"}
             />
           </div>

@@ -81,13 +81,13 @@ export default function FxRateGauge({
           "No purchases logged yet."
         ) : isGain ? (
           <>
-            Buying {formatRate(ceilingRate - anchor)} under ceiling — worth{" "}
+            Buying {formatRate(ceilingRate - anchor)} under ceiling, worth{" "}
             <span className="font-mono tabular-nums text-gold-deep">MVR {formatMvr(gapValue)}</span> across the current USD
             balance.
           </>
         ) : (
           <>
-            Buying {formatRate(anchor - ceilingRate)} over ceiling — costing{" "}
+            Buying {formatRate(anchor - ceilingRate)} over ceiling, costing{" "}
             <span className="font-mono tabular-nums text-red-400">MVR {formatMvr(-gapValue)}</span> across the current USD
             balance.
           </>

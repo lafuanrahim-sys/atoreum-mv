@@ -72,7 +72,7 @@ export default function MaintenanceLogo() {
       <svg
         viewBox="70 515 625 220"
         role="img"
-        aria-label="Atoreum MV — Korean Beauty, Maldivian Soul"
+        aria-label="Atoreum MV: Korean Beauty, Maldivian Soul"
         className="w-full"
       >
         <g fill="#6c7770">

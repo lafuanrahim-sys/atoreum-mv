@@ -6,10 +6,10 @@ import { setRuntimeConfigAction, clearRuntimeConfigAction } from "@/app/actions/
 import type { RuntimeConfigRow, RuntimeConfigKey } from "@/lib/boli/runtimeConfig.server";
 
 const LABELS: Record<RuntimeConfigKey, string> = {
-  game_enabled: "Boli Dive enabled",
-  weekly_cap: "Weekly game Boli cap",
-  monthly_cap: "Monthly game Boli cap",
-  global_daily_budget: "Global daily game Boli budget",
+  game_enabled: "Sangu Dive enabled",
+  weekly_cap: "Weekly game Sangu cap",
+  monthly_cap: "Monthly game Sangu cap",
+  global_daily_budget: "Global daily game Sangu budget",
 };
 
 /** Live, no-deploy toggles for the kill switch and the three spend caps (BOLI_SPEC.md §5.5, §8). */

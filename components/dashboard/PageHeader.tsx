@@ -19,7 +19,7 @@ export default function PageHeader({
         <h1 className="mt-3 font-admin-heading text-3xl font-bold text-ivory md:text-4xl">
           {title}
           {count !== undefined && (
-            <span className="ml-3 font-mono text-lg font-normal text-ivory-dim align-middle">— {count}</span>
+            <span className="ml-3 font-mono text-lg font-normal text-ivory-dim align-middle">({count})</span>
           )}
         </h1>
         {description && <p className="mt-2 text-sm text-ivory-dim">{description}</p>}

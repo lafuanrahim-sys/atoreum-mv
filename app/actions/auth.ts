@@ -279,5 +279,5 @@ export async function adminSendPasswordResetAction(userId: string): Promise<void
 
   const resetUrl = `${await getBaseUrl()}/login?mode=reset&token=${result.resetToken}`;
   const sendResult = await sendPasswordResetEmail({ to: result.user.email, name: result.user.name, resetUrl });
-  if ("error" in sendResult) throw new Error("Couldn't send the reset email — try again.");
+  if ("error" in sendResult) throw new Error("Couldn't send the reset email. Try again.");
 }

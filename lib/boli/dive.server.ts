@@ -20,7 +20,7 @@ import {
 } from "./config";
 
 /**
- * Boli Dive orchestration — the only place that calls boli_dive_play()
+ * Sangu Dive orchestration — the only place that calls boli_dive_play()
  * (lib/boli/schema.sql). Deals the day's 9-ball board using the pure,
  * unit-tested engine (lib/boli/diveEngine.ts), then hands the board and
  * the player's 3 picks to the Postgres function, which re-derives the
@@ -45,7 +45,7 @@ export type DivePlayResult = {
   goldenMultiplier: number;
   isGolden: boolean;
   finalPayout: number;
-  chestBoli: number;
+  chestSangu: number;
   totalPayout: number;
   wasClamped: boolean;
   shieldFired: boolean;
@@ -71,7 +71,7 @@ type DivePlayRow = {
 
 function mapRow(row: DivePlayRow): DivePlayResult {
   const finalPayout = Number(row.final_payout);
-  const chestBoli = Number(row.chest_boli);
+  const chestSangu = Number(row.chest_boli);
   return {
     id: row.id,
     playDate: row.play_date,
@@ -84,8 +84,8 @@ function mapRow(row: DivePlayRow): DivePlayResult {
     goldenMultiplier: Number(row.golden_multiplier),
     isGolden: Number(row.golden_multiplier) > 1,
     finalPayout,
-    chestBoli,
-    totalPayout: finalPayout + chestBoli,
+    chestSangu,
+    totalPayout: finalPayout + chestSangu,
     wasClamped: Number(row.cap_clamped_amount) > 0,
     shieldFired: row.shield_fired,
     streakDay: row.streak_day,
@@ -97,21 +97,21 @@ export type DiveEligibility = { eligible: true } | { eligible: false; reason: st
 /** Checks everything short of "already played today" — the unlock gates from BOLI_SPEC.md §6.1. */
 export async function checkDiveEligibility(params: { userId: string; email: string }): Promise<DiveEligibility> {
   if (!(await getEffectiveGameEnabled())) {
-    return { eligible: false, reason: "Boli Dive isn't available right now — check back soon." };
+    return { eligible: false, reason: "Sangu Dive isn't available right now. Check back soon." };
   }
 
   if (isDisposableEmailDomain(params.email)) {
-    return { eligible: false, reason: "Boli Dive isn't available for this email address." };
+    return { eligible: false, reason: "Sangu Dive isn't available for this email address." };
   }
 
   // Both flags default false in this codebase (no email-verification or
   // SMS-OTP flow exists to check against — see config.ts comments); wired
   // here so flipping either on later needs no change to this function.
   if (REQUIRE_VERIFIED_EMAIL_FOR_GAME) {
-    return { eligible: false, reason: "Verify your email to unlock Boli Dive." };
+    return { eligible: false, reason: "Verify your email to unlock Sangu Dive." };
   }
   if (REQUIRE_PHONE_FOR_GAME) {
-    return { eligible: false, reason: "Verify your phone number to unlock Boli Dive." };
+    return { eligible: false, reason: "Verify your phone number to unlock Sangu Dive." };
   }
 
   const { rows } = await pool().query<{ game_access_suspended: boolean }>(
@@ -119,7 +119,7 @@ export async function checkDiveEligibility(params: { userId: string; email: stri
     [params.userId]
   );
   if (rows[0]?.game_access_suspended) {
-    return { eligible: false, reason: "Boli Dive is paused on this account pending review — contact us if you have questions." };
+    return { eligible: false, reason: "Sangu Dive is paused on this account pending review. Contact us if you have questions." };
   }
 
   return { eligible: true };
@@ -192,7 +192,7 @@ export async function playToday(params: {
     fallbackCommonPayout: DIVE_PAYOUT_TABLE.common.boli,
     gameExpiryDays: GAME_BOLI_EXPIRY_DAYS,
     streakChestDay: STREAK_CHEST_DAY,
-    streakChestBoli: STREAK_CHEST_BOLI,
+    streakChestSangu: STREAK_CHEST_BOLI,
     streakMultiplierStartDay: STREAK_MULTIPLIER_START_DAY,
     streakMultiplier: STREAK_MULTIPLIER,
     goldenMultiplier: GOLDEN_SHELL_MULTIPLIER,
@@ -218,7 +218,7 @@ export async function playToday(params: {
 
   if (params.deviceHash) {
     // Fire-and-forget-with-logging — a fraud-flag write must never break a
-    // successful play (same posture as the order-status Boli hook).
+    // successful play (same posture as the order-status Sangu hook).
     flagDeviceHashCollisionIfNeeded(params.deviceHash).catch((err) =>
       console.error("[boli] device hash flag check failed:", err)
     );
@@ -237,7 +237,7 @@ export async function dismissDiveIntro(userId: string): Promise<void> {
 }
 
 /**
- * Testing-only: deletes today's Boli Dive play and everything it credited
+ * Testing-only: deletes today's Sangu Dive play and everything it credited
  * (its game_earn/streak_chest ledger rows, its slice of the streak state,
  * its slice of the global daily budget), so the same account can roll
  * again immediately. Gated by UNLIMITED_DIVE_PLAYS_FOR_ADMINS + admin role

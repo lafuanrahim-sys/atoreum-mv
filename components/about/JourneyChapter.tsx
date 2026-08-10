@@ -190,7 +190,7 @@ export default function JourneyChapter() {
         {DISTANCE_KM.toLocaleString("en-US")} km
       </p>
       <p className="mt-3 max-w-md text-sm leading-relaxed text-ivory-dim">
-        Every formula in the collection makes this trip — packed in Korea,
+        Every formula in the collection makes this trip: packed in Korea,
         landed in Malé, delivered across the atolls.
       </p>
     </section>

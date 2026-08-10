@@ -99,7 +99,7 @@ export async function sendPasswordResetEmail(params: {
             </a>
           </p>
           <p style="font-size: 13px; color: #666;">Or paste this link into your browser:<br />${params.resetUrl}</p>
-          <p style="font-size: 13px; color: #666;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email — your password won't change.</p>
+          <p style="font-size: 13px; color: #666;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email. Your password won't change.</p>
         </div>
       `,
     });

@@ -278,6 +278,133 @@ select
   ex.profit_vs_market + tt.saved_incl_opp as total_value_created
 from ex, tt;
 
+-- =============================================================================
+-- Stock control: shipments in, physical counts, and the movement ledger that
+-- reconciles them against what the storefront has actually sold.
+--
+-- products.stock_on_hand stays the single number everything else reads (the
+-- storefront, the low-stock signal, the products table) -- it is a CACHE,
+-- the same role boli_users.boli_balance_cached plays for Sangu. The truth
+-- is stock_movements: every unit that has ever entered or left, with a
+-- reason attached. Before this, stock_on_hand was a bare integer typed in
+-- by hand with no record of why it changed, so a wrong number could only
+-- ever be re-guessed, never explained.
+--
+-- Faulty units are deliberately NOT a stock status or a separate pool: they
+-- are recorded per shipment line (qty_faulty) and simply never enter
+-- sellable stock in the first place -- only qty_good is received. That
+-- keeps "how many arrived broken, and what are they worth" answerable per
+-- shipment, per product, and in total, without ever risking a damaged unit
+-- being sold.
+-- =============================================================================
+
+create table if not exists stock_shipments (
+  id uuid primary key default gen_random_uuid(),
+  -- Supplier invoice, AWB, or whatever the store actually writes on the box.
+  reference text not null default '',
+  supplier text not null default '',
+  shipped_date date,
+  received_date date,
+  -- draft: lines are still being entered/edited, nothing has touched stock.
+  -- received: quantities have been posted to the movement ledger and are
+  -- final. The transition happens exactly once (receiveShipment()).
+  status text not null default 'draft' check (status in ('draft', 'received')),
+  notes text not null default '',
+  created_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists stock_shipments_created_idx on stock_shipments (created_at desc);
+
+create table if not exists stock_shipment_items (
+  id uuid primary key default gen_random_uuid(),
+  shipment_id uuid not null references stock_shipments (id) on delete cascade,
+  product_id text not null references products (id) on delete restrict,
+  qty_expected integer not null default 0 check (qty_expected >= 0),
+  qty_received integer not null default 0 check (qty_received >= 0),
+  qty_faulty integer not null default 0 check (qty_faulty >= 0),
+  note text not null default '',
+  -- The only quantity that ever becomes sellable stock. greatest(...,0) is a
+  -- floor for a mis-typed faulty count exceeding received; the form blocks
+  -- that case too, but the database is what actually has to hold.
+  qty_good integer generated always as (greatest(qty_received - qty_faulty, 0)) stored,
+  -- Short by this many against what the supplier was meant to send.
+  qty_short integer generated always as (greatest(qty_expected - qty_received, 0)) stored,
+  unique (shipment_id, product_id)
+);
+create index if not exists stock_shipment_items_shipment_idx on stock_shipment_items (shipment_id);
+create index if not exists stock_shipment_items_product_idx on stock_shipment_items (product_id);
+
+-- Paperwork for a shipment: supplier invoice, packing list, photos of what
+-- arrived damaged. storage_path is a key inside the PRIVATE shipment-files
+-- bucket, not a URL -- links are signed at render time and expire (see
+-- lib/storage.ts), because these carry supplier pricing.
+--
+-- Attachments stay editable after a shipment is received, unlike its
+-- quantity lines: a credit note or a damage claim usually only arrives
+-- after the box has been unpacked and posted to stock.
+create table if not exists stock_shipment_files (
+  id uuid primary key default gen_random_uuid(),
+  shipment_id uuid not null references stock_shipments (id) on delete cascade,
+  file_name text not null,
+  storage_path text not null,
+  content_type text not null default '',
+  size_bytes integer not null default 0,
+  uploaded_by text,
+  created_at timestamptz not null default now()
+);
+create index if not exists stock_shipment_files_shipment_idx on stock_shipment_files (shipment_id, created_at desc);
+
+create table if not exists stock_counts (
+  id uuid primary key default gen_random_uuid(),
+  counted_on date not null default current_date,
+  status text not null default 'draft' check (status in ('draft', 'applied')),
+  notes text not null default '',
+  created_by text,
+  created_at timestamptz not null default now(),
+  applied_at timestamptz
+);
+create index if not exists stock_counts_created_idx on stock_counts (created_at desc);
+
+-- A count only has to cover the products actually counted -- a full
+-- stocktake and a single-shelf spot check are the same shape, just a
+-- different number of rows.
+create table if not exists stock_count_items (
+  id uuid primary key default gen_random_uuid(),
+  count_id uuid not null references stock_counts (id) on delete cascade,
+  product_id text not null references products (id) on delete restrict,
+  -- What the system believed at the moment the line was entered, frozen so
+  -- the variance stays meaningful even if a sale lands mid-count.
+  system_qty integer not null,
+  counted_qty integer not null check (counted_qty >= 0),
+  variance integer generated always as (counted_qty - system_qty) stored,
+  unique (count_id, product_id)
+);
+create index if not exists stock_count_items_count_idx on stock_count_items (count_id);
+
+-- Append-only. Never updated, never deleted -- a correction is another row.
+create table if not exists stock_movements (
+  id uuid primary key default gen_random_uuid(),
+  product_id text not null references products (id) on delete cascade,
+  -- Signed: positive adds sellable stock, negative removes it.
+  delta integer not null check (delta <> 0),
+  reason text not null check (reason in (
+    'shipment_received',  -- good units from a received shipment
+    'count_adjustment',   -- reconciling to a physical count
+    'sale',               -- order reached a stock-committed status
+    'sale_reversal',      -- that order was later cancelled
+    'manual'              -- direct edit on the product form
+  )),
+  -- What caused it: 'shipment'/'count'/'order'/'product', plus that row's id.
+  source_type text not null default '',
+  source_id text not null default '',
+  note text not null default '',
+  created_by text,
+  created_at timestamptz not null default now()
+);
+create index if not exists stock_movements_product_idx on stock_movements (product_id, created_at desc);
+create index if not exists stock_movements_source_idx on stock_movements (source_type, source_id);
+
 -- -----------------------------------------------------------------------------
 -- Row Level Security. These tables are only ever queried through this app's
 -- own backend -- a direct Postgres connection as the `postgres` role (see
@@ -300,3 +427,9 @@ alter table store_settings enable row level security;
 alter table fx_settings enable row level security;
 alter table fx_exchanges enable row level security;
 alter table fx_tt_payments enable row level security;
+alter table stock_shipments enable row level security;
+alter table stock_shipment_items enable row level security;
+alter table stock_shipment_files enable row level security;
+alter table stock_counts enable row level security;
+alter table stock_count_items enable row level security;
+alter table stock_movements enable row level security;

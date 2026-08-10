@@ -11,7 +11,7 @@ import type { Order } from "@/lib/types";
  * function.
  */
 export function notifyNewOrder(order: Order) {
-  const line = `[${order.createdAt}] New order ${order.orderNumber} — ${order.customer.name} (${order.customer.email}, ${order.customer.phone}) — ${order.currency} ${order.subtotal.toLocaleString("en-US")} — ${order.items.length} item(s)`;
+  const line = `[${order.createdAt}] New order ${order.orderNumber} · ${order.customer.name} (${order.customer.email}, ${order.customer.phone}) · ${order.currency} ${order.subtotal.toLocaleString("en-US")} · ${order.items.length} item(s)`;
 
   console.log(line);
 

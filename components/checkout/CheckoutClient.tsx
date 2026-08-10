@@ -30,13 +30,13 @@ function formatBytes(bytes: number) {
  *  selection, not after a full submit round-trip. Returns an error or null. */
 function validateProof(file: File): string | null {
   if (file.size > MAX_PROOF_BYTES) {
-    return `That file is ${formatBytes(file.size)} — the limit is 8 MB. Try a screenshot instead of a full-resolution photo.`;
+    return `That file is ${formatBytes(file.size)}. The limit is 8 MB. Try a screenshot instead of a full-resolution photo.`;
   }
   const okType =
     ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"].includes(file.type) ||
     /\.(jpe?g|png|webp|heic|heif|pdf)$/i.test(file.name);
   if (!okType) {
-    return "That file type isn't supported — please upload a photo (JPG, PNG, WEBP, HEIC) or a PDF.";
+    return "That file type isn't supported. Please upload a photo (JPG, PNG, WEBP, HEIC) or a PDF.";
   }
   return null;
 }
@@ -55,7 +55,7 @@ export default function CheckoutClient({
   defaultContact,
 }: {
   bankDetails: StoreSettings;
-  /** Signed-in user's Boli redemption eligibility, resolved server-side — null for guests. This only drives whether the widget is shown; the actual redemption is re-validated server-side regardless (see app/actions/checkout.ts). */
+  /** Signed-in user's Sangu redemption eligibility, resolved server-side — null for guests. This only drives whether the widget is shown; the actual redemption is re-validated server-side regardless (see app/actions/checkout.ts). */
   boli: BoliEligibility;
   /** Signed-in user's name/email, prefilled so it naturally matches the account instead of relying on the customer retyping it correctly — null for guests. Still just a starting point; the account link itself comes from the session server-side (app/actions/checkout.ts), not from this value matching. */
   defaultContact: { name: string; email: string } | null;
@@ -99,13 +99,13 @@ export default function CheckoutClient({
   );
 
   // Live preview only — the server re-validates every part of this against
-  // the real Boli balance and re-computes the cap itself (spec §6.4, "never
+  // the real Sangu balance and re-computes the cap itself (spec §6.4, "never
   // trust the client"). Safe to import config here since lib/boli/config.ts
   // is pure data with no runtime imports.
-  const maxByCapBoli = Math.floor(subtotal * MAX_REDEMPTION_SUBTOTAL_FRACTION * REDEMPTION_BOLI_PER_MVR);
-  const maxRedeemableBoli = boli ? Math.min(boli.available, maxByCapBoli) : 0;
+  const maxByCapSangu = Math.floor(subtotal * MAX_REDEMPTION_SUBTOTAL_FRACTION * REDEMPTION_BOLI_PER_MVR);
+  const maxRedeemableSangu = boli ? Math.min(boli.available, maxByCapSangu) : 0;
   const boliRequested = Math.max(0, Math.floor(Number(boliInput) || 0));
-  const boliApplied = Math.min(boliRequested, maxRedeemableBoli);
+  const boliApplied = Math.min(boliRequested, maxRedeemableSangu);
   const boliMeetsMinimum = boliApplied >= MIN_REDEMPTION_BOLI;
   const boliDiscountMvr = boliMeetsMinimum ? boliApplied / REDEMPTION_BOLI_PER_MVR : 0;
   const total = Math.max(0, subtotal - boliDiscountMvr);
@@ -149,7 +149,7 @@ export default function CheckoutClient({
     } catch {
       // Network / transport failure (offline, request too large, timeout) —
       // without this the rejection left the button stuck on "Placing Order…".
-      setError("We couldn't reach the server. Check your connection and try again — your details are still filled in.");
+      setError("We couldn't reach the server. Check your connection and try again. Your details are still filled in.");
     } finally {
       setSubmitting(false);
     }
@@ -246,7 +246,7 @@ export default function CheckoutClient({
                 boli={boli}
                 subtotal={subtotal}
                 currency={currency ?? "MVR"}
-                maxRedeemableBoli={maxRedeemableBoli}
+                maxRedeemableSangu={maxRedeemableSangu}
                 input={boliInput}
                 onInputChange={setBoliInput}
                 applied={boliApplied}
@@ -256,7 +256,7 @@ export default function CheckoutClient({
 
               {boliMeetsMinimum && (
                 <div className="mt-4 flex justify-between text-base">
-                  <span className="text-ivory">Total after Boli</span>
+                  <span className="text-ivory">Total after Sangu</span>
                   <span className="text-gold tabular-nums">{formatPrice(total, currency ?? "MVR")}</span>
                 </div>
               )}
@@ -354,7 +354,7 @@ function Field({
 function BoliRedeemWidget({
   boli,
   currency,
-  maxRedeemableBoli,
+  maxRedeemableSangu,
   input,
   onInputChange,
   applied,
@@ -364,19 +364,19 @@ function BoliRedeemWidget({
   boli: BoliEligibility;
   subtotal: number;
   currency: string;
-  maxRedeemableBoli: number;
+  maxRedeemableSangu: number;
   input: string;
   onInputChange: (v: string) => void;
   applied: number;
   meetsMinimum: boolean;
   discountMvr: number;
 }) {
-  if (!boli) return null; // guest checkout — Boli is account-only
+  if (!boli) return null; // guest checkout — Sangu is account-only
 
   if (!boli.eligible) {
     return (
       <p className="mt-6 text-xs text-ivory-dim">
-        {boli.ineligibleReason ?? "Boli redemption isn't available on this account yet."}
+        {boli.ineligibleReason ?? "Sangu redemption isn't available on this account yet."}
       </p>
     );
   }
@@ -386,8 +386,8 @@ function BoliRedeemWidget({
   return (
     <div className="mt-6 border border-line p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-xs uppercase tracking-[0.15em] text-gold">Redeem Boli</p>
-        <p className="text-xs text-ivory-dim">{boli.available.toLocaleString()} Boli available</p>
+        <p className="text-xs uppercase tracking-[0.15em] text-gold">Redeem Sangu</p>
+        <p className="text-xs text-ivory-dim">{boli.available.toLocaleString()} Sangu available</p>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -395,31 +395,31 @@ function BoliRedeemWidget({
           type="number"
           inputMode="numeric"
           min={0}
-          max={maxRedeemableBoli}
+          max={maxRedeemableSangu}
           step={1}
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
           placeholder="0"
-          aria-label="Boli to redeem"
+          aria-label="Sangu to redeem"
           className="w-32 border border-line bg-transparent px-3 py-2 text-sm text-ivory focus:border-gold focus:outline-none"
         />
         <button
           type="button"
-          onClick={() => onInputChange(String(maxRedeemableBoli))}
+          onClick={() => onInputChange(String(maxRedeemableSangu))}
           className="text-xs uppercase tracking-[0.15em] text-gold underline underline-offset-4"
         >
-          Use max ({maxRedeemableBoli.toLocaleString()})
+          Use max ({maxRedeemableSangu.toLocaleString()})
         </button>
       </div>
 
       <p className="mt-2 text-xs text-ivory-dim">
-        Minimum {MIN_REDEMPTION_BOLI.toLocaleString()} Boli · up to {Math.round(MAX_REDEMPTION_SUBTOTAL_FRACTION * 100)}% of
+        Minimum {MIN_REDEMPTION_BOLI.toLocaleString()} Sangu · up to {Math.round(MAX_REDEMPTION_SUBTOTAL_FRACTION * 100)}% of
         this order&apos;s subtotal
       </p>
 
       {requestedButBelowMinimum && (
         <p className="mt-2 text-xs text-red-400">
-          Enter at least {MIN_REDEMPTION_BOLI.toLocaleString()} Boli, or clear the field.
+          Enter at least {MIN_REDEMPTION_BOLI.toLocaleString()} Sangu, or clear the field.
         </p>
       )}
 
@@ -428,7 +428,7 @@ function BoliRedeemWidget({
           <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
             <path d="M3 8.5l3.2 3.2L13 4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          {applied.toLocaleString()} Boli applied — {formatPrice(discountMvr, currency)} off
+          {applied.toLocaleString()} Sangu applied · {formatPrice(discountMvr, currency)} off
         </p>
       )}
     </div>
@@ -533,7 +533,7 @@ function PaymentStep({
               <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.2" />
               <path d="M8 5v3.5M8 10.8v.7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
             </svg>
-            Please have the exact amount ready before delivery — our courier may not carry change.
+            Please have the exact amount ready before delivery. Our courier may not carry change.
           </p>
         </div>
       )}
@@ -639,7 +639,7 @@ function ProofUpload({
               <svg viewBox="0 0 12 12" aria-hidden="true" className="h-3 w-3">
                 <path d="M2 6.5L4.8 9 10 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              {formatBytes(file.size)} — attached
+              {formatBytes(file.size)} · attached
             </p>
           </div>
           <button
@@ -677,7 +677,7 @@ function ProofUpload({
             Drop your receipt here, or <span className="text-gold underline underline-offset-4">browse</span>
           </span>
           <span className="text-xs text-ivory-dim">
-            Screenshot or photo of the transfer — JPG, PNG, WEBP, HEIC, or PDF, up to 8 MB
+            Screenshot or photo of the transfer: JPG, PNG, WEBP, HEIC, or PDF, up to 8 MB
           </span>
         </button>
       )}

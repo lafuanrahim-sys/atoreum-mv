@@ -127,7 +127,7 @@ export default async function DashboardOrderDetailPage({
           ) : (
             <p className="mt-3 text-sm text-ivory-dim">
               {paymentMethod === "cash"
-                ? "Not applicable — payment is collected in cash on delivery."
+                ? "Not applicable. Payment is collected in cash on delivery."
                 : "No proof uploaded yet."}
             </p>
           )}

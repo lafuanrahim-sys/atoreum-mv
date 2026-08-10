@@ -81,7 +81,7 @@ export default async function DashboardReviewsPage() {
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">
-          Pending Approval — {pending.length}
+          Pending Approval ({pending.length})
         </h2>
         {pending.length > 1 && (
           <AdminActionButton
@@ -100,7 +100,7 @@ export default async function DashboardReviewsPage() {
         )}
       </div>
       {pending.length === 0 ? (
-        <p className="mt-3 text-sm text-ivory-dim">Nothing waiting — all caught up.</p>
+        <p className="mt-3 text-sm text-ivory-dim">Nothing waiting. All caught up.</p>
       ) : (
         <ul className="mt-4 flex flex-col border-t border-line">
           {pending.map((r) => (
@@ -110,7 +110,7 @@ export default async function DashboardReviewsPage() {
       )}
 
       <h2 className="mt-12 font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">
-        Published — {approved.length}
+        Published ({approved.length})
       </h2>
       {approved.length === 0 ? (
         <p className="mt-3 text-sm text-ivory-dim">No published reviews yet.</p>

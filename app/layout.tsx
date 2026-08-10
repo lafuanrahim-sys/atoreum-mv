@@ -66,7 +66,7 @@ const marcellusSC = Marcellus_SC({
 });
 
 export const metadata: Metadata = {
-  title: "Atoreum MV — Lebelage launch in the Maldives",
+  title: "Atoreum MV | Lebelage launch in the Maldives",
   description:
     "Atoreum MV introduces Lebelage to the Maldives with premium Korean skincare curated for island life.",
 };

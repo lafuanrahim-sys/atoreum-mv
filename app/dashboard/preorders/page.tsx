@@ -67,7 +67,7 @@ export default async function DashboardPreOrdersPage() {
             {preorders.length === 0 && (
               <tr>
                 <td colSpan={7} className="py-6 text-sm text-ivory-dim">
-                  No pre-orders waiting — all caught up.
+                  No pre-orders waiting. All caught up.
                 </td>
               </tr>
             )}

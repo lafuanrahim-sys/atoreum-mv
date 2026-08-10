@@ -116,7 +116,7 @@ export default function ContactClient({ sent, error }: { sent: boolean; error: b
             Contact
           </p>
           <h1 className="contact-title mt-6 font-display text-4xl leading-[1.15] text-ivory md:text-5xl">
-            <WordMask text="Write us a note — we're listening." />
+            <WordMask text="Write us a note. We're listening." />
           </h1>
 
           <p data-reveal className="mt-6 flex items-center gap-3 text-sm text-ivory-dim">
@@ -125,7 +125,7 @@ export default function ContactClient({ sent, error }: { sent: boolean; error: b
               <span className="relative inline-flex h-2 w-2 rounded-full bg-gold" />
             </span>
             {maleTime ? (
-              <>It&apos;s {maleTime} in Malé — we reply within the day.</>
+              <>It&apos;s {maleTime} in Malé, and we reply within the day.</>
             ) : (
               <>We reply from Malé within the day.</>
             )}
@@ -170,7 +170,7 @@ export default function ContactClient({ sent, error }: { sent: boolean; error: b
             </p>
             <div className="mt-8 border-t border-line pt-4 text-sm">
               <p className={name ? "text-ivory" : "text-ivory-dim/60"}>
-                — {name || "Your name"}
+                From {name || "Your name"}
               </p>
               <p className={`mt-1 tabular-nums ${phone ? "text-ivory-dim" : "text-ivory-dim/60"}`}>
                 {phone || "+960 · · · · · · ·"}
@@ -210,7 +210,7 @@ export default function ContactClient({ sent, error }: { sent: boolean; error: b
             <div className="border border-line p-8 md:p-10">
               <p className="text-xs uppercase tracking-[0.3em] text-gold">Message sent</p>
               <h2 className="mt-4 font-display text-2xl text-ivory">
-                Thank you — we&apos;ve received your note.
+                Thank you. We&apos;ve received your note.
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-ivory-dim">
                 We&apos;ll get back to you on the number you left. For anything urgent,

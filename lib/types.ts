@@ -91,14 +91,14 @@ export type Order = {
   /**
    * The signed-in account that placed this order, if any — set once at
    * checkout from the session, independent of whatever contact email was
-   * typed into the shipping form. Account linkage (My Orders, Boli
+   * typed into the shipping form. Account linkage (My Orders, Sangu
    * earning) should always prefer this over matching `customer.email`,
    * which is just delivery contact info and may legitimately differ from
    * the account's login email. Absent on guest checkouts and on every
    * order placed before this field existed.
    */
   userId?: string;
-  /** Cart subtotal BEFORE any Boli discount — this is the base the 30%-of-subtotal redemption cap and the purchase-Boli earn rate are both computed against. Orders predating Boli have no discount and this is the full charged amount. */
+  /** Cart subtotal BEFORE any Sangu discount — this is the base the 30%-of-subtotal redemption cap and the purchase-Sangu earn rate are both computed against. Orders predating Sangu have no discount and this is the full charged amount. */
   subtotal: number;
   currency: Currency;
   customer: OrderCustomer;
@@ -108,10 +108,10 @@ export type Order = {
   paymentProofPath: string | null;
   status: OrderStatus;
   /**
-   * Boli redemption applied at checkout, if any — a receipt of what the
-   * Boli ledger (Supabase) already recorded, not itself a balance. The
+   * Sangu redemption applied at checkout, if any — a receipt of what the
+   * Sangu ledger (Supabase) already recorded, not itself a balance. The
    * amount actually charged is `subtotal - boliDiscountAmount`. Absent on
-   * orders that redeemed nothing (including every order placed before Boli
+   * orders that redeemed nothing (including every order placed before Sangu
    * existed).
    */
   boliRedeemed?: number;

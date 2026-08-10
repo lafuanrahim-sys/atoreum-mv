@@ -18,7 +18,7 @@ export default async function FxTtListPage() {
         eyebrow="Dollar Exchange"
         title="TT Log"
         count={payments.length}
-        description="TT payments where Bank of Maldives covers part of the transfer in dollars, at its own rate — every column from the source ledger."
+        description="TT payments where Bank of Maldives covers part of the transfer in dollars, at its own rate, with every column from the source ledger."
         actions={
           <Link
             href="/fx/tt/new"
@@ -85,7 +85,7 @@ export default async function FxTtListPage() {
           </tbody>
         </table>
       </div>
-      {payments.length === 0 && <p className="mt-6 text-sm text-ivory-dim">No TTs logged yet — log the first one above.</p>}
+      {payments.length === 0 && <p className="mt-6 text-sm text-ivory-dim">No TTs logged yet. Log the first one above.</p>}
     </div>
   );
 }

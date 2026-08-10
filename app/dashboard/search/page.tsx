@@ -76,7 +76,7 @@ export default async function DashboardSearchPage({
 
       {products.length > 0 && (
         <section className="mt-10">
-          <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Products — {products.length}</h2>
+          <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Products ({products.length})</h2>
           <ul className="mt-3 flex flex-col border-t border-line">
             {products.map((p) => (
               <li key={p.id}>
@@ -97,7 +97,7 @@ export default async function DashboardSearchPage({
 
       {orders.length > 0 && (
         <section className="mt-10">
-          <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Orders — {orders.length}</h2>
+          <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Orders ({orders.length})</h2>
           <ul className="mt-3 flex flex-col border-t border-line">
             {orders.map((o) => (
               <li key={o.id}>
@@ -106,7 +106,7 @@ export default async function DashboardSearchPage({
                   className="flex items-center justify-between border-b border-line py-3 text-sm transition-colors hover:text-gold-deep"
                 >
                   <span className="font-mono text-ivory">
-                    {o.orderNumber} <span className="font-sans text-ivory-dim">— {o.customer.name}</span>
+                    {o.orderNumber} <span className="font-sans text-ivory-dim">· {o.customer.name}</span>
                   </span>
                   <span className="font-mono text-xs tabular-nums text-ivory-dim">{formatPrice(o.subtotal, o.currency)}</span>
                 </Link>
@@ -118,7 +118,7 @@ export default async function DashboardSearchPage({
 
       {customers.length > 0 && (
         <section className="mt-10">
-          <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Customers — {customers.length}</h2>
+          <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Customers ({customers.length})</h2>
           <ul className="mt-3 flex flex-col border-t border-line">
             {customers.map((u) => (
               <li key={u.id}>

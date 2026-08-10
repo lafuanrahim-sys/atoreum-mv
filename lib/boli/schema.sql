@@ -24,6 +24,25 @@
 
 create extension if not exists pgcrypto; -- gen_random_uuid(), digest()
 
+-- Every function below pins `set search_path = public, extensions` rather
+-- than the bare `public` an earlier Supabase-security-linter fix used. The
+-- linter wants a pinned (non-mutable) search_path, which `public` alone
+-- satisfies -- but WHERE pgcrypto lives differs by environment, and pinning
+-- it out of reach silently broke digest() inside boli_ledger_write() on
+-- production only: a local `create extension pgcrypto` installs into public
+-- (so `public` alone still resolved digest, and every local test passed),
+-- while Supabase installs it into a dedicated `extensions` schema (so
+-- digest() resolved to nothing and EVERY ledger write -- dive payouts,
+-- purchase earn, redemptions, admin adjustments -- threw
+-- "No function matches the given name and argument types").
+--
+-- Listing both keeps the search_path just as pinned (the linter's actual
+-- security property) while resolving pgcrypto wherever it happens to be
+-- installed. A search_path entry naming a schema that doesn't exist is
+-- silently ignored by Postgres, so `extensions` is harmless on a local
+-- database that has no such schema.
+
+
 -- -----------------------------------------------------------------------------
 -- 1. boli_users — 1:1 extension of the existing (JSON-file) user record.
 -- -----------------------------------------------------------------------------
@@ -240,7 +259,7 @@ create or replace function boli_ledger_write(
   p_admin_reason text default null
 ) returns boli_ledger
 language plpgsql
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_prev_hash text;
@@ -325,7 +344,7 @@ $$;
 create or replace function boli_spendable_lots(p_user_id text)
 returns table (ledger_id uuid, remaining bigint, expires_at timestamptz)
 language sql stable
-set search_path = public
+set search_path = public, extensions
 as $$
   with credits as (
     select id, delta, expires_at,
@@ -355,7 +374,7 @@ create or replace function boli_redeem(
   p_mvr_value numeric
 ) returns boli_ledger
 language plpgsql
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_true_balance bigint;
@@ -413,7 +432,7 @@ $$;
 create or replace function boli_expire_user(p_user_id text)
 returns integer
 language plpgsql
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_lot record;
@@ -489,7 +508,7 @@ create or replace function boli_dive_play(
   p_config jsonb
 ) returns boli_dive_plays
 language plpgsql
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_streak boli_streaks;
@@ -631,9 +650,15 @@ begin
   v_month_start := date_trunc('month', p_play_date)::date;
   v_month_end := (date_trunc('month', p_play_date) + interval '1 month' - interval '1 day')::date;
 
-  select coalesce(sum(final_payout + chest_boli), 0) into v_weekly_used
+  -- Deliberately sums final_payout ONLY, not chest_boli: the day-7 streak
+  -- chest sits outside the weekly/monthly caps entirely (see below), so it
+  -- must not consume the headroom those caps allow for dive payouts either.
+  -- Counting it here would make the exemption half-real -- the chest would
+  -- be paid in full, then quietly take 100 off what the rest of the week
+  -- could win.
+  select coalesce(sum(final_payout), 0) into v_weekly_used
     from boli_dive_plays where user_id = p_user_id and play_date >= v_week_start and play_date <= v_week_end;
-  select coalesce(sum(final_payout + chest_boli), 0) into v_monthly_used
+  select coalesce(sum(final_payout), 0) into v_monthly_used
     from boli_dive_plays where user_id = p_user_id and play_date >= v_month_start and play_date <= v_month_end;
 
   v_remaining_weekly := greatest(0, (p_config ->> 'weeklyCap')::bigint - v_weekly_used);
@@ -643,8 +668,23 @@ begin
   v_remaining_weekly := v_remaining_weekly - v_dive_payout;
   v_remaining_monthly := v_remaining_monthly - v_dive_payout;
 
+  -- The streak chest is EXEMPT from the weekly and monthly caps: it pays in
+  -- full whenever day streakChestDay is reached.
+  --
+  -- It used to be clamped by whatever cap room was left, which produced the
+  -- exact opposite of what the chest is for -- a player who finished a
+  -- 7-day streak AND hit a big win on the last day had the win eat all the
+  -- remaining headroom, leaving the chest to pay 0. The one outcome the
+  -- streak exists to reward was the one guaranteed to cancel it. Finishing
+  -- a streak is now always worth streakChestBoli, whatever else happened
+  -- that week.
+  --
+  -- The cost of the exemption is bounded and small: at most one chest per
+  -- streakChestDay days per player (about +400 Sangu / MVR 4 per player per
+  -- month at the current settings). The store-wide daily budget below still
+  -- applies to it, so the emergency brake is unaffected.
   if v_chest_fires then
-    v_chest_payout := least((p_config ->> 'streakChestBoli')::bigint, v_remaining_weekly, v_remaining_monthly);
+    v_chest_payout := (p_config ->> 'streakChestBoli')::bigint;
   end if;
 
   -- Store-wide daily budget — locked independently of any single user, so
@@ -660,6 +700,13 @@ begin
     -- room is left) and drop the chest entirely for the rest of the day.
     -- The spec doesn't spell out the chest/budget interaction — this is
     -- the conservative reading. BOLI-ASSUMPTION.
+    --
+    -- The chest's exemption from the per-player weekly/monthly caps above
+    -- deliberately does NOT extend to here. Those caps shape one player's
+    -- normal week; this is the store-wide circuit breaker for a day that
+    -- has already issued an abnormal amount of Sangu, and an emergency
+    -- brake that carves out exceptions isn't a brake. Reaching it needs
+    -- roughly the entire active player base to max out on the same day.
     v_dive_payout := least(v_fallback_common, v_remaining_weekly + v_dive_payout);
     v_chest_payout := 0;
   end if;

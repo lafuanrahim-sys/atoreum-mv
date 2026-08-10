@@ -12,13 +12,13 @@ import {
 } from "./config";
 
 /**
- * The Boli ledger service. Every balance-affecting write goes through one of
+ * The Sangu ledger service. Every balance-affecting write goes through one of
  * the exported functions below, which call the Postgres functions in
  * lib/boli/schema.sql via a direct connection (see lib/boli/db.ts) — never
  * insert into boli_ledger directly from anywhere else in the app. Those
  * Postgres functions hold the row lock, assign the hash-chain link, and
  * update the cached balance atomically; this file is a thin, typed wrapper
- * plus the Boli-specific business rules (earn formula, tier lookup,
+ * plus the Sangu-specific business rules (earn formula, tier lookup,
  * redemption pre-checks) that don't need to live in SQL.
  */
 
@@ -90,17 +90,17 @@ export function getTier(lifetimeEarned: bigint): BoliTier {
   return "faru";
 }
 
-/** The exact formula creditPurchaseEarn() applies, exposed standalone so the account page can show "Pending" orders their expected Boli before they're actually credited (BOLI_SPEC.md §4.2). Pure math, no I/O — the real credit still only ever happens through creditPurchaseEarn(). */
+/** The exact formula creditPurchaseEarn() applies, exposed standalone so the account page can show "Pending" orders their expected Sangu before they're actually credited (BOLI_SPEC.md §4.2). Pure math, no I/O — the real credit still only ever happens through creditPurchaseEarn(). */
 export function estimatePurchaseEarn(orderSubtotalMvr: number, boliDiscountMvr: number, tier: BoliTier): number {
   const eligibleMvr = Math.max(0, orderSubtotalMvr - boliDiscountMvr);
-  const baseBoli = Math.floor(eligibleMvr / PURCHASE_EARN_PER_MVR) * PURCHASE_EARN_BOLI;
-  return Math.floor(baseBoli * TIER_MULTIPLIER[tier]);
+  const baseSangu = Math.floor(eligibleMvr / PURCHASE_EARN_PER_MVR) * PURCHASE_EARN_BOLI;
+  return Math.floor(baseSangu * TIER_MULTIPLIER[tier]);
 }
 
 /**
  * Parse a raw, untrusted redemption-amount input (form field, JSON body...)
  * into a positive integer bigint, or null if it's anything else — not a
- * digit string, zero, negative, fractional, or too large to be a sane Boli
+ * digit string, zero, negative, fractional, or too large to be a sane Sangu
  * amount. Spec §6.4: "Reject non-integers, negatives and overflow explicitly."
  */
 export function parseBoliAmount(raw: unknown): bigint | null {
@@ -190,7 +190,7 @@ export async function listLedger(userId: string, opts: { limit?: number; offset?
   return { entries: rows.slice(0, limit), hasMore: rows.length > limit };
 }
 
-/** Boli currently within EXPIRY_WARNING_WINDOW_DAYS of expiring — sum of `remaining` from still-live lots whose expiry falls in that window. */
+/** Sangu currently within EXPIRY_WARNING_WINDOW_DAYS of expiring — sum of `remaining` from still-live lots whose expiry falls in that window. */
 export async function getExpiringSoon(userId: string, withinDays: number): Promise<bigint> {
   const cutoff = addDays(new Date(), withinDays).toISOString();
   const { rows } = await pool().query<{ ledger_id: string; remaining: string; expires_at: string | null }>(
@@ -208,7 +208,7 @@ export async function getExpiringSoon(userId: string, withinDays: number): Promi
 // ---------------------------------------------------------------------------
 
 /**
- * Credits the Boli an order earned, once — safe to call more than once for
+ * Credits the Sangu an order earned, once — safe to call more than once for
  * the same order (idempotency key is `order:{orderId}:delivered`; a retried
  * call is a no-op). `orderSubtotal` and `boliDiscountAmount` are both in
  * MVR; earning excludes shipping (never in `subtotal` to begin with) and
@@ -222,12 +222,12 @@ export async function creditPurchaseEarn(params: {
 }): Promise<BoliLedgerEntry | null> {
   const { lifetimeEarned } = await getBalance(params.userId);
   const tier = getTier(lifetimeEarned);
-  const finalBoli = estimatePurchaseEarn(params.orderSubtotalMvr, params.boliDiscountMvr, tier);
-  if (finalBoli <= 0) return null;
+  const finalSangu = estimatePurchaseEarn(params.orderSubtotalMvr, params.boliDiscountMvr, tier);
+  if (finalSangu <= 0) return null;
 
   return ledgerWrite({
     userId: params.userId,
-    delta: BigInt(finalBoli),
+    delta: BigInt(finalSangu),
     reason: "purchase_earn",
     sourceType: "order",
     sourceId: params.orderId,
@@ -238,7 +238,7 @@ export async function creditPurchaseEarn(params: {
 
 /**
  * Reverses everything a single order did to the ledger, on cancellation or
- * refund (spec §6.2): claws back Boli it earned, and returns Boli it spent.
+ * refund (spec §6.2): claws back Sangu it earned, and returns Sangu it spent.
  * Both halves are independently idempotent and safe to call even if only
  * one of them ever happened for this order.
  */
@@ -316,17 +316,17 @@ export async function redeemForOrder(params: {
   boliAmount: bigint;
   orderSubtotalMvr: number;
 }): Promise<RedeemResult> {
-  if (params.boliAmount <= BigInt(0)) return { ok: false, error: "Redemption amount must be a positive whole number of Boli." };
+  if (params.boliAmount <= BigInt(0)) return { ok: false, error: "Redemption amount must be a positive whole number of Sangu." };
 
   if (params.boliAmount < BigInt(MIN_REDEMPTION_BOLI)) {
-    return { ok: false, error: `Minimum redemption is ${MIN_REDEMPTION_BOLI.toLocaleString()} Boli.` };
+    return { ok: false, error: `Minimum redemption is ${MIN_REDEMPTION_BOLI.toLocaleString()} Sangu.` };
   }
 
-  const maxAllowedBoli = Math.floor(params.orderSubtotalMvr * MAX_REDEMPTION_SUBTOTAL_FRACTION * REDEMPTION_BOLI_PER_MVR);
-  if (params.boliAmount > BigInt(maxAllowedBoli)) {
+  const maxAllowedSangu = Math.floor(params.orderSubtotalMvr * MAX_REDEMPTION_SUBTOTAL_FRACTION * REDEMPTION_BOLI_PER_MVR);
+  if (params.boliAmount > BigInt(maxAllowedSangu)) {
     return {
       ok: false,
-      error: `You can redeem at most ${Math.round(MAX_REDEMPTION_SUBTOTAL_FRACTION * 100)}% of this order's subtotal in Boli (${maxAllowedBoli.toLocaleString()} Boli max).`,
+      error: `You can redeem at most ${Math.round(MAX_REDEMPTION_SUBTOTAL_FRACTION * 100)}% of this order's subtotal in Sangu (${maxAllowedSangu.toLocaleString()} Sangu max).`,
     };
   }
 

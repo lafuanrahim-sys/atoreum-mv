@@ -25,9 +25,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const product = await getProductById(id);
-  if (!product) return { title: "Product not found — Atoreum MV" };
+  if (!product) return { title: "Product not found | Atoreum MV" };
   return {
-    title: `${product.name} — Atoreum MV`,
+    title: `${product.name} | Atoreum MV`,
     description: product.description,
   };
 }

@@ -11,17 +11,17 @@ import { flagRefundPatternIfNeeded } from "@/lib/boli/fraud.server";
 import type { OrderStatus } from "@/lib/types";
 
 /**
- * Boli purchase-credit (on the order's first transition to "Completed" —
+ * Sangu purchase-credit (on the order's first transition to "Completed" —
  * this codebase's equivalent of the spec's "delivered", see
  * lib/boli/schema.sql header) and refund clawback (on transition to
  * "Cancelled") both hang off this one function, since it's the only place
  * order.status is ever written (see lib/data/orders.server.ts,
  * updateOrderStatus — grepped repo-wide, nothing else calls it).
  *
- * Deliberately fire-and-forget-with-logging, not fire-and-block: a Boli
+ * Deliberately fire-and-forget-with-logging, not fire-and-block: a Sangu
  * ledger failure (e.g. Supabase not yet provisioned — see docs/BOLI_SPEC.md)
  * must never prevent an admin from managing orders, which is core store
- * functionality that predates and doesn't depend on Boli.
+ * functionality that predates and doesn't depend on Sangu.
  */
 async function runBoliHook(orderId: string, previousStatus: OrderStatus, nextStatus: OrderStatus) {
   if (previousStatus === nextStatus) return; // no real transition — nothing to do
@@ -35,7 +35,7 @@ async function runBoliHook(orderId: string, previousStatus: OrderStatus, nextSta
     // email. Falls back to email match for orders placed before userId
     // existed.
     const user = (order.userId ? await getUserById(order.userId) : null) ?? (await getUserByEmail(order.customer.email));
-    if (!user) return; // guest checkout, no account — Boli is account-only
+    if (!user) return; // guest checkout, no account — Sangu is account-only
 
     if (nextStatus === "Completed" && previousStatus !== "Completed") {
       await creditPurchaseEarn({
@@ -52,7 +52,7 @@ async function runBoliHook(orderId: string, previousStatus: OrderStatus, nextSta
       if (clawback) await flagRefundPatternIfNeeded(user.id);
     }
   } catch (err) {
-    // Never let a Boli failure block order management — log loudly and move on.
+    // Never let a Sangu failure block order management — log loudly and move on.
     console.error(`[boli] order status hook failed for ${orderId} (${previousStatus} -> ${nextStatus}):`, err);
   }
 }

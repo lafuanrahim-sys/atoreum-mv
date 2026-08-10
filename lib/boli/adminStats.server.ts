@@ -1,17 +1,20 @@
 import { pool } from "./db";
 import { getUserById } from "@/lib/data/users.server";
 import { getEffectiveCaps } from "./runtimeConfig.server";
+import { getTier } from "./ledger.server";
 import {
   ALERT_GLOBAL_BUDGET_PCT,
   ALERT_WEEKLY_CAP_PCT,
   ALERT_REDEMPTION_SPIKE_MULTIPLIER,
   ALERT_DEVICE_COLLISION_COUNT,
   BOLI_TO_MVR,
+  TIER_MULTIPLIER,
+  type BoliTier,
 } from "./config";
 import { maleDateString } from "./diveEngine";
 
 /**
- * Aggregation queries for the admin Boli dashboard (BOLI_SPEC.md §8).
+ * Aggregation queries for the admin Sangu dashboard (BOLI_SPEC.md §8).
  * Everything here is a read — mutations (resolving a fraud flag, adjusting
  * a balance) live in lib/boli/fraud.server.ts / ledger.server.ts and
  * app/actions/boliAdmin.ts.
@@ -117,7 +120,7 @@ export type TopGameEarner = {
   userId: string;
   name: string;
   email: string;
-  gameBoli: number;
+  gameSangu: number;
   deviceCollisionCount: number;
 };
 
@@ -161,12 +164,92 @@ export async function getTopGameEarners(limit = 20): Promise<TopGameEarner[]> {
         userId: row.user_id,
         name: user?.name ?? "Unknown",
         email: user?.email ?? row.user_id,
-        gameBoli: Number(row.game_boli),
+        gameSangu: Number(row.game_boli),
         deviceCollisionCount: Number(row.collision_count),
       };
     })
   );
 }
+
+export type SanguUserStats = {
+  balance: number;
+  /** Lifetime PURCHASE-earned only -- what tier progression is measured on. Game winnings and admin credits deliberately don't count (see boli_ledger_write()). */
+  lifetimeEarned: number;
+  /** Everything ever credited, from any source, so "accumulated" reads as the customer would understand it. */
+  totalEarned: number;
+  /** Net redeemed at checkout: redemptions, less any returned when an order was cancelled. */
+  spent: number;
+  tier: BoliTier;
+  tierMultiplier: number;
+  /** Sangu Dive suspended pending fraud review -- surfaced so the customer page can offer to restore it. */
+  gameAccessSuspended: boolean;
+};
+
+/**
+ * Sangu figures for many users in one round trip. Built for the customers
+ * table, which would otherwise issue a getBalance() per row.
+ */
+export async function getSanguStatsForUsers(userIds: string[]): Promise<Map<string, SanguUserStats>> {
+  const out = new Map<string, SanguUserStats>();
+  if (userIds.length === 0) return out;
+
+  const { rows } = await pool().query<{
+    user_id: string;
+    balance: string;
+    lifetime_earned: string;
+    total_earned: string;
+    redeemed: string;
+    returned: string;
+    game_access_suspended: boolean;
+  }>(
+    `select u.user_id,
+            u.game_access_suspended,
+            u.boli_balance_cached as balance,
+            u.boli_lifetime_earned as lifetime_earned,
+            coalesce(l.total_earned, 0) as total_earned,
+            coalesce(l.redeemed, 0) as redeemed,
+            coalesce(l.returned, 0) as returned
+       from boli_users u
+       left join (
+         select user_id,
+                sum(case when delta > 0 then delta else 0 end) as total_earned,
+                sum(case when reason = 'redemption' then -delta else 0 end) as redeemed,
+                sum(case when reason = 'redemption_reversal' then delta else 0 end) as returned
+           from boli_ledger
+          group by user_id
+       ) l on l.user_id = u.user_id
+      where u.user_id = any($1::text[])`,
+    [userIds]
+  );
+
+  for (const r of rows) {
+    const lifetimeEarned = Number(r.lifetime_earned);
+    const tier = getTier(BigInt(lifetimeEarned));
+    const balance = Number(r.balance);
+    out.set(r.user_id, {
+      // Mirrors getBalance()'s displayBalance: a negative cached balance
+      // (possible mid-reversal) is never shown as negative.
+      balance: balance < 0 ? 0 : balance,
+      lifetimeEarned,
+      totalEarned: Number(r.total_earned),
+      spent: Math.max(0, Number(r.redeemed) - Number(r.returned)),
+      tier,
+      tierMultiplier: TIER_MULTIPLIER[tier],
+      gameAccessSuspended: Boolean(r.game_access_suspended),
+    });
+  }
+  return out;
+}
+
+export const EMPTY_SANGU_STATS: SanguUserStats = {
+  balance: 0,
+  lifetimeEarned: 0,
+  totalEarned: 0,
+  spent: 0,
+  tier: "faru",
+  tierMultiplier: TIER_MULTIPLIER.faru,
+  gameAccessSuspended: false,
+};
 
 export type FraudFlagRow = {
   id: string;
@@ -232,7 +315,7 @@ export async function getBoliAlerts(): Promise<BoliAlert[]> {
   if (caps.globalDailyBudget > 0 && globalUsed / caps.globalDailyBudget >= ALERT_GLOBAL_BUDGET_PCT) {
     alerts.push({
       severity: globalUsed >= caps.globalDailyBudget ? "critical" : "warning",
-      message: `Global daily Boli Dive budget at ${Math.round((globalUsed / caps.globalDailyBudget) * 100)}% (${globalUsed.toLocaleString()} / ${caps.globalDailyBudget.toLocaleString()}) today.`,
+      message: `Global daily Sangu Dive budget at ${Math.round((globalUsed / caps.globalDailyBudget) * 100)}% (${globalUsed.toLocaleString()} / ${caps.globalDailyBudget.toLocaleString()}) today.`,
     });
   }
 
@@ -250,7 +333,7 @@ export async function getBoliAlerts(): Promise<BoliAlert[]> {
   if (weeklyRows.length > 0) {
     alerts.push({
       severity: "warning",
-      message: `${weeklyRows.length} account(s) at ${Math.round(ALERT_WEEKLY_CAP_PCT * 100)}%+ of the weekly Boli Dive cap this week.`,
+      message: `${weeklyRows.length} account(s) at ${Math.round(ALERT_WEEKLY_CAP_PCT * 100)}%+ of the weekly Sangu Dive cap this week.`,
     });
   }
 
@@ -271,7 +354,7 @@ export async function getBoliAlerts(): Promise<BoliAlert[]> {
   if (trailingAvgDaily > 0 && todayRedeemed >= trailingAvgDaily * ALERT_REDEMPTION_SPIKE_MULTIPLIER) {
     alerts.push({
       severity: "warning",
-      message: `Redemption today (${todayRedeemed.toLocaleString()} Boli) is ${(todayRedeemed / trailingAvgDaily).toFixed(1)}x the trailing 30-day daily average.`,
+      message: `Redemption today (${todayRedeemed.toLocaleString()} Sangu) is ${(todayRedeemed / trailingAvgDaily).toFixed(1)}x the trailing 30-day daily average.`,
     });
   }
 
@@ -286,7 +369,7 @@ export async function getBoliAlerts(): Promise<BoliAlert[]> {
   if (collisionRows.length > 0) {
     alerts.push({
       severity: "warning",
-      message: `${collisionRows.length} device(s) shared by ${ALERT_DEVICE_COLLISION_COUNT}+ accounts — review the fraud queue.`,
+      message: `${collisionRows.length} device(s) shared by ${ALERT_DEVICE_COLLISION_COUNT}+ accounts. Review the fraud queue.`,
     });
   }
 

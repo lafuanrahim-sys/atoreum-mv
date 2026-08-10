@@ -12,7 +12,7 @@ import type { DivePlayResult } from "@/lib/boli/dive.server";
 import { DIVE_GRID_SIZE, DIVE_PICK_COUNT, DIVE_PAYOUT_TABLE, type DiveOutcomeTier } from "@/lib/boli/config";
 
 /**
- * Boli Dive — 9 balls, pick DIVE_PICK_COUNT blind, then everything opens
+ * Sangu Dive — 9 balls, pick DIVE_PICK_COUNT blind, then everything opens
  * at once: match 2+ of your picks on the same tier and you win that
  * tier's value (all 3 matching pays a bonus); pick 3 different tiers and
  * you're paid on the lowest of them — never zero. All server state; this
@@ -311,7 +311,7 @@ export default function BoliDiveGame({
         if (cancelled || !data.loggedIn) return;
         preRollStreakRef.current = data.streak?.currentStreak ?? 0;
         if (!data.eligible) {
-          setIneligibleReason(data.ineligibleReason ?? "Boli Dive isn't available right now.");
+          setIneligibleReason(data.ineligibleReason ?? "Sangu Dive isn't available right now.");
           setPhase("ineligible");
           return;
         }
@@ -415,11 +415,11 @@ export default function BoliDiveGame({
       setBoard(null);
       setResult(null);
       setPreviousStreakDay(undefined);
-      setAnnouncement("Reset — ready to play again.");
+      setAnnouncement("Reset. Ready to play again.");
       setMsToMidnight(null);
       setPhase("picking");
     } catch {
-      setError("Couldn't reset — try again.");
+      setError("Couldn't reset. Try again.");
     } finally {
       setReplaying(false);
     }
@@ -452,8 +452,8 @@ export default function BoliDiveGame({
       if (!muted) playRevealChime(play.outcomeTier);
       const matched = getMatchedIndices(play);
       setAnnouncement(
-        `${MATCH_LABEL[play.matchType]} You won ${play.totalPayout.toLocaleString()} Boli${play.isGolden ? " on a Golden Shell day" : ""}.` +
-          (play.chestBoli > 0 ? ` Plus a ${play.chestBoli.toLocaleString()} Boli streak chest.` : "") +
+        `${MATCH_LABEL[play.matchType]} You won ${play.totalPayout.toLocaleString()} Sangu${play.isGolden ? " on a Golden Shell day" : ""}.` +
+          (play.chestSangu > 0 ? ` Plus a ${play.chestSangu.toLocaleString()} Sangu streak chest.` : "") +
           (play.shieldFired ? " Your shield caught a missed day." : "")
       );
 
@@ -570,7 +570,7 @@ export default function BoliDiveGame({
         });
         const data = await res.json();
         if (!data.ok) {
-          setError(data.error ?? "Something went wrong — try again.");
+          setError(data.error ?? "Something went wrong. Try again.");
           setPhase("picking");
           setSelected([]);
           return;
@@ -584,7 +584,7 @@ export default function BoliDiveGame({
         setPhase("revealing");
         window.setTimeout(() => revealResult(play), 250);
       } catch {
-        setError("Something went wrong — try again.");
+        setError("Something went wrong. Try again.");
         setPhase("picking");
         setSelected([]);
       }
@@ -613,7 +613,7 @@ export default function BoliDiveGame({
     // hit of the day can take a real moment. A visible spinner at least
     // confirms something is happening.
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: BG_DEEP }} role="status" aria-label="Loading Boli Dive">
+      <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: BG_DEEP }} role="status" aria-label="Loading Sangu Dive">
         <span
           aria-hidden="true"
           className="h-8 w-8 animate-spin rounded-full border-2 border-transparent"
@@ -659,10 +659,10 @@ export default function BoliDiveGame({
           onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
           onMouseLeave={(e) => (e.currentTarget.style.color = INK_DIM)}
         >
-          ← My Boli
+          ← My Sangu
         </Link>
         <p className="font-display text-sm italic" style={{ color: INK_DIM }}>
-          Boli Dive
+          Sangu Dive
         </p>
       </header>
 
@@ -676,10 +676,16 @@ export default function BoliDiveGame({
             {showIntro && (
               <div className="mb-8 border p-5" style={{ borderColor: "rgba(244,197,66,0.4)", background: "rgba(244,197,66,0.06)" }}>
                 <p className="text-sm leading-relaxed" style={{ color: INK }}>
-                  Cowrie shells — <span style={{ color: GOLD }}>boli</span> — were currency across the Maldives and the
-                  Indian Ocean for centuries before paper money. {DIVE_GRID_SIZE} shells wait on the sand each day —
-                  choose {DIVE_PICK_COUNT} blind. Match 2 or more and you win that shell&apos;s value; the whole board
-                  opens either way, so you always see what the sea gave up.
+                  {/* Deliberately does not call sangu a historical currency:
+                      the shell money of the Maldives was the cowrie, not the
+                      conch. Conch was genuinely dived, traded and prized
+                      across the Indian Ocean, which is what this says
+                      instead — the claim stays true after the rename. */}
+                  Conch, or <span style={{ color: GOLD }}>sangu</span>, has been dived from Maldivian reefs for as long
+                  as anyone has sailed them, and carried far across the Indian Ocean as treasure.{" "}
+                  {DIVE_GRID_SIZE} shells wait on the sand each day. Choose {DIVE_PICK_COUNT} blind. Match 2 or more
+                  and you win that shell&apos;s value; the whole board opens either way, so you always see what the sea
+                  gave up.
                 </p>
                 <button
                   type="button"
@@ -697,18 +703,18 @@ export default function BoliDiveGame({
                 className="relative mb-4 inline-block overflow-hidden border px-3 py-1 text-xs uppercase tracking-[0.2em]"
                 style={{ borderColor: GOLD, color: GOLD }}
               >
-                Golden Shell day — 1.5× on every ball
+                Golden Shell day · 1.5× on every ball
               </p>
             )}
 
             {phase === "picking" && (
               <div className="mb-6 flex flex-col items-center gap-4">
                 <p className="text-center text-xs uppercase tracking-[0.2em]" style={{ color: INK_DIM }}>
-                  Choose {DIVE_PICK_COUNT} shells — {selected.length} of {DIVE_PICK_COUNT} picked
+                  Choose {DIVE_PICK_COUNT} shells · {selected.length} of {DIVE_PICK_COUNT} picked
                 </p>
                 <p className="max-w-sm text-center text-xs leading-relaxed" style={{ color: INK_DIM }}>
                   Every shell hides a tier. Match {DIVE_PICK_COUNT - 1}+ of your picks on the same tier and you win
-                  that tier&apos;s value — match all {DIVE_PICK_COUNT} for a bonus. No match still pays the lowest of
+                  that tier&apos;s value. Match all {DIVE_PICK_COUNT} for a bonus. No match still pays the lowest of
                   your three, never nothing.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
@@ -782,7 +788,7 @@ export default function BoliDiveGame({
                         aria-pressed={phase === "picking" ? isSelected : undefined}
                         aria-label={
                           revealed && style
-                            ? `Ball ${index + 1}: ${style.label}, ${style.boli.toLocaleString()} Boli${isSelected ? (isMatched ? " — matched" : " — your pick") : ""}`
+                            ? `Ball ${index + 1}: ${style.label}, ${style.boli.toLocaleString()} Sangu${isSelected ? (isMatched ? ", matched" : ", your pick") : ""}`
                             : isSelected
                               ? `Ball ${index + 1}, selected`
                               : `Choose ball ${index + 1}`
@@ -864,25 +870,25 @@ export default function BoliDiveGame({
             {phase === "revealed" && result && (
               <div className="mt-8 flex flex-col gap-6">
                 <p className="text-center font-display text-3xl tabular-nums" style={{ color: TIER_STYLE[result.outcomeTier].color }}>
-                  +{result.totalPayout.toLocaleString()} Boli
+                  +{result.totalPayout.toLocaleString()} Sangu
                 </p>
 
-                {result.chestBoli > 0 && (
+                {result.chestSangu > 0 && (
                   <p
                     className="border px-4 py-3 text-center text-sm"
                     style={{ borderColor: "rgba(244,197,66,0.4)", background: "rgba(244,197,66,0.08)", color: GOLD }}
                   >
-                    Day {result.streakDay} chest — +{result.chestBoli.toLocaleString()} Boli
+                    Day {result.streakDay} chest · +{result.chestSangu.toLocaleString()} Sangu
                   </p>
                 )}
                 {result.shieldFired && (
                   <p className="text-center text-sm" style={{ color: INK_DIM }}>
-                    Your shield caught that one — streak protected.
+                    Your shield caught that one. Streak protected.
                   </p>
                 )}
                 {result.wasClamped && (
                   <p className="text-center text-xs" style={{ color: INK_DIM, opacity: 0.8 }}>
-                    Today&apos;s payout was capped by your weekly or monthly Boli Dive limit.
+                    Today&apos;s payout was capped by your weekly or monthly Sangu Dive limit.
                   </p>
                 )}
 
@@ -901,7 +907,7 @@ export default function BoliDiveGame({
                       {replaying ? "Resetting…" : "Play again"}
                     </button>
                     <p className="text-center text-[11px]" style={{ color: INK_DIM }}>
-                      Clears today&apos;s play so you can roll again — admin-only, off before launch.
+                      Clears today&apos;s play so you can roll again. Admin-only, off before launch.
                     </p>
                   </div>
                 )}

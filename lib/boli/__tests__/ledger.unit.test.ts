@@ -94,6 +94,27 @@ describe("estimatePurchaseEarn", () => {
     expect(estimatePurchaseEarn(PURCHASE_EARN_PER_MVR - 1, 0, "faru")).toBe(0);
   });
 
+  // The tier ladder shown on the account page (components/account/BoliSection.tsx)
+  // promises that a higher tier earns strictly more on the same order. That
+  // promise is only kept if the multiplier is genuinely applied at credit
+  // time — creditPurchaseEarn() routes through this same function, so
+  // asserting it here covers the real payout path, not just the display.
+  it("pays strictly more on the same order as the tier goes up", () => {
+    const subtotal = 1_000;
+    const byTier = (["faru", "vilu", "kandu", "thari"] as const).map((t) => estimatePurchaseEarn(subtotal, 0, t));
+    for (let i = 1; i < byTier.length; i++) {
+      expect(byTier[i]).toBeGreaterThan(byTier[i - 1]);
+    }
+  });
+
+  it("pays each tier exactly its configured multiple of the base rate", () => {
+    const subtotal = 1_000;
+    const base = Math.floor(subtotal / PURCHASE_EARN_PER_MVR) * PURCHASE_EARN_BOLI;
+    for (const tier of ["faru", "vilu", "kandu", "thari"] as const) {
+      expect(estimatePurchaseEarn(subtotal, 0, tier)).toBe(Math.floor(base * TIER_MULTIPLIER[tier]));
+    }
+  });
+
   it("never goes negative when the discount exceeds the subtotal", () => {
     expect(estimatePurchaseEarn(50, 999, "faru")).toBe(0);
   });

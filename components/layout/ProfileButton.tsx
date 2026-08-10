@@ -15,7 +15,7 @@ export default function ProfileButton() {
       ? "/dashboard"
       : "/account"
     : "/login";
-  const label = loggedIn ? `Account — ${name}` : "Sign in";
+  const label = loggedIn ? `Account: ${name}` : "Sign in";
 
   return (
     <Link

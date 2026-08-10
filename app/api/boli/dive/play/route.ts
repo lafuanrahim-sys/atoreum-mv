@@ -13,7 +13,7 @@ function clientIp(request: NextRequest): string {
 }
 
 /**
- * Deals (or resumes) today's Boli Dive board and resolves the player's
+ * Deals (or resumes) today's Sangu Dive board and resolves the player's
  * pick. The client sends only which 3 balls it chose (positions, nothing
  * about their values — it can't know those) and a device hash it computed
  * locally — never a tier or an amount (BOLI_SPEC.md §6.4: "the server
@@ -23,14 +23,14 @@ function clientIp(request: NextRequest): string {
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ ok: false, error: "Sign in to play Boli Dive." }, { status: 401 });
+    return NextResponse.json({ ok: false, error: "Sign in to play Sangu Dive." }, { status: 401 });
   }
 
   const ip = clientIp(request);
   const rateLimit = checkPlayRateLimit(user.id, ip);
   if (!rateLimit.ok) {
     return NextResponse.json(
-      { ok: false, error: "Too many requests — try again shortly." },
+      { ok: false, error: "Too many requests. Try again shortly." },
       { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } }
     );
   }
@@ -60,6 +60,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, result: result.result }, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {
     console.error("[boli] /api/boli/dive/play failed:", err);
-    return NextResponse.json({ ok: false, error: "Something went wrong — try again in a moment." }, { status: 500 });
+    return NextResponse.json({ ok: false, error: "Something went wrong. Try again in a moment." }, { status: 500 });
   }
 }

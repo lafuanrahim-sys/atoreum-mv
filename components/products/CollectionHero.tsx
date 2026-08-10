@@ -129,7 +129,7 @@ export default function CollectionHero() {
             className="mt-6 max-w-lg text-lg leading-relaxed md:text-xl"
             style={{ color: WARM.body }}
           >
-            Selected for Atoreum MV&apos;s official Lebelage launch &mdash; formulas made to
+            Selected for Atoreum MV&apos;s official Lebelage launch, with formulas made to
             perform under salt air, sunlight, and island humidity.
           </p>
         </div>

@@ -4,7 +4,7 @@ import { getSettings } from "@/lib/data/settings.server";
 import MaintenancePage from "@/components/layout/MaintenancePage";
 
 export const metadata: Metadata = {
-  title: "We'll be back shortly — Atoreum MV",
+  title: "We'll be back shortly | Atoreum MV",
 };
 
 // Without this, Next statically prerenders the page at build time -- the

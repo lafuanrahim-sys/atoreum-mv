@@ -40,7 +40,7 @@ export default function FxTtForm({
             type="number"
             step="0.0001"
             defaultValue={supportPctDisplay}
-            hint="The share of the TT the bank supplies at its own rate — the rest comes from the company's own USD account."
+            hint="The share of the TT the bank supplies at its own rate. The rest comes from the company's own USD account."
             required
           />
         </div>

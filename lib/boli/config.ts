@@ -1,9 +1,20 @@
 /**
- * Boli — every rate, weight, multiplier, cap and threshold in one place.
+ * Sangu — every rate, weight, multiplier, cap and threshold in one place.
  * No magic numbers anywhere else in lib/boli/** or the routes/components
  * that call into it. Change a number here, not in the code that reads it.
  *
  * Pure data/config only — no runtime imports, safe from client or server.
+ *
+ * NAMING: the currency is called **Sangu** everywhere a customer or admin
+ * can read it; **boli** remains its internal codename throughout the code
+ * — database tables and functions (boli_users, boli_ledger,
+ * boli_dive_plays, boli_ledger_write()...), routes (/api/boli/*,
+ * /dashboard/boli, /terms/boli), identifiers (BoliSection, BoliTier,
+ * BOLI_TO_MVR) and docs/BOLI_SPEC.md all still say boli. That split is
+ * deliberate: renaming the display name is a copy change, while renaming
+ * the tables would mean migrating a live, hash-chained ledger for no
+ * user-visible gain. Treat "boli" in code as meaning Sangu, and never put
+ * the word "Boli" into anything rendered.
  */
 
 // ---------------------------------------------------------------------------
@@ -147,6 +158,14 @@ export const STREAK_MULTIPLIER = 1.25;
 
 /** Day the chest fires; the streak counter then resets to 1 (not 0 — that day's play still counts as day 1 of the next week). */
 export const STREAK_CHEST_DAY = 7;
+/**
+ * Paid in full on day STREAK_CHEST_DAY, EXEMPT from the weekly and monthly
+ * caps below (boli_dive_play() in lib/boli/schema.sql). It was previously
+ * clamped by leftover cap room, which meant a player who completed a streak
+ * and hit a big win on the same day received no chest at all — the win ate
+ * the headroom the chest needed. Finishing a streak is now always worth this
+ * much. The store-wide GLOBAL_DAILY_GAME_BOLI_BUDGET still applies to it.
+ */
 export const STREAK_CHEST_BOLI = 100;
 
 /** One missed day per calendar month is auto-absorbed by a streak shield. */
@@ -277,9 +296,12 @@ export const ADMIN_ADJUSTMENT_APPROVAL_THRESHOLD = 10_000;
 //     close enough for budgeting; the caps below are the real ceiling)
 //   Perfect week (7 plays, 1.25x from day 3, +100 chest, one 1.5x golden day)
 //                    ....... ~500 Boli/wk  = MVR 5.00
-//   Weekly cap ............. 600 Boli      = MVR 6.00   (hard ceiling)
-//   Monthly cap ............ 1,800 Boli    = MVR 18.00  (hard ceiling)
-//   100 fully engaged players ............ ~MVR 1,800/month worst case
+//   Weekly cap ............. 600 Boli      = MVR 6.00   (dive payouts only)
+//   Monthly cap ............ 1,800 Boli    = MVR 18.00  (dive payouts only)
+//   Streak chests .......... +100 per 7-day streak, OUTSIDE both caps, so
+//     at most ~4 per player per month = +400 Boli = MVR 4.00
+//   True per-player ceiling  2,200 Boli/mo = MVR 22.00  (1,800 + 4 chests)
+//   100 fully engaged players ............ ~MVR 2,200/month worst case
 //
 // Actual cost is materially lower than the above because:
 //   (a) game Boli cannot be redeemed without a delivered order (see 6.1)

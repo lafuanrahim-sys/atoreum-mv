@@ -119,7 +119,7 @@ export default function ProductForm({
 
         <div className="flex flex-col gap-4">
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">
-            Headlines — 3 alternate taglines, rotated on the product page
+            Headlines: 3 alternate taglines, rotated on the product page
           </span>
           <TextField label="Headline 1" name="headline1" defaultValue={product?.headlines?.[0]} />
           <TextField label="Headline 2" name="headline2" defaultValue={product?.headlines?.[1]} />
@@ -220,7 +220,7 @@ export default function ProductForm({
         </button>
 
         <p className="font-mono text-xs text-ivory-dim">
-          {product ? "Add more, or remove above — at least one image must remain." : "At least one image is required."}
+          {product ? "Add more, or remove above. At least one image must remain." : "At least one image is required."}
           {newFiles.length > 0 && ` ${newFiles.length} new file${newFiles.length > 1 ? "s" : ""} staged (${formatBytes(newFiles.reduce((s, f) => s + f.file.size, 0))}).`}
         </p>
       </FormSection>

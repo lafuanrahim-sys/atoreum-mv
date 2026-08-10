@@ -6,19 +6,19 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth/SessionContext";
 
 /**
- * Header balance chip — shell icon + live Boli balance, linking to the
- * account "Boli" tab. Renders nothing for guests, and nothing if the
- * balance can't be loaded (e.g. Boli not yet provisioned) rather than
+ * Header balance chip — shell icon + live Sangu balance, linking to the
+ * account "Sangu" tab. Renders nothing for guests, and nothing if the
+ * balance can't be loaded (e.g. Sangu not yet provisioned) rather than
  * showing a broken/zero state.
  *
  * Refetches on pathname/searchParams change and on window focus, not just
  * once on mount — this chip lives in the root layout, which stays mounted
  * across every client-side navigation in the app (unlike the account
- * page's own Boli balance display, a Server Component that does refetch on
+ * page's own Sangu balance display, a Server Component that does refetch on
  * navigation). Without this, the number here froze at whatever it was on
- * first load: playing Boli Dive (a searchParams-only change on /account,
+ * first load: playing Sangu Dive (a searchParams-only change on /account,
  * ?boliView=dive -> ?boliView=my) or completing a checkout that redeems/
- * earns Boli left this chip showing the pre-play balance until a full page
+ * earns Sangu left this chip showing the pre-play balance until a full page
  * reload remounted it — reported as "have to restart the page" to see an
  * updated balance.
  */
@@ -78,8 +78,8 @@ export default function BoliChip() {
   return (
     <Link
       href="/account?tab=boli"
-      aria-label={`Boli balance: ${balance.toLocaleString()}`}
-      title={`${balance.toLocaleString()} Boli`}
+      aria-label={`Sangu balance: ${balance.toLocaleString()}`}
+      title={`${balance.toLocaleString()} Sangu`}
       className="flex h-9 items-center gap-1.5 px-1.5 text-ivory-dim transition-colors hover:text-gold"
     >
       <svg viewBox="0 0 20 20" aria-hidden="true" className="h-4 w-4 shrink-0">

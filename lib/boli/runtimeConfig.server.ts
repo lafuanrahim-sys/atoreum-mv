@@ -2,10 +2,10 @@ import { pool } from "./db";
 import { GAME_ENABLED, WEEKLY_GAME_BOLI_CAP, MONTHLY_GAME_BOLI_CAP, GLOBAL_DAILY_GAME_BOLI_BUDGET } from "./config";
 
 /**
- * Live, no-deploy overrides for the handful of Boli Dive numbers the admin
+ * Live, no-deploy overrides for the handful of Sangu Dive numbers the admin
  * dashboard can flip (BOLI_SPEC.md §5.5 kill switch, §8 "live toggles for
  * GAME_ENABLED and the three caps"). lib/boli/config.ts remains the single
- * source of DEFAULT values — every other Boli number is still read directly
+ * source of DEFAULT values — every other Sangu number is still read directly
  * from there, unchanged. A row in boli_runtime_config overrides exactly one
  * key until an admin changes or clears it; no row means "use the config.ts
  * default."
@@ -74,7 +74,7 @@ export async function getEffectiveCaps(): Promise<{
   };
 }
 
-/** Sets (or replaces) a live override. Attributed, like every other Boli admin write (BOLI_SPEC.md §6.6 ethos). */
+/** Sets (or replaces) a live override. Attributed, like every other Sangu admin write (BOLI_SPEC.md §6.6 ethos). */
 export async function setRuntimeConfig(key: RuntimeConfigKey, value: boolean | number, adminId: string): Promise<void> {
   await pool().query(
     `insert into boli_runtime_config (key, value, updated_at, updated_by)

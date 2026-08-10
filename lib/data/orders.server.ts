@@ -1,5 +1,6 @@
 import { pool } from "@/lib/db";
 import type { Order, OrderCustomer, OrderItem, OrderStatus, PaymentMethod } from "@/lib/types";
+import { recordMovement } from "@/lib/data/stock.server";
 
 /**
  * Postgres-backed order store (see lib/data/schema.sql) — replaces the
@@ -82,23 +83,26 @@ const STOCK_COMMITTED_STATUSES: ReadonlySet<OrderStatus> = new Set(["Confirmed",
  * that at all; a race between two simultaneous confirmations could still
  * oversell before either deduction lands).
  */
-async function adjustStockForItems(items: OrderItem[], direction: 1 | -1): Promise<void> {
+async function adjustStockForItems(items: OrderItem[], direction: 1 | -1, orderId?: string): Promise<void> {
   if (items.length === 0) return;
   const client = await pool().connect();
   try {
     await client.query("BEGIN");
     for (const item of items) {
-      if (direction === -1) {
-        await client.query(
-          "update products set stock_on_hand = greatest(0, stock_on_hand - $2), updated_at = now() where id = $1",
-          [item.productId, item.quantity]
-        );
-      } else {
-        await client.query(
-          "update products set stock_on_hand = stock_on_hand + $2, updated_at = now() where id = $1",
-          [item.productId, item.quantity]
-        );
-      }
+      // Goes through the stock movement ledger rather than updating
+      // stock_on_hand directly (recordMovement does both, in this same
+      // transaction). Sales are the largest source of stock change, so
+      // leaving them out would make the ledger unable to explain the
+      // on-hand number it's supposed to be the record of -- see the stock_*
+      // tables in lib/data/schema.sql.
+      await recordMovement(client, {
+        productId: item.productId,
+        delta: direction * item.quantity,
+        reason: direction === -1 ? "sale" : "sale_reversal",
+        sourceType: "order",
+        sourceId: orderId ?? "",
+        note: item.name,
+      });
     }
     await client.query("COMMIT");
   } catch (err) {
@@ -118,13 +122,13 @@ export async function createOrder(params: {
   paymentProofPath: string | null;
   /** The signed-in account placing this order, if any — see the field comment on Order.userId in lib/types.ts. */
   userId?: string;
-  /** Already-validated-and-applied Boli redemption receipt (see app/actions/checkout.ts) — omit for orders that redeemed nothing. */
+  /** Already-validated-and-applied Sangu redemption receipt (see app/actions/checkout.ts) — omit for orders that redeemed nothing. */
   boliRedeemed?: number;
   boliDiscountAmount?: number;
   /**
    * Pre-generated id, when the caller needs to know the order id before the
    * order itself is durably created — checkout.ts does this so it can pass
-   * the same id to the Boli ledger's redemption idempotency key
+   * the same id to the Sangu ledger's redemption idempotency key
    * (`redeem:{orderId}`) BEFORE the order row exists. Falls back to the
    * usual auto-generated id when omitted.
    */
@@ -162,7 +166,7 @@ export async function createOrder(params: {
   // at "Pending Verification" and get deducted later, in
   // updateOrderStatus, when an admin actually confirms them.
   if (status === "Confirmed") {
-    await adjustStockForItems(params.items, -1);
+    await adjustStockForItems(params.items, -1, rows[0].id);
   }
   return rowToOrder(rows[0]);
 }
@@ -205,9 +209,9 @@ export async function updateOrderStatus(id: string, status: OrderStatus): Promis
   const wasCommitted = STOCK_COMMITTED_STATUSES.has(before.status);
   const isCommitted = STOCK_COMMITTED_STATUSES.has(status);
   if (!wasCommitted && isCommitted) {
-    await adjustStockForItems(before.items, -1);
+    await adjustStockForItems(before.items, -1, before.id);
   } else if (wasCommitted && status === "Cancelled") {
-    await adjustStockForItems(before.items, 1);
+    await adjustStockForItems(before.items, 1, before.id);
   }
 
   return rowToOrder(rows[0]);

@@ -29,7 +29,7 @@ export default function Footer() {
             Atoreum <span className="text-gold">MV</span>
           </p>
           <p className="mt-4 text-sm leading-relaxed text-ivory-dim">
-            Atoreum MV introduces Lebelage to the Maldives — premium Korean skincare curated for island life.
+            Atoreum MV introduces Lebelage to the Maldives with premium Korean skincare curated for island life.
           </p>
         </div>
 

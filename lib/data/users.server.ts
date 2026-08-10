@@ -104,15 +104,22 @@ const VERIFICATION_TOKEN_TTL_MS = 1000 * 60 * 60 * 24; // 24h
 // in an inbox is a more sensitive thing to leave valid for a full day.
 const PASSWORD_RESET_TOKEN_TTL_MS = 1000 * 60 * 60; // 1h
 
-/** The one account that owns the store — always the super admin. */
-export const SUPER_ADMIN_EMAIL = "admin@atoreum.mv";
+/**
+ * The one account that owns the store — always the super admin.
+ *
+ * A real, deliverable mailbox on purpose. It was previously
+ * admin@atoreum.mv, which nothing could actually receive mail at, so
+ * "Forgot password?" had nowhere to send a reset link and the only admin
+ * account had no self-service recovery path at all.
+ */
+export const SUPER_ADMIN_EMAIL = "sales@aranzo.co";
 
 /**
  * First run bootstraps the store with one super-admin account so the
- * dashboard is never locked out: admin@atoreum.mv, password = ADMIN_PASSWORD
- * env var (falling back to "atoreum-admin" in dev). Change it after first
- * login. Cheap idempotent check — safe to call from every exported function
- * here, same as the old readAll()'s inline bootstrap.
+ * dashboard is never locked out: SUPER_ADMIN_EMAIL, password =
+ * ADMIN_PASSWORD env var (falling back to "atoreum-admin" in dev). Change it
+ * after first login. Cheap idempotent check — safe to call from every
+ * exported function here, same as the old readAll()'s inline bootstrap.
  */
 async function ensureSeedAdmin(): Promise<void> {
   const { rows } = await pool().query<{ count: string }>("select count(*)::text as count from users");
@@ -314,6 +321,42 @@ export async function changeUserPassword(
     hashPassword(newPassword),
   ]);
   return { ok: true };
+}
+
+/**
+ * Sets a password WITHOUT knowing the current one. Out-of-band account
+ * recovery only, for the case the normal reset flow can't help: the owner
+ * account's address had no deliverable mailbox behind it, so a "Forgot
+ * password?" link had nowhere to arrive. Kept after moving the account to a
+ * real address, since it is still the only way back in if the mail path
+ * itself is ever the thing that is broken.
+ *
+ * MUST NOT be reachable from any route, server action or API handler — it
+ * deliberately skips the current-password check that changeUserPassword()
+ * enforces, so exposing it would turn "can reach an endpoint" into "can take
+ * over any account". Its only caller is scripts/set-password.ts, which runs
+ * from a terminal against a database URL the operator supplies.
+ *
+ * Reuses this module's own hashPassword() rather than re-deriving scrypt
+ * parameters at the call site: a mismatch there would write a hash that
+ * verifyPassword() can never match, locking the account further instead of
+ * recovering it.
+ */
+export async function setPasswordForRecovery(
+  email: string,
+  newPassword: string
+): Promise<{ ok: true; name: string; role: UserRole } | { error: string }> {
+  const normalized = email.trim().toLowerCase();
+  const { rows } = await pool().query<UserRow>("select * from users where lower(email) = $1", [normalized]);
+  const row = rows[0];
+  if (!row) return { error: `No account found for ${email}.` };
+  if (newPassword.length < 8) return { error: "Password must be at least 8 characters." };
+
+  await pool().query("update users set password_hash = $2, updated_at = now() where id = $1", [
+    row.id,
+    hashPassword(newPassword),
+  ]);
+  return { ok: true, name: row.name, role: row.role as UserRole };
 }
 
 export async function setUserRole(id: string, role: UserRole): Promise<PublicUser | null> {

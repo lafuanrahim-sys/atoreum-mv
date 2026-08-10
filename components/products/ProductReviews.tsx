@@ -53,7 +53,7 @@ export default function ProductReviews({
 
       {reviews.length === 0 ? (
         <p className="mt-6 text-sm text-ivory-dim">
-          No reviews yet — be the first to share your experience.
+          No reviews yet. Be the first to share your experience.
         </p>
       ) : (
         <ul className="mt-8 flex flex-col gap-8">
@@ -77,7 +77,7 @@ export default function ProductReviews({
       <div className="mt-12 max-w-xl">
         {flag === "submitted" && (
           <p className="mb-4 text-sm text-gold" role="status">
-            Thank you — your review is awaiting approval.
+            Thank you. Your review is awaiting approval.
           </p>
         )}
         {flag === "invalid" && (
@@ -131,7 +131,7 @@ export default function ProductReviews({
           </form>
         ) : isLoggedIn ? (
           <p className="text-sm text-ivory-dim">
-            Reviews are open to verified buyers — you can write one once you&apos;ve purchased
+            Reviews are open to verified buyers. You can write one once you&apos;ve purchased
             this product and your order is completed.
           </p>
         ) : (

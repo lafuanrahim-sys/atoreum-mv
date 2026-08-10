@@ -15,7 +15,7 @@ import SubmitButton from "@/components/ui/SubmitButton";
 import PasswordField from "@/components/ui/PasswordField";
 
 export const metadata: Metadata = {
-  title: "Sign in — Atoreum MV",
+  title: "Sign in | Atoreum MV",
   description: "Sign in to your Atoreum MV account.",
 };
 
@@ -25,14 +25,14 @@ const ERROR_MESSAGES: Record<string, string> = {
   password: "Password must be at least 8 characters.",
   "password-mismatch": "Those passwords don't match.",
   exists: "An account with this email already exists. Try signing in instead.",
-  unverified: "Please verify your email before signing in — check your inbox for the link.",
+  unverified: "Please verify your email before signing in. Check your inbox for the link.",
   "verify-failed": "That verification link is invalid or has expired. Request a new one below.",
   "reset-failed": "That reset link is invalid or has expired. Request a new one below.",
   "rate-limited": "Too many attempts. Please wait a few minutes and try again.",
 };
 
 const NOTICE_MESSAGES: Record<string, string> = {
-  "verify-sent": "Check your inbox — we've sent a verification link.",
+  "verify-sent": "Check your inbox. We've sent a verification link.",
   "verify-send-failed": "Your account was created, but the verification email couldn't be sent. Try resending it below.",
   "reset-sent": "If an account exists for that email, we've sent a link to reset your password.",
 };
@@ -81,6 +81,18 @@ export default async function LoginPage({
   // reads as pressed into the glass card rather than just outlined.
   const EMBOSS_FIELD = "shadow-[inset_0_2px_5px_rgba(0,0,0,0.4),inset_0_-1px_0_rgba(255,255,255,0.05)]";
 
+  // Card lift. The drop shadow's spread (-32) is deliberately larger than
+  // half its blur (56/2 = 28), which keeps the shadow rect inset ~4px
+  // INSIDE the card's own footprint on every side -- so it only ever reads
+  // as a soft pool grounded beneath the card, never as a halo tracing its
+  // edges. An earlier 60px-blur/-15px-spread version did the opposite:
+  // against a near-black page (--ink #121915) a black shadow reaching ~15px
+  // past the card on all four sides had nothing to fall off into, so it
+  // rendered as a visible dirty ring rather than depth. On a dark theme the
+  // border and the 1px inset top highlight are what actually define the
+  // card; the shadow only has to ground it.
+  const CARD_LIFT = "shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_24px_56px_-32px_rgba(0,0,0,0.65)]";
+
   return (
     <div className="bg-ink">
       {/* Exactly the viewport minus the fixed header's own reserved space
@@ -94,7 +106,7 @@ export default async function LoginPage({
           centers the card in that exact space on any screen, desktop or
           mobile, with nothing left over to scroll. */}
       <div className="page-gutter flex h-[calc(100svh-6rem)] flex-col items-center justify-center gap-10 md:h-[calc(100svh-7rem)]">
-        <div className="card-entrance w-full max-w-md overflow-hidden rounded-2xl border border-ivory/15 bg-ink-2/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_55%)] p-8 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_25px_60px_-15px_rgba(0,0,0,0.5)] backdrop-blur-xl backdrop-saturate-150 md:p-10">
+        <div className={`card-entrance w-full max-w-md overflow-hidden rounded-2xl border border-ivory/15 bg-ink-2/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_55%)] p-8 ${CARD_LIFT} backdrop-blur-xl backdrop-saturate-150 md:p-10`}>
         <h1 className="font-display text-2xl text-ivory md:text-3xl">{heading}</h1>
         <p className="mt-2 text-sm leading-relaxed text-ivory-dim">{subtitle}</p>
 

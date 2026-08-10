@@ -8,7 +8,7 @@ import OrbitRing from "@/components/home/OrbitRing";
 export default function OrbitHero() {
   return (
     <section className="relative flex h-100svh w-full items-center justify-center overflow-hidden bg-ink">
-      <h1 className="sr-only">Atoreum MV — Lebelage launch in the Maldives</h1>
+      <h1 className="sr-only">Atoreum MV: Lebelage launch in the Maldives</h1>
 
       <OrbitRing />
 
@@ -21,7 +21,7 @@ export default function OrbitHero() {
             Atoreum
           </span>
           <span className="mt-1 text-[10px] uppercase tracking-[0.35em] text-gold sm:text-xs">
-            MV — Lebelage launch
+            MV · Lebelage launch
           </span>
         </span>
       </div>

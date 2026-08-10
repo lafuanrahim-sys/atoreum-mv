@@ -5,6 +5,7 @@ import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motionDefaults, prefersReducedMotion } from "@/lib/motion";
+import WordMask from "@/components/ui/WordMask";
 import {
   BLOB_HUVADHOO,
   BLOB_KAAFU_1,
@@ -34,8 +35,8 @@ ScrollTrigger.config({ ignoreMobileResize: true });
 
 const TITLE_LINE_1 = "The Atoreum Story";
 const TITLE_LINE_2 = "Three origins, one name. Korea's beauty, carried home to the Maldives.";
-const FLOWER_TEXT = "The Mugunghwa — South Korea's national flower — represents where Atoreum's journey began.";
-const WAVE_TEXT = "A wave connecting two oceans — Korea to the Maldives.";
+const FLOWER_TEXT = "The Mugunghwa, South Korea's national flower, represents where Atoreum's journey began.";
+const WAVE_TEXT = "A wave connecting two oceans: Korea to the Maldives.";
 
 // Below md the caption column stacks full-width under the stage (see the
 // layout below) so the text gets a generous phone-appropriate max-width;
@@ -117,6 +118,7 @@ export default function LogoOriginSequence() {
 
   const titleContainerRef = useRef<HTMLDivElement | null>(null);
   const titleLine1Ref = useRef<HTMLParagraphElement | null>(null);
+  const titleRuleRef = useRef<HTMLDivElement | null>(null);
   const titleLine2Ref = useRef<HTMLParagraphElement | null>(null);
   const flowerTextContainerRef = useRef<HTMLDivElement | null>(null);
   const flowerTextLineRef = useRef<HTMLParagraphElement | null>(null);
@@ -206,6 +208,7 @@ export default function LogoOriginSequence() {
 
         const titleContainer = titleContainerRef.current;
         const titleLine1 = titleLine1Ref.current;
+        const titleRule = titleRuleRef.current;
         const titleLine2 = titleLine2Ref.current;
         const flowerTextContainer = flowerTextContainerRef.current;
         const flowerTextLine = flowerTextLineRef.current;
@@ -220,7 +223,7 @@ export default function LogoOriginSequence() {
           !lhavLabel || !kaafuLabel || !huvLabel ||
           !blobLhav || !blobKaafu1 || !blobKaafu2 || !blobHuvadhoo || !seal || !sealGlow || !waveGroup ||
           !waveClipRect || !typeset || !resolved || !cta || !stage || !captionBox || petals.length !== 5 ||
-          !titleContainer || !titleLine1 || !titleLine2 ||
+          !titleContainer || !titleLine1 || !titleRule || !titleLine2 ||
           !flowerTextContainer || !flowerTextLine ||
           !waveTextContainer || !waveTextLine
         ) {
@@ -488,13 +491,35 @@ export default function LogoOriginSequence() {
         gsap.set(cta, { opacity: 0, pointerEvents: "none" });
         gsap.set(art, { opacity: 1 });
 
-        // Overlay title: shown only in this desktop motion mode (the static
-        // fallback carries its own title). Line 1 is a plain, always-visible
-        // paragraph, so the very first painted frame — before any scroll —
-        // already reads "The Atoreum Story" at full size.
+        // Overlay title: shown only in this motion mode (the static fallback
+        // carries its own title).
         gsap.set(titleContainer, { display: "flex", opacity: 1 });
         gsap.set(flowerTextContainer, { opacity: 0 });
         gsap.set(waveTextContainer, { opacity: 0 });
+
+        // Line 1's entrance. Deliberately a standalone, autoplaying timeline
+        // rather than a beat in the scrubbed timeline below: this section is
+        // pinned from the very top of the page, so at scroll progress 0 a
+        // scrubbed reveal would sit frozen on its first frame and never play
+        // until the visitor scrolled -- which is precisely the flat opening
+        // frame this replaces (line 1 previously had no animation at all and
+        // simply *was* there on first paint).
+        //
+        // Values mirror splitWordReveal() (lib/motion.ts) so the opening
+        // title speaks the same motion dialect as the masked section
+        // headlines further down the page; written out here rather than
+        // calling that helper because the gold rule has to be sequenced
+        // against the words, which it doesn't expose.
+        const titleWords = titleLine1.querySelectorAll<HTMLElement>("[data-word]");
+        gsap.set(titleWords, { yPercent: 110, rotate: 3, transformOrigin: "0% 100%" });
+        gsap.set(titleRule, { scaleX: 0 });
+        gsap
+          .timeline({ delay: 0.15 })
+          .to(titleWords, { yPercent: 0, rotate: 0, duration: 0.9, ease: "expo.out", stagger: 0.09 })
+          // Draws out from its own center (default transformOrigin) as the
+          // last word lands, so it reads as the words settling onto a line
+          // rather than as a third element animating in on its own.
+          .to(titleRule, { scaleX: 1, duration: 0.7, ease: "power2.out" }, "<0.3");
 
         const tl = gsap.timeline({
           defaults: { ease: motionDefaults.ease },
@@ -1053,9 +1078,10 @@ export default function LogoOriginSequence() {
       {/* pb-24/28 mirrors main's own header offset: at load the pinned
           section starts that far below the true viewport top, so centering
           within the section alone reads visibly low — this pulls the title
-          back up to the optical middle of the screen. Line 1 is a plain
-          paragraph (not TypedLine): it's fully pre-revealed anyway, so it
-          doesn't need the per-character reveal machinery. */}
+          back up to the optical middle of the screen. Line 1 uses WordMask
+          (not TypedLine): it plays a word-level masked rise on load, the
+          same idiom as the site's other display headlines, rather than the
+          per-character typewriter the scroll-scrubbed lines use. */}
       <div
         ref={titleContainerRef}
         className="pointer-events-none absolute inset-0 z-20 hidden flex-col items-center justify-center gap-6 px-6 pb-24 text-center md:pb-28"
@@ -1064,9 +1090,9 @@ export default function LogoOriginSequence() {
           ref={titleLine1Ref}
           className="max-w-5xl font-script text-3xl tracking-wide leading-[1.3] text-ivory md:text-6xl"
         >
-          {TITLE_LINE_1}
+          <WordMask text={TITLE_LINE_1} />
         </p>
-        <div className="h-px w-16 bg-gold/60" />
+        <div ref={titleRuleRef} className="h-px w-16 bg-gold/60" />
         <TypedLine
           text={TITLE_LINE_2}
           lineRef={titleLine2Ref}

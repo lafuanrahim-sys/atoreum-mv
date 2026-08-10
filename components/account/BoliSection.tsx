@@ -8,7 +8,7 @@ import {
 } from "@/lib/boli/config";
 import type { BoliLedgerEntry } from "@/lib/boli/ledger.server";
 
-function formatBoli(n: number) {
+function formatSangu(n: number) {
   return n.toLocaleString("en-US");
 }
 function formatMvr(boli: number) {
@@ -24,9 +24,12 @@ const TIER_LABEL: Record<BoliTier, string> = {
 
 const TIER_ORDER: BoliTier[] = ["faru", "vilu", "kandu", "thari"];
 
+/** Round number used only to make the tier multiplier tangible in copy ("an order earning 1,000 base Sangu pays you …"). Not a rate — the real earn rate is PURCHASE_EARN_BOLI/PURCHASE_EARN_PER_MVR. */
+const EXAMPLE_BASE_BOLI = 1_000;
+
 const REASON_LABEL: Record<string, string> = {
   purchase_earn: "Purchase reward",
-  game_earn: "Boli Dive",
+  game_earn: "Sangu Dive",
   streak_chest: "Streak chest",
   redemption: "Redeemed at checkout",
   redemption_reversal: "Redemption returned",
@@ -35,7 +38,7 @@ const REASON_LABEL: Record<string, string> = {
   admin_adjustment: "Account adjustment",
 };
 
-export type PendingBoliOrder = { orderId: string; orderNumber: string; estimatedBoli: number; placedAt: string };
+export type PendingBoliOrder = { orderId: string; orderNumber: string; estimatedSangu: number; placedAt: string };
 
 export default function BoliSection({
   displayBalance,
@@ -71,8 +74,8 @@ export default function BoliSection({
       {underReview && (
         <div className="mb-8 border border-red-400/50 bg-red-400/5 p-5">
           <p className="text-sm text-ivory">
-            Your Boli balance is under review following an account adjustment. Redemption is paused until this
-            clears — contact us if you have questions.
+            Your Sangu balance is under review following an account adjustment. Redemption is paused until this
+            clears. Contact us if you have questions.
           </p>
         </div>
       )}
@@ -80,7 +83,7 @@ export default function BoliSection({
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
         <div className="border border-line p-6">
           <p className="text-xs uppercase tracking-[0.2em] text-ivory-dim">Balance</p>
-          <p className="mt-3 font-display text-4xl text-gold tabular-nums">{formatBoli(displayBalance)}</p>
+          <p className="mt-3 font-display text-4xl text-gold tabular-nums">{formatSangu(displayBalance)}</p>
           <p className="mt-1 text-sm text-ivory-dim">{formatMvr(displayBalance)} in value</p>
         </div>
 
@@ -98,13 +101,62 @@ export default function BoliSection({
                 <div className="h-full bg-gold" style={{ width: `${progressPct}%` }} />
               </div>
               <p className="mt-2 text-xs text-ivory-dim">
-                {formatBoli(Math.max(0, (nextThreshold ?? 0) - lifetimeEarned))} more lifetime Boli to {TIER_LABEL[nextTier]}
+                {formatSangu(Math.max(0, (nextThreshold ?? 0) - lifetimeEarned))} more lifetime Sangu to {TIER_LABEL[nextTier]}
               </p>
             </>
           ) : (
             <p className="mt-4 text-xs text-ivory-dim">You&apos;ve reached the top tier.</p>
           )}
         </div>
+      </div>
+
+      {/* Full tier ladder. The Tier card above only ever shows the current
+          tier and the next one; this lays out all four with the exact
+          multiplier each one earns at, so the reward for climbing is
+          legible before you get there. Thresholds and multipliers both come
+          straight from lib/boli/config.ts — the same constants
+          creditPurchaseEarn() actually multiplies by at credit time, so
+          this table can never drift from what gets paid out. */}
+      <div className="mt-8 border border-line p-6">
+        <p className="text-xs uppercase tracking-[0.2em] text-ivory-dim">Tiers</p>
+        <ul className="mt-5 flex flex-col divide-y divide-line">
+          {TIER_ORDER.map((t) => {
+            const isCurrent = t === tier;
+            const reached = lifetimeEarned >= TIER_THRESHOLD_LIFETIME_EARNED[t];
+            return (
+              <li
+                key={t}
+                className={`flex items-center justify-between gap-4 py-3 ${isCurrent ? "text-ivory" : "text-ivory-dim"}`}
+              >
+                <span className="flex min-w-0 items-baseline gap-2">
+                  <span className={`text-sm ${isCurrent ? "text-gold" : ""}`}>{TIER_LABEL[t]}</span>
+                  {isCurrent && (
+                    <span className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-gold/70">You</span>
+                  )}
+                  {!isCurrent && reached && (
+                    <span className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-ivory-dim/60">Passed</span>
+                  )}
+                </span>
+                <span className="flex shrink-0 items-baseline gap-6">
+                  <span className="text-xs tabular-nums text-ivory-dim">
+                    {TIER_THRESHOLD_LIFETIME_EARNED[t] === 0
+                      ? "From the start"
+                      : `${formatSangu(TIER_THRESHOLD_LIFETIME_EARNED[t])} lifetime`}
+                  </span>
+                  <span className={`w-12 text-right text-sm tabular-nums ${isCurrent ? "text-gold" : ""}`}>
+                    {TIER_MULTIPLIER[t]}×
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="mt-4 text-xs leading-relaxed text-ivory-dim/80">
+          Your tier multiplies the Sangu you earn on every completed order. At {TIER_MULTIPLIER[tier]}×, an order
+          earning {formatSangu(EXAMPLE_BASE_BOLI)} base Sangu pays you{" "}
+          <span className="text-ivory">{formatSangu(Math.floor(EXAMPLE_BASE_BOLI * TIER_MULTIPLIER[tier]))}</span>. Only
+          purchases count toward reaching the next tier; Sangu Dive winnings and account adjustments don&apos;t.
+        </p>
       </div>
 
       {pendingOrders.length > 0 && (
@@ -116,12 +168,12 @@ export default function BoliSection({
                 <span className="text-ivory-dim">
                   {o.orderNumber} <span className="text-ivory-dim/60">· placed {new Date(o.placedAt).toLocaleDateString()}</span>
                 </span>
-                <span className="text-ivory tabular-nums">+{formatBoli(o.estimatedBoli)} Boli</span>
+                <span className="text-ivory tabular-nums">+{formatSangu(o.estimatedSangu)} Sangu</span>
               </li>
             ))}
           </ul>
           <p className="mt-3 text-xs text-ivory-dim/80">
-            Unlocks once each order is marked completed — estimated at your current tier.
+            Unlocks once each order is marked completed, estimated at your current tier.
           </p>
         </div>
       )}
@@ -132,17 +184,17 @@ export default function BoliSection({
             <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.2" />
             <path d="M8 5v3.5M8 10.8v.7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
           </svg>
-          {formatBoli(expiringSoon)} Boli expire within {EXPIRY_WARNING_WINDOW_DAYS} days.
+          {formatSangu(expiringSoon)} Sangu expire within {EXPIRY_WARNING_WINDOW_DAYS} days.
         </p>
       )}
 
       <div className="mt-10 border-t border-line pt-8">
         <p className="text-xs uppercase tracking-[0.2em] text-ivory">Ways to Earn</p>
         <ul className="mt-4 flex flex-col gap-2 text-sm text-ivory-dim">
-          <li>Shop — earn Boli on every completed order, boosted by your tier</li>
+          <li>Shop: earn Sangu on every completed order, boosted by your tier</li>
           <li>
             <Link href="/terms/boli" className="text-gold hover:underline">
-              Read the full Boli terms
+              Read the full Sangu terms
             </Link>
           </li>
         </ul>
@@ -151,7 +203,7 @@ export default function BoliSection({
       <div className="mt-10 border-t border-line pt-8">
         <p className="text-xs uppercase tracking-[0.2em] text-ivory">History</p>
         {ledger.length === 0 ? (
-          <p className="mt-4 text-sm text-ivory-dim">No Boli activity yet.</p>
+          <p className="mt-4 text-sm text-ivory-dim">No Sangu activity yet.</p>
         ) : (
           <ul className="mt-4 flex flex-col divide-y divide-line">
             {ledger.map((entry) => {
@@ -164,7 +216,7 @@ export default function BoliSection({
                   </div>
                   <span className={`tabular-nums ${delta > 0 ? "text-gold" : "text-ivory-dim"}`}>
                     {delta > 0 ? "+" : ""}
-                    {formatBoli(delta)}
+                    {formatSangu(delta)}
                   </span>
                 </li>
               );

@@ -32,7 +32,7 @@ export default function OrderStatusForm({
         await changeStatus(orderId, value);
         showToast(`Order status updated to "${value}".`, "success");
       } catch (err) {
-        showToast(err instanceof Error ? err.message : "Couldn't update status — try again.", "error");
+        showToast(err instanceof Error ? err.message : "Couldn't update status. Try again.", "error");
       }
     });
   };

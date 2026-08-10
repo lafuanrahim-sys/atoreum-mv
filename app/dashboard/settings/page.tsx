@@ -169,7 +169,7 @@ export default async function DashboardSettingsPage({
             ))}
           </ul>
           <p className="mt-4 text-[11px] text-ivory-dim/80">
-            Removing a brand doesn&apos;t change existing products — they keep their brand.
+            Removing a brand doesn&apos;t change existing products. They keep their brand.
           </p>
         </div>
       </div>

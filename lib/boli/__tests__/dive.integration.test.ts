@@ -2,7 +2,15 @@ import { describe, it, expect, afterAll } from "vitest";
 import crypto from "crypto";
 import { pool } from "../db";
 import { playToday, getTodaysPlay } from "../dive.server";
-import { PITY_COUNTER_WINDOW, PITY_MINIMUM_TIER, PITY_BOOST_BALL_COUNT, WEEKLY_GAME_BOLI_CAP, DIVE_PAYOUT_TABLE } from "../config";
+import {
+  PITY_COUNTER_WINDOW,
+  PITY_MINIMUM_TIER,
+  PITY_BOOST_BALL_COUNT,
+  WEEKLY_GAME_BOLI_CAP,
+  DIVE_PAYOUT_TABLE,
+  STREAK_CHEST_DAY,
+  STREAK_CHEST_BOLI,
+} from "../config";
 
 /**
  * Real integration tests against a live Postgres database with
@@ -127,7 +135,11 @@ describe.skipIf(!hasDatabase)("Boli Dive integration (live Postgres required)", 
     // either way, this play's payout must never push the week's total past
     // the configured cap.
     const { rows } = await db.query<{ total: string }>(
-      `select coalesce(sum(final_payout + chest_boli), 0) as total from boli_dive_plays
+      // final_payout only: the streak chest is deliberately exempt from the
+      // weekly cap (see boli_dive_play() in lib/boli/schema.sql), so summing
+      // chest_boli in here would assert the behaviour this codebase
+      // specifically moved away from.
+      `select coalesce(sum(final_payout), 0) as total from boli_dive_plays
        where user_id = $1 and play_date >= $2 and play_date <= $3`,
       [
         userId,
@@ -136,5 +148,70 @@ describe.skipIf(!hasDatabase)("Boli Dive integration (live Postgres required)", 
       ]
     );
     expect(Number(rows[0].total)).toBeLessThanOrEqual(WEEKLY_GAME_BOLI_CAP);
+  }, 30_000);
+
+  /**
+   * Regression guard. The chest used to be clamped by leftover cap room,
+   * which meant the single best week a player could have -- a completed
+   * 7-day streak ending in a big win -- was also the week the chest paid
+   * nothing, because the win consumed the headroom first. Drives
+   * boli_dive_play() directly with explicit dates so the assertion doesn't
+   * depend on which weekday the suite runs on.
+   */
+  it("streak chest is exempt from the weekly cap: pays in full even when the cap is already spent", async () => {
+    const userId = freshUserId();
+    const db = pool();
+    await db.query(`insert into boli_users (user_id) values ($1) on conflict do nothing`, [userId]);
+
+    const config = {
+      gridSize: 9,
+      pickCount: 3,
+      payoutTable: DIVE_PAYOUT_TABLE,
+      tripleMultiplier: 1.5,
+      globalDailyBudget: 50_000,
+      fallbackCommonPayout: DIVE_PAYOUT_TABLE.common.boli,
+      gameExpiryDays: 60,
+      streakChestDay: STREAK_CHEST_DAY,
+      streakChestBoli: STREAK_CHEST_BOLI,
+      streakMultiplierStartDay: 3,
+      streakMultiplier: 1.25,
+      goldenMultiplier: 1.5,
+      weeklyCap: WEEKLY_GAME_BOLI_CAP,
+      monthlyCap: 1_800,
+    };
+    // A Monday well clear of any real data, so all 7 days sit in one ISO week.
+    const weekStart = Date.UTC(2031, 8, 1); // 2031-09-01 is a Monday
+    const dayOf = (i: number) => new Date(weekStart + i * 86_400_000).toISOString().slice(0, 10);
+    const treasureBoard = JSON.stringify(["treasure", "treasure", ...Array(7).fill("common")]);
+    const commonBoard = JSON.stringify(Array(9).fill("common"));
+
+    // Days 1-6 build the streak; day 1 is a Treasure, which alone exhausts
+    // the entire weekly cap and would previously have starved the chest.
+    for (let i = 0; i < 6; i++) {
+      await db.query(`select * from boli_dive_play($1,$2,$3,$4,$5,$6,$7,$8)`, [
+        userId, dayOf(i), i === 0 ? treasureBoard : commonBoard,
+        JSON.stringify(FIXED_PICK), false, null, null, JSON.stringify(config),
+      ]);
+    }
+
+    const { rows } = await db.query<{ final_payout: string; chest_boli: string; streak_day: number }>(
+      `select * from boli_dive_play($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [userId, dayOf(6), commonBoard, JSON.stringify(FIXED_PICK), false, null, null, JSON.stringify(config)]
+    );
+
+    expect(rows[0].streak_day).toBe(STREAK_CHEST_DAY);
+    // Cap fully spent by the day-1 Treasure, so the dive itself pays nothing...
+    expect(Number(rows[0].final_payout)).toBe(0);
+    // ...but finishing the streak still pays, in full.
+    expect(Number(rows[0].chest_boli)).toBe(STREAK_CHEST_BOLI);
+
+    const { rows: weekRows } = await db.query<{ dive: string; chest: string }>(
+      `select coalesce(sum(final_payout),0) as dive, coalesce(sum(chest_boli),0) as chest
+         from boli_dive_plays where user_id = $1 and play_date >= $2 and play_date <= $3`,
+      [userId, dayOf(0), dayOf(6)]
+    );
+    // The cap still binds the dive side exactly; only the chest sits outside it.
+    expect(Number(weekRows[0].dive)).toBe(WEEKLY_GAME_BOLI_CAP);
+    expect(Number(weekRows[0].chest)).toBe(STREAK_CHEST_BOLI);
   }, 30_000);
 });

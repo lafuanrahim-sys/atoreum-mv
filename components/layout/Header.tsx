@@ -138,7 +138,7 @@ export default function Header() {
           </span>
         </Link>
 
-        {/* gap-2 (not gap-4, used elsewhere) -- with a Boli balance chip
+        {/* gap-2 (not gap-4, used elsewhere) -- with a Sangu balance chip
             showing (signed-in visitors), the logo wordmark plus all four
             icons don't fit a phone-width row at the wider gap: the icon
             group overflowed its own padding by ~19px, rendering right up

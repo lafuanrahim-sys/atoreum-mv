@@ -75,7 +75,7 @@ export default function DhoniTrail({
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="mx-auto block h-16 w-full max-w-sm"
         role="img"
-        aria-label={`Streak day ${clampedDay} of ${ISLAND_COUNT}${shieldFired ? " — your shield caught a missed day" : ""}`}
+        aria-label={`Streak day ${clampedDay} of ${ISLAND_COUNT}${shieldFired ? ", your shield caught a missed day" : ""}`}
       >
         <path
           d={`M ${islandX(0)} ${HEIGHT / 2} L ${islandX(ISLAND_COUNT - 1)} ${HEIGHT / 2}`}

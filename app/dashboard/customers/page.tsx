@@ -1,6 +1,8 @@
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { listUsers } from "@/lib/data/users.server";
 import { getAllOrders } from "@/lib/data/orders.server";
+import { getSanguStatsForUsers, EMPTY_SANGU_STATS } from "@/lib/boli/adminStats.server";
+import Link from "next/link";
 import { adminSendPasswordResetAction, assignRoleAction, deleteUserAction } from "@/app/actions/auth";
 import AdminActionButton from "@/components/dashboard/AdminActionButton";
 import Pagination from "@/components/dashboard/Pagination";
@@ -28,10 +30,15 @@ export default async function DashboardCustomersPage({
   const me = await getCurrentUser();
   const isSuperAdmin = me?.role === "superadmin";
   const [users, orders] = await Promise.all([listUsers(), getAllOrders()]);
+  const sanguStats = await getSanguStatsForUsers(users.map((u) => u.id));
 
-  const statsFor = (email: string) => {
+  // userId is the authoritative order link; the email match is the fallback
+  // for orders placed before that field existed (same rule as /account).
+  const statsFor = (userId: string, email: string) => {
     const theirs = orders.filter(
-      (o) => o.customer.email.toLowerCase() === email.toLowerCase() && o.status !== "Cancelled"
+      (o) =>
+        (o.userId === userId || o.customer.email.toLowerCase() === email.toLowerCase()) &&
+        o.status !== "Cancelled"
     );
     return {
       count: theirs.length,
@@ -40,12 +47,17 @@ export default async function DashboardCustomersPage({
     };
   };
 
-  const withStats = users.map((u) => ({ user: u, stats: statsFor(u.email) }));
+  const withStats = users.map((u) => ({
+    user: u,
+    stats: statsFor(u.id, u.email),
+    sangu: sanguStats.get(u.id) ?? EMPTY_SANGU_STATS,
+  }));
 
   const [sortKey, sortDir] = sort.split("-");
   const dir = sortDir === "asc" ? 1 : -1;
   withStats.sort((a, b) => {
     if (sortKey === "spend") return (a.stats.spend - b.stats.spend) * dir;
+    if (sortKey === "sangu") return (a.sangu.balance - b.sangu.balance) * dir;
     // default: joined date
     return (new Date(a.user.createdAt).getTime() - new Date(b.user.createdAt).getTime()) * dir;
   });
@@ -96,19 +108,30 @@ export default async function DashboardCustomersPage({
                 activeSort={sort}
                 hrefFor={(s) => hrefFor({ sort: s, page: 1 })}
               />
+              <SortHeader
+                label="Sangu"
+                sortKey="sangu"
+                activeSort={sort}
+                hrefFor={(s) => hrefFor({ sort: s, page: 1 })}
+              />
               <th className="py-3 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Role</th>
               <th className="py-3"></th>
             </tr>
           </thead>
           <tbody>
-            {paged.map(({ user: u, stats }) => {
+            {paged.map(({ user: u, stats, sangu }) => {
               const isSelf = me?.id === u.id;
               const isTargetSuperAdmin = u.role === "superadmin";
               const canManage = isSuperAdmin && !isSelf && !isTargetSuperAdmin;
               return (
                 <tr key={u.id} className="border-b border-line">
-                  <td className="py-3 pr-4 text-ivory">
-                    {u.name}
+                  <td className="py-3 pr-4">
+                    <Link
+                      href={`/dashboard/customers/${u.id}`}
+                      className="text-ivory transition-colors hover:text-gold-deep"
+                    >
+                      {u.name}
+                    </Link>
                     {isSelf && <span className="ml-2 font-mono text-[10px] uppercase text-ivory-dim">(you)</span>}
                   </td>
                   <td className="py-3 pr-4 font-mono text-xs text-ivory-dim">{u.email}</td>
@@ -118,6 +141,14 @@ export default async function DashboardCustomersPage({
                   <td className="py-3 pr-4 font-mono tabular-nums text-ivory-dim">{stats.count}</td>
                   <td className="py-3 pr-4 font-mono tabular-nums text-ivory-dim">
                     {formatPrice(stats.spend, stats.currency)}
+                  </td>
+                  <td className="py-3 pr-4 font-mono tabular-nums">
+                    <Link href={`/dashboard/customers/${u.id}`} className="text-gold-deep hover:underline">
+                      {sangu.balance.toLocaleString()}
+                    </Link>
+                    <span className="ml-2 text-[10px] text-ivory-dim">
+                      {sangu.spent > 0 ? `${sangu.spent.toLocaleString()} spent` : ""}
+                    </span>
                   </td>
                   <td className="py-3 pr-4">
                     <span

@@ -6,6 +6,7 @@ import { getAllOrders } from "@/lib/data/orders.server";
 import { getAllProducts } from "@/lib/data/products.server";
 import { logoutAction } from "@/app/actions/auth";
 import ProfileForms from "@/components/account/ProfileForms";
+import ProfileOverview, { type ProfileOverviewData } from "@/components/account/ProfileOverview";
 import ProductCard from "@/components/products/ProductCard";
 import BoliSection, { type PendingBoliOrder } from "@/components/account/BoliSection";
 import BoliDiveGame from "@/components/boli/BoliDiveGame";
@@ -16,7 +17,7 @@ import { EXPIRY_WARNING_WINDOW_DAYS, UNLIMITED_DIVE_PLAYS_FOR_ADMINS } from "@/l
 import PageTransition from "@/components/ui/PageTransition";
 
 export const metadata: Metadata = {
-  title: "My Account — Atoreum MV",
+  title: "My Account | Atoreum MV",
   description: "Your orders, favorites, and profile.",
 };
 
@@ -35,7 +36,7 @@ const STATUS_STYLES: Record<string, string> = {
 const TABS = [
   { key: "orders", label: "My Orders" },
   { key: "favorites", label: "Favorites" },
-  { key: "boli", label: "Boli" },
+  { key: "boli", label: "Sangu" },
   { key: "profile", label: "Profile" },
 ] as const;
 
@@ -60,8 +61,8 @@ export default async function AccountPage({
   );
   const favoriteProducts = allProducts.filter((p) => user.favorites.includes(p.id));
 
-  // Fetched only when the Boli tab is active (or an error is hit) — no
-  // point calling out to Supabase on every account-page load. Boli not
+  // Fetched only when the Sangu tab is active (or an error is hit) — no
+  // point calling out to Supabase on every account-page load. Sangu not
   // being provisioned yet must never break the rest of the account page.
   let boliData: {
     displayBalance: number;
@@ -76,6 +77,56 @@ export default async function AccountPage({
   } | null = null;
   let boliError = false;
 
+  // The Profile tab shows tier/balance too, so it needs the same snapshot the
+  // Sangu tab loads -- but only the snapshot, not the ledger page. Sangu being
+  // unavailable must never stop the profile rendering, hence the try/catch and
+  // the null-tolerant shape downstream.
+  let profileOverview: ProfileOverviewData | null = null;
+  if (tab === "profile") {
+    const activeOrders = myOrders.filter((o) => o.status !== "Cancelled");
+    const sorted = [...myOrders].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    const last = sorted[0] ?? null;
+
+    let sangu: ProfileOverviewData["sangu"] = null;
+    try {
+      const snapshot = await getBalance(user.id);
+      sangu = {
+        balance: Number(snapshot.displayBalance),
+        lifetimeEarned: Number(snapshot.lifetimeEarned),
+        tier: snapshot.tier,
+      };
+    } catch (err) {
+      console.error("[boli] profile snapshot failed:", err);
+    }
+
+    profileOverview = {
+      name: user.name,
+      email: user.email,
+      memberSince: new Date(user.createdAt).toLocaleDateString("en-GB", {
+        month: "long",
+        year: "numeric",
+      }),
+      sangu,
+      orderCount: activeOrders.length,
+      lifetimeSpend: activeOrders.reduce((sum, o) => sum + o.subtotal, 0),
+      currency: activeOrders[0]?.currency ?? "MVR",
+      favoritesCount: user.favorites.length,
+      lastOrder: last
+        ? {
+            id: last.id,
+            orderNumber: last.orderNumber,
+            placedAt: last.createdAt,
+            status: last.status,
+            total: last.subtotal,
+            currency: last.currency,
+            itemCount: last.items.reduce((n, i) => n + i.quantity, 0),
+          }
+        : null,
+    };
+  }
+
   if (tab === "boli" && boliView !== "dive") {
     try {
       const page = Math.max(1, Number(boliPageRaw) || 1);
@@ -89,10 +140,10 @@ export default async function AccountPage({
         .map((o) => ({
           orderId: o.id,
           orderNumber: o.orderNumber,
-          estimatedBoli: estimatePurchaseEarn(o.subtotal, o.boliDiscountAmount ?? 0, snapshot.tier),
+          estimatedSangu: estimatePurchaseEarn(o.subtotal, o.boliDiscountAmount ?? 0, snapshot.tier),
           placedAt: o.createdAt,
         }))
-        .filter((o) => o.estimatedBoli > 0);
+        .filter((o) => o.estimatedSangu > 0);
 
       boliData = {
         displayBalance: Number(snapshot.displayBalance),
@@ -170,7 +221,7 @@ export default async function AccountPage({
               {myOrders.length === 0 ? (
                 <div className="flex flex-col items-start gap-4">
                   <p className="text-sm text-ivory-dim">
-                    No orders yet — your order history will appear here.
+                    No orders yet. Your order history will appear here.
                   </p>
                   <Link
                     href="/products"
@@ -225,7 +276,7 @@ export default async function AccountPage({
               {favoriteProducts.length === 0 ? (
                 <div className="flex flex-col items-start gap-4">
                   <p className="text-sm text-ivory-dim">
-                    Nothing saved yet — tap the heart on any product to keep it here.
+                    Nothing saved yet. Tap the heart on any product to keep it here.
                   </p>
                   <Link
                     href="/products"
@@ -252,14 +303,14 @@ export default async function AccountPage({
                   aria-current={boliView !== "dive" ? "page" : undefined}
                   className={`transition-colors active:scale-95 ${boliView !== "dive" ? "text-gold" : "text-ivory-dim hover:text-gold"}`}
                 >
-                  My Boli
+                  My Sangu
                 </Link>
                 <Link
                   href="/account?tab=boli&boliView=dive"
                   aria-current={boliView === "dive" ? "page" : undefined}
                   className={`transition-colors active:scale-95 ${boliView === "dive" ? "text-gold" : "text-ivory-dim hover:text-gold"}`}
                 >
-                  Boli Dive
+                  Sangu Dive
                 </Link>
               </nav>
 
@@ -273,7 +324,7 @@ export default async function AccountPage({
                 <>
                   {boliError && (
                     <p className="text-sm text-ivory-dim">
-                      Boli isn&apos;t available right now — please check back shortly.
+                      Sangu isn&apos;t available right now. Please check back shortly.
                     </p>
                   )}
                   {boliData && <BoliSection {...boliData} />}
@@ -283,11 +334,19 @@ export default async function AccountPage({
           )}
 
           {tab === "profile" && (
-            <ProfileForms
-              user={user}
-              back="/account?tab=profile"
-              flags={{ profile, password }}
-            />
+            <div className="flex flex-col gap-14">
+              {profileOverview && <ProfileOverview data={profileOverview} />}
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-ivory">Account details</p>
+                <div className="mt-6">
+                  <ProfileForms
+                    user={user}
+                    back="/account?tab=profile"
+                    flags={{ profile, password }}
+                  />
+                </div>
+              </div>
+            </div>
           )}
         </div>
         </PageTransition>
