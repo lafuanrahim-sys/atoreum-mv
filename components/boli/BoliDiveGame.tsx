@@ -601,7 +601,11 @@ export default function BoliDiveGame({
       if (next.length === DIVE_PICK_COUNT) {
         idleTweenRef.current?.kill();
         gsap.set(idleGlowRefs.current.filter(Boolean) as HTMLSpanElement[], { opacity: 0, scale: 1 });
-        window.setTimeout(() => handleConfirmPick(next), 300);
+        // Long enough for the third pick to visibly land before the board
+        // starts revealing. At the old 300ms this fired exactly as the
+        // selection transition finished, so the ball you just chose was
+        // swallowed by the reveal and the choice never registered.
+        window.setTimeout(() => handleConfirmPick(next), 520);
       }
       return next;
     });
@@ -757,6 +761,8 @@ export default function BoliDiveGame({
                 const tier = board?.[index] ?? null;
                 const style = tier ? TIER_STYLE[tier] : null;
                 const isSelected = selected.includes(index);
+                const pickOrder = selected.indexOf(index) + 1; // 0 when unpicked
+                const atCapacity = selected.length >= DIVE_PICK_COUNT;
                 const isMatched = matchedIndices.includes(index);
                 const revealed = phase === "revealed" && tier !== null;
                 const disabled = phase !== "picking" || (!isSelected && selected.length >= DIVE_PICK_COUNT);
@@ -770,7 +776,16 @@ export default function BoliDiveGame({
                     className="relative flex flex-col items-center gap-1.5"
                     style={{ opacity: enteredRef.current ? undefined : 0 }}
                   >
-                    <div className="relative h-16 w-16 sm:h-24 sm:w-24">
+                    <div
+                      className="relative h-16 w-16 transition-[transform,opacity,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:h-24 sm:w-24"
+                      style={{
+                        transform: isSelected && phase === "picking" ? "scale(1.07)" : "scale(1)",
+                        // Once three are down, the rest recede rather than
+                        // simply going disabled — the picked set should be
+                        // readable at a glance, before anything is revealed.
+                        opacity: phase === "picking" && !isSelected && atCapacity ? 0.35 : 1,
+                      }}
+                    >
                       {phase === "picking" && !isSelected && (
                         <span
                           ref={(el) => {
@@ -793,22 +808,34 @@ export default function BoliDiveGame({
                               ? `Ball ${index + 1}, selected`
                               : `Choose ball ${index + 1}`
                         }
-                        className="relative flex h-full w-full items-center justify-center rounded-full transition-[box-shadow,opacity,transform] duration-300 focus-visible:outline focus-visible:outline-2 disabled:cursor-default enabled:active:scale-95"
+                        className="relative flex h-full w-full items-center justify-center rounded-full transition-[box-shadow,opacity,border-color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-default enabled:active:scale-[0.94]"
                         style={{
                           background: revealed && style
                             ? `radial-gradient(circle at 35% 28%, ${style.soft}, #0a161c 72%)`
                             : "radial-gradient(circle at 35% 28%, #24404c, #0a161c 75%)",
-                          border: `1.5px solid ${revealed && style ? style.color : isSelected ? GOLD : LINE}`,
+                          border: `${isSelected && !revealed ? 2 : 1.5}px solid ${revealed && style ? style.color : isSelected ? GOLD : LINE}`,
                           boxShadow: revealed && style
                             ? `0 0 20px ${style.glow}`
                             : isSelected
-                              ? `0 0 14px rgba(244,197,66,0.45)`
+                              // Inner rim plus outer bloom: the ring reads as
+                              // lit from the shell rather than outlined.
+                              ? `inset 0 0 12px rgba(244,197,66,0.25), 0 0 22px rgba(244,197,66,0.55)`
                               : "0 0 0 rgba(0,0,0,0)",
                           outlineColor: GOLD,
                           color: INK,
                           opacity: phase === "revealing" && !revealed ? 0.85 : 1,
                         }}
                       >
+                        {pickOrder > 0 && phase === "picking" && (
+                          <span
+                            aria-hidden="true"
+                            className="pointer-events-none absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold tabular-nums sm:h-6 sm:w-6 sm:text-xs"
+                            style={{ background: GOLD, color: BG_DEEP, boxShadow: `0 0 12px ${GOLD}66` }}
+                          >
+                            {pickOrder}
+                          </span>
+                        )}
+
                         {/* Shine highlight — a soft arc near the top so the ball reads as dimensional, not a flat disc. */}
                         <span
                           aria-hidden="true"
@@ -838,14 +865,26 @@ export default function BoliDiveGame({
                               </span>
                             </>
                           ) : (
-                            <svg viewBox="0 0 32 32" aria-hidden="true" className="h-7 w-7 sm:h-9 sm:w-9" style={{ color: isSelected ? GOLD : INK_DIM }}>
+                            <svg
+                              viewBox="0 0 20 20"
+                              aria-hidden="true"
+                              className="h-7 w-7 transition-[color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:h-9 sm:w-9"
+                              style={{
+                                color: isSelected ? GOLD : INK_DIM,
+                                // A quarter turn as it is chosen: the shell
+                                // reads as being picked up and turned over,
+                                // which is the one bit of motion here that
+                                // carries meaning rather than decoration.
+                                transform: isSelected ? "rotate(-90deg)" : "rotate(0deg)",
+                              }}
+                            >
                               <path
-                                d="M16 4c6.5 0 10.5 6.5 10.5 12.5S22.5 28 16 28 5.5 22.5 5.5 16.5 9.5 4 16 4Z"
+                                d="M16.8 10a6.8 6.8 0 1 1-6.8-6.8 5.2 5.2 0 0 1 5.2 5.2 3.9 3.9 0 0 1-3.9 3.9 2.9 2.9 0 0 1-2.9-2.9 2.1 2.1 0 0 1 2.1-2.1"
                                 fill="none"
                                 stroke="currentColor"
-                                strokeWidth={1.4}
+                                strokeWidth={1.9}
+                                strokeLinecap="round"
                               />
-                              <path d="M16 10v12" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" />
                             </svg>
                           )}
                         </span>
