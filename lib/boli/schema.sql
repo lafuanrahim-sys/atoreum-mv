@@ -626,6 +626,21 @@ begin
   end if;
 
   v_base_payout := ((p_config -> 'payoutTable' -> v_determined_tier) ->> 'boli')::bigint;
+
+  -- A single unmatched Treasure pays a consolation instead of the lowest of
+  -- the three. Without it Treasure only ever paid on a pair or better, which
+  -- is roughly 1 play in 14,000 -- the rarest ball on the board was one
+  -- virtually no customer would ever be paid for.
+  --
+  -- match_type stays 'none', because nothing matched and the ledger should
+  -- not claim otherwise; only the tier and the payout change. Read from
+  -- p_config so the figure lives with the rest of the game's economics in
+  -- lib/boli/config.ts, and coalesced so an older caller that does not send
+  -- it keeps the previous behaviour rather than erroring.
+  if v_match_type = 'none' and 'treasure' in (v_tier_a, v_tier_b, v_tier_c) then
+    v_determined_tier := 'treasure';
+    v_base_payout := coalesce((p_config ->> 'loneTreasureConsolation')::bigint, v_base_payout);
+  end if;
   v_triple_multiplier := case when v_match_type = 'triple' then (p_config ->> 'tripleMultiplier')::numeric else 1 end;
 
   insert into boli_streaks (user_id) values (p_user_id) on conflict (user_id) do nothing;

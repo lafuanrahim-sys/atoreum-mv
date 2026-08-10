@@ -9,7 +9,13 @@ import { msUntilNextMaleMidnight } from "@/lib/boli/diveEngine";
 import { playRevealChime } from "@/lib/boli/gameAudio";
 import DhoniTrail from "./DhoniTrail";
 import type { DivePlayResult } from "@/lib/boli/dive.server";
-import { DIVE_GRID_SIZE, DIVE_PICK_COUNT, DIVE_PAYOUT_TABLE, type DiveOutcomeTier } from "@/lib/boli/config";
+import {
+  DIVE_GRID_SIZE,
+  DIVE_PICK_COUNT,
+  DIVE_PAYOUT_TABLE,
+  LONE_TREASURE_CONSOLATION_BOLI,
+  type DiveOutcomeTier,
+} from "@/lib/boli/config";
 
 /**
  * Sangu Dive — 9 balls, pick DIVE_PICK_COUNT blind, then everything opens
@@ -126,6 +132,18 @@ const MATCH_LABEL: Record<DivePlayResult["matchType"], string> = {
   pair: "Matched!",
   none: "No match",
 };
+
+/**
+ * A single unmatched Treasure pays a consolation rather than the lowest tier,
+ * so announcing it as "No match" would be technically true and completely
+ * wrong: the player is looking at the rarest ball on the board and a payout
+ * several times the usual one. Nothing matched, so the result stays
+ * matchType "none" everywhere it is recorded -- only the headline changes.
+ */
+function matchHeadline(result: DivePlayResult): string {
+  if (result.matchType === "none" && result.outcomeTier === "treasure") return "Treasure found!";
+  return MATCH_LABEL[result.matchType];
+}
 
 function formatCountdown(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -515,7 +533,7 @@ export default function BoliDiveGame({
       if (!muted) playRevealChime(play.outcomeTier);
       const matched = getMatchedIndices(play);
       setAnnouncement(
-        `${MATCH_LABEL[play.matchType]} You won ${play.totalPayout.toLocaleString()} Sangu${play.isGolden ? " on a Golden Shell day" : ""}.` +
+        `${matchHeadline(play)} You won ${play.totalPayout.toLocaleString()} Sangu${play.isGolden ? " on a Golden Shell day" : ""}.` +
           (play.chestSangu > 0 ? ` Plus a ${play.chestSangu.toLocaleString()} Sangu streak chest.` : "") +
           (play.shieldFired ? " Your shield caught a missed day." : "")
       );
@@ -858,7 +876,8 @@ export default function BoliDiveGame({
                 <p className="max-w-sm text-center text-xs leading-relaxed" style={{ color: INK_DIM }}>
                   Every shell hides a tier. Match {DIVE_PICK_COUNT - 1}+ of your picks on the same tier and you win
                   that tier&apos;s value. Match all {DIVE_PICK_COUNT} for a bonus. No match still pays the lowest of
-                  your three, never nothing.
+                  your three, never nothing &mdash; and a single Treasure pays{" "}
+                  {LONE_TREASURE_CONSOLATION_BOLI.toLocaleString()} on its own.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
                   {TIER_ORDER.map((tier) => (
@@ -881,7 +900,7 @@ export default function BoliDiveGame({
                 className="mb-4 text-center text-sm font-semibold uppercase tracking-[0.15em]"
                 style={{ color: result.matchType === "none" ? INK_DIM : TIER_STYLE[result.outcomeTier].color }}
               >
-                {MATCH_LABEL[result.matchType]}
+                {matchHeadline(result)}
               </p>
             )}
 

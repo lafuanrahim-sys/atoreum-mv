@@ -14,6 +14,7 @@ import {
 import {
   DIVE_PAYOUT_TABLE,
   DIVE_GRID_SIZE,
+  LONE_TREASURE_CONSOLATION_BOLI,
   PITY_COUNTER_WINDOW,
   PITY_MINIMUM_TIER,
   PITY_BOOST_BALL_COUNT,
@@ -118,10 +119,31 @@ describe("evaluatePick", () => {
   });
 
   it("pays the lowest of the 3 tiers when none match", () => {
-    const result = evaluatePick([...grid], [3, 6, 7]); // uncommon, epic, treasure — all distinct
+    // Deliberately treasure-free: a treasure in the picks takes the
+    // consolation path below instead, so testing the "lowest of three" rule
+    // through a set containing one would only ever assert the exception.
+    const result = evaluatePick([...grid], [3, 4, 6]); // uncommon, rare, epic
     expect(result.matchType).toBe("none");
     expect(result.tier).toBe("uncommon"); // lowest-ranked of the three
     expect(result.basePayout).toBe(DIVE_PAYOUT_TABLE.uncommon.boli);
+  });
+
+  it("pays the consolation for a lone unmatched treasure, not the lowest tier", () => {
+    const result = evaluatePick([...grid], [3, 6, 7]); // uncommon, epic, treasure
+    // Still "none" -- nothing matched, and reporting it as a match would
+    // misstate the outcome to the ledger and to the player.
+    expect(result.matchType).toBe("none");
+    expect(result.tier).toBe("treasure");
+    expect(result.basePayout).toBe(LONE_TREASURE_CONSOLATION_BOLI);
+    expect(result.basePayout).toBeGreaterThan(DIVE_PAYOUT_TABLE.uncommon.boli);
+  });
+
+  it("never lets a lone treasure out-pay a real match of the same tier", () => {
+    const lone = evaluatePick([...grid], [3, 6, 7]); // treasure, unmatched
+    const pairGrid = ["treasure", "treasure", "common"] as const;
+    const pair = evaluatePick([...pairGrid], [0, 1, 2]);
+    expect(pair.matchType).toBe("pair");
+    expect(lone.basePayout).toBeLessThan(pair.basePayout);
   });
 
   it("never returns a zero payout, even on a no-match", () => {

@@ -135,6 +135,28 @@ export const DIVE_PICK_COUNT = 3;
 /** Bonus multiplier when all 3 picked balls share the same tier. */
 export const TRIPLE_MATCH_MULTIPLIER = 1.5;
 
+/**
+ * Consolation for holding a single Treasure ball with no match.
+ *
+ * Without it a Treasure only pays on a pair or better, which is 1 play in
+ * 12,422 -- measured over 2,000,000 simulated plays, and about once every 34
+ * years for someone playing every day. The rarest, most exciting outcome on
+ * the board was one almost no customer would ever be paid for, which makes it
+ * decoration rather than a prize.
+ *
+ * At 250 a paying Treasure becomes roughly 1 in 124 plays, at a cost of about
+ * 2 laari per player per day. The weekly, monthly and global caps are
+ * untouched, so this cannot widen the programme's real exposure -- it only
+ * changes how the existing budget is distributed.
+ *
+ * Set level with the Epic pair (250), never above it. A lone unmatched ball
+ * must not out-pay a real match, or matching stops being the point of the
+ * game -- and Treasure being the rarest tier is what earns it parity with the
+ * second-best match rather than a premium over it.
+ */
+export const LONE_TREASURE_CONSOLATION_BOLI = 250;
+
+
 /** If the user's last N plays all resolved to Common (a "none" or a Common "pair"), the next day's board gets a boosted chance at a bigger match — see PITY_BOOST_BALL_COUNT. */
 export const PITY_COUNTER_WINDOW = 10;
 export const PITY_MINIMUM_TIER: DiveOutcomeTier = "rare";

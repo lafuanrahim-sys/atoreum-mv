@@ -3,6 +3,7 @@ import {
   DIVE_PAYOUT_TABLE,
   DIVE_GRID_SIZE,
   TRIPLE_MATCH_MULTIPLIER,
+  LONE_TREASURE_CONSOLATION_BOLI,
   PITY_COUNTER_WINDOW,
   PITY_MINIMUM_TIER,
   PITY_BOOST_BALL_COUNT,
@@ -106,6 +107,14 @@ export type PickEvaluation = { matchType: PickMatchType; tier: DiveOutcomeTier; 
  * triple (bonus multiplier applied by the caller), exactly 2 the same is a
  * pair (that tier's value), and 3 different tiers pays the LOWEST of the
  * three — never zero, same "always a small win" principle as before.
+ *
+ * One exception: three different tiers INCLUDING a Treasure pays the lone
+ * Treasure consolation instead of the lowest. Without it, Treasure only ever
+ * paid on a pair or better — 1 play in 12,422, about once every 34 years for
+ * a daily player — so the rarest thing on the board was one virtually no
+ * customer would ever be paid for. It stays classified as "none": nothing was
+ * matched, and calling it a match would misreport the outcome to the ledger
+ * and to the player.
  */
 export function evaluatePick(tiers: DiveOutcomeTier[], pickedIndices: number[]): PickEvaluation {
   const picked = pickedIndices.map((i) => tiers[i]);
@@ -119,6 +128,11 @@ export function evaluatePick(tiers: DiveOutcomeTier[], pickedIndices: number[]):
     if (count === 2) return { matchType: "pair", tier, basePayout: DIVE_PAYOUT_TABLE[tier].boli };
   }
   const lowest = picked.reduce((worst, t) => (TIER_ORDER.indexOf(t) < TIER_ORDER.indexOf(worst) ? t : worst));
+  if (picked.includes("treasure")) {
+    // Reported against the treasure tier, not the lowest, so the reveal can
+    // colour and label it as the treasure it actually is.
+    return { matchType: "none", tier: "treasure", basePayout: LONE_TREASURE_CONSOLATION_BOLI };
+  }
   return { matchType: "none", tier: lowest, basePayout: DIVE_PAYOUT_TABLE[lowest].boli };
 }
 
