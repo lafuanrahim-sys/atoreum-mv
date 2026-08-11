@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import gsap from "gsap";
@@ -326,11 +328,16 @@ export default function SpiralShowcase({ products }: { products: Product[] }) {
                 href={`/products/${product.id}`}
                 className="absolute inset-0 block overflow-hidden rounded-sm bg-photo-well shadow-[0_20px_45px_rgba(0,0,0,0.35)]"
               >
-                <img
+                {/* next/image so these are resized and lazily fetched. As
+                    raw tags every product photo on the homepage downloaded at
+                    full resolution whether or not it was ever scrolled to. */}
+                <Image
                   src={product.images[0]}
                   alt={product.name}
+                  fill
                   draggable={false}
-                  className="absolute inset-3 h-[calc(100%-1.5rem)] w-[calc(100%-1.5rem)] object-contain transition-transform duration-500 ease-out motion-safe:group-hover:scale-105"
+                  sizes="(min-width: 1024px) 24vw, (min-width: 640px) 40vw, 70vw"
+                  className="!inset-3 !h-[calc(100%-1.5rem)] !w-[calc(100%-1.5rem)] object-contain transition-transform duration-500 ease-out motion-safe:group-hover:scale-105"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-ink/0 transition-colors duration-500 ease-out motion-safe:group-hover:bg-ink/55" />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent" />
@@ -359,10 +366,12 @@ export default function SpiralShowcase({ products }: { products: Product[] }) {
             className="relative w-[280px] flex-none overflow-hidden rounded-sm bg-photo-well"
             style={{ aspectRatio: CARD_ASPECT }}
           >
-            <img
+            <Image
               src={product.images[0]}
               alt={product.name}
-              className="absolute inset-3 h-[calc(100%-1.5rem)] w-[calc(100%-1.5rem)] object-contain"
+              fill
+              sizes="280px"
+              className="!inset-3 !h-[calc(100%-1.5rem)] !w-[calc(100%-1.5rem)] object-contain"
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent" />
             <div className="pointer-events-none absolute inset-0 flex flex-col items-start justify-end gap-1 p-5">

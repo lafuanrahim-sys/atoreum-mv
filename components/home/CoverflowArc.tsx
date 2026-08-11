@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
@@ -89,15 +91,28 @@ const MOBILE_LIFT_MAX = 6; // px, off-center cards sit slightly lower
 
 // Shared between the desktop stack and mobile row so the photo/placeholder/
 // label treatment can't drift between the two.
-function CardMedia({ card }: { card: CoverflowCard }) {
+function CardMedia({ card, priority = false }: { card: CoverflowCard; priority?: boolean }) {
   return (
     <>
       {card.image ? (
-        <img
+        // next/image, not a bare <img>: as raw tags these bypassed the
+        // optimizer entirely and shipped at their full 1254px into a ~464px
+        // slot -- 1.6MB across the fifteen categories, every one of them
+        // decoded on the main thread. `sizes` is what lets it pick a width
+        // that matches the slot instead of the largest it has.
+        <Image
           src={card.image}
           alt={card.label}
+          fill
           draggable={false}
-          className="absolute inset-0 h-full w-full object-cover"
+          // The first few cards are above the fold and one of them is the
+          // page's LCP element. next/image lazy-loads by default, which for
+          // the LCP image means fetching it only after layout -- slower than
+          // the raw <img> this replaced. priority restores the eager fetch
+          // for those, while everything further along the arc stays lazy.
+          priority={priority}
+          sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 80vw"
+          className="object-cover"
         />
       ) : (
         // Same "no photo yet" treatment as ProductCard -- covers any future
@@ -460,7 +475,7 @@ export default function CoverflowArc() {
                 aria-label={`Shop ${card.label}`}
                 draggable={false}
               >
-                <CardMedia card={card} />
+                <CardMedia card={card} priority={i < 3} />
               </Link>
             </div>
           ))}
@@ -486,7 +501,7 @@ export default function CoverflowArc() {
             className="relative block flex-none overflow-hidden rounded-2xl bg-ink-2"
             style={{ width: "var(--card-size)", height: "var(--card-size)" }}
           >
-            <CardMedia card={card} />
+            <CardMedia card={card} priority={i < 3} />
           </Link>
         ))}
       </div>
