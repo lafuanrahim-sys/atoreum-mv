@@ -5,6 +5,7 @@ import { getOrderById } from "@/lib/data/orders.server";
 import { changeOrderStatus } from "@/app/actions/orders";
 import AdminActionButton from "@/components/dashboard/AdminActionButton";
 import OrderStatusForm from "@/components/dashboard/OrderStatusForm";
+import SendReceiptButton from "@/components/dashboard/SendReceiptButton";
 
 function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
@@ -32,12 +33,17 @@ export default async function DashboardOrderDetailPage({
           <p className="mt-2 font-mono text-xs text-ivory-dim">
             Placed {new Date(order.createdAt).toLocaleString()}
           </p>
-          <Link
-            href={`/invoice/${order.id}`}
-            className="mt-3 inline-block font-mono text-[11px] uppercase tracking-[0.15em] text-gold-deep hover:underline"
-          >
-            Tax invoice →
-          </Link>
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            <Link
+              href={`/invoice/${order.id}`}
+              className="font-mono text-[11px] uppercase tracking-[0.15em] text-gold-deep hover:underline"
+            >
+              Tax invoice →
+            </Link>
+            {order.customer.email && (
+              <SendReceiptButton orderId={order.id} email={order.customer.email} />
+            )}
+          </div>
         </div>
 
         {order.status === "Completed" ? (
@@ -76,6 +82,15 @@ export default async function DashboardOrderDetailPage({
           <p className="mt-1 text-sm text-ivory-dim">{order.customer.email}</p>
           <p className="text-sm text-ivory-dim">{order.customer.phone}</p>
           <p className="mt-2 text-sm text-ivory-dim">{order.customer.address}</p>
+          {order.customer.notes && (
+            /* Boxed and gold-edged rather than another grey line: this is the
+               one part of an order the customer wrote themselves, and it
+               usually needs acting on. */
+            <div className="mt-4 border-l-2 border-gold-deep bg-gold-deep/5 px-4 py-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold-deep">Note from customer</p>
+              <p className="mt-1.5 text-sm leading-relaxed whitespace-pre-wrap text-ivory">{order.customer.notes}</p>
+            </div>
+          )}
         </div>
 
         <div>

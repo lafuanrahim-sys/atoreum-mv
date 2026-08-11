@@ -40,6 +40,11 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();
+  // Capped rather than rejected: a customer pasting an essay should still get
+  // their order through, and 2000 characters is far more than any real
+  // delivery instruction while still bounding what reaches the database, the
+  // notification and the invoice.
+  const notes = String(formData.get("notes") ?? "").trim().slice(0, 2000);
   const itemsRaw = String(formData.get("items") ?? "[]");
 
   if (!name || !email || !phone || !address) {
@@ -85,6 +90,11 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
       productId: product.id,
       name: product.name,
       price: product.priceEffective,
+      // Only recorded when there is a discount, so a full-price line stays
+      // exactly the shape it has always been.
+      ...(product.discountPercent > 0
+        ? { listPrice: product.price, discountPercent: product.discountPercent }
+        : {}),
       currency: product.currency,
       quantity,
       image: product.images[0] ?? null,
@@ -173,7 +183,7 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
     items,
     subtotal,
     currency,
-    customer: { name, email, phone, address },
+    customer: { name, email, phone, address, ...(notes ? { notes } : {}) },
     paymentMethod,
     paymentProofPath,
     userId: currentUser?.id,

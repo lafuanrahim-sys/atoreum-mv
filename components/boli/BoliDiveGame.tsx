@@ -724,6 +724,12 @@ export default function BoliDiveGame({
     <div
       ref={stageRef}
       className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
+      // Lenis drives smooth scrolling for the whole document and swallows
+      // wheel events, so this fixed overlay -- which has its own scroll
+      // container -- never saw them: the scrollbar worked, the wheel did
+      // nothing. data-lenis-prevent is Lenis's own opt-out for exactly this,
+      // nested scrollable panels.
+      data-lenis-prevent
       style={{
         background: `linear-gradient(to bottom, ${WATER_TOP} 0%, ${WATER_MID} 22%, ${WATER_LOW} 52%, ${WATER_DEEP} 78%, ${ABYSS} 100%)`,
         color: INK,
@@ -827,7 +833,7 @@ export default function BoliDiveGame({
         </p>
       </header>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center px-6 pb-16">
+      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-start px-6 pt-2 pb-8">
         {phase === "ineligible" ? (
           <p className="text-center text-sm" style={{ color: INK_DIM }}>
             {ineligibleReason}

@@ -101,7 +101,17 @@ export type PaymentMethod = "cash" | "transfer";
 export type OrderItem = {
   productId: string;
   name: string;
+  /** Price actually charged, per unit — the discounted price where one applied. */
   price: number;
+  /**
+   * Undiscounted listing price at the time of sale, and the percentage taken
+   * off it. Snapshotted onto the line rather than looked up later: a receipt
+   * has to keep saying what it said, and the product's price will move.
+   * Absent on orders placed before this existed, and on anything sold at full
+   * price — the invoice simply shows no discount for those.
+   */
+  listPrice?: number;
+  discountPercent?: number;
   currency: Currency;
   quantity: number;
   image: string | null;
@@ -112,6 +122,12 @@ export type OrderCustomer = {
   email: string;
   phone: string;
   address: string;
+  /**
+   * Whatever the customer wanted us to know — delivery instructions, a
+   * landmark, a preferred time. Optional, and absent on orders placed before
+   * the field existed.
+   */
+  notes?: string;
 };
 
 export type Order = {

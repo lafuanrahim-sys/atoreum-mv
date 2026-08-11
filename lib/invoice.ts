@@ -31,6 +31,12 @@ export type InvoiceLine = {
   quantity: number;
   /** GST-inclusive unit price, as charged. */
   unitGross: number;
+  /** Undiscounted unit price, when the line was sold at a discount. */
+  listUnitGross: number | null;
+  /** Percent off, when discounted. */
+  discountPercent: number | null;
+  /** GST-inclusive value of the discount on this line. */
+  lineSaving: number;
   /** GST-inclusive line total. */
   lineGross: number;
   /** Line total excluding GST. */
@@ -45,6 +51,10 @@ export type Invoice = {
   grossSubtotal: number;
   /** Sangu redemption applied at checkout, GST-inclusive. */
   discount: number;
+  /** Total taken off by per-product discounts, GST-inclusive. */
+  productSavings: number;
+  /** What the lines would have come to at full list price. */
+  grossBeforeProductDiscounts: number;
   /** What the customer actually pays, GST-inclusive. */
   grossTotal: number;
   /** grossTotal excluding GST -- the taxable value. */
@@ -71,11 +81,16 @@ export function buildInvoice(order: Order): Invoice {
   const lines: InvoiceLine[] = order.items.map((item) => {
     const lineGross = toLaari(item.price * item.quantity);
     const lineNet = toLaari(lineGross / (1 + GST_RATE));
+    const listUnit = item.listPrice ?? null;
     return {
       productId: item.productId,
       name: item.name,
       quantity: item.quantity,
       unitGross: item.price,
+      listUnitGross: listUnit,
+      discountPercent: item.discountPercent ?? null,
+      // What the customer saved on this line, at list.
+      lineSaving: listUnit ? toLaari((listUnit - item.price) * item.quantity) : 0,
       lineGross,
       lineNet,
       // Derived by subtraction, not by a second division, so net + gst is
@@ -85,6 +100,11 @@ export function buildInvoice(order: Order): Invoice {
   });
 
   const grossSubtotal = toLaari(lines.reduce((sum, l) => sum + l.lineGross, 0));
+  const productSavings = toLaari(lines.reduce((sum, l) => sum + l.lineSaving, 0));
+  // Shown as the starting figure the discounts came off, so the invoice reads
+  // as a sum the customer can follow rather than a total appearing from
+  // nowhere. Not a taxable figure -- GST is charged on what was actually paid.
+  const grossBeforeProductDiscounts = toLaari(grossSubtotal + productSavings);
   const discount = toLaari(order.boliDiscountAmount ?? 0);
   const grossTotal = toLaari(Math.max(0, grossSubtotal - discount));
   const netTotal = toLaari(grossTotal / (1 + GST_RATE));
@@ -92,6 +112,8 @@ export function buildInvoice(order: Order): Invoice {
   return {
     lines,
     grossSubtotal,
+    productSavings,
+    grossBeforeProductDiscounts,
     discount,
     grossTotal,
     netTotal,

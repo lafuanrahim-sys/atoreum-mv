@@ -69,6 +69,7 @@ export default function CheckoutClient({
     email: defaultContact?.email ?? "",
     phone: "",
     address: "",
+    notes: "",
   });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("transfer");
   const [boliInput, setBoliInput] = useState("");
@@ -182,6 +183,7 @@ export default function CheckoutClient({
           <input type="hidden" name="email" value={contact.email} />
           <input type="hidden" name="phone" value={contact.phone} />
           <input type="hidden" name="address" value={contact.address} />
+          <input type="hidden" name="notes" value={contact.notes} />
           <input type="hidden" name="paymentMethod" value={paymentMethod} />
           {/* Omitted entirely (not just zero) unless the amount clears the minimum — an absent field reads server-side as "no redemption requested" rather than a rejected tiny one. */}
           {boliMeetsMinimum && <input type="hidden" name="boliRedeem" value={boliApplied} />}
@@ -210,6 +212,16 @@ export default function CheckoutClient({
                 textarea
                 value={contact.address}
                 onChange={(v) => setContact((c) => ({ ...c, address: v }))}
+              />
+              {/* Deliberately outside contactValid: notes are optional, and
+                  gating checkout on an empty one would turn a courtesy into
+                  an obstacle. */}
+              <Field
+                label="Notes for us (optional)"
+                textarea
+                value={contact.notes}
+                onChange={(v) => setContact((c) => ({ ...c, notes: v }))}
+                hint="Delivery instructions, a landmark, a preferred time — anything we should know."
               />
 
               <button
@@ -316,9 +328,11 @@ function Field({
   onChange,
   type = "text",
   textarea = false,
+  hint,
 }: {
   label: string;
   value: string;
+  hint?: string;
   onChange: (v: string) => void;
   type?: string;
   textarea?: boolean;
@@ -341,6 +355,7 @@ function Field({
           className="border border-line bg-transparent px-4 py-3 text-sm text-ivory focus:border-gold focus:outline-none"
         />
       )}
+      {hint && <span className="text-[11px] leading-snug text-ivory-dim/70">{hint}</span>}
     </label>
   );
 }

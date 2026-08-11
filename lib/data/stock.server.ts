@@ -679,6 +679,49 @@ export type CountSheetRow = {
   stockStatus: "in-stock" | "low-stock" | "out-of-stock";
 };
 
+/**
+ * Headline inventory figures for the stock page.
+ *
+ * `sold` comes from the movement ledger rather than from orders, and counts
+ * sale movements net of their reversals: an order that was placed and then
+ * cancelled put its units back on the shelf, so counting it as sold would
+ * overstate what actually left the building. The ledger is the only record
+ * that knows the difference.
+ */
+export type StockTotals = {
+  /** Units currently on the shelf, across every product. */
+  onHand: number;
+  /** Distinct products carrying at least one unit. */
+  productsInStock: number;
+  productsLow: number;
+  productsOut: number;
+  /** Units sold and not returned. */
+  sold: number;
+};
+
+export async function getStockTotals(): Promise<StockTotals> {
+  const { rows } = await pool().query<{
+    on_hand: string; in_stock: string; low: string; out: string; sold: string;
+  }>(
+    `select
+       coalesce(sum(stock_on_hand), 0)                                  as on_hand,
+       count(*) filter (where stock_status = 'in-stock')                as in_stock,
+       count(*) filter (where stock_status = 'low-stock')               as low,
+       count(*) filter (where stock_status = 'out-of-stock')            as out,
+       (select coalesce(-sum(delta), 0) from stock_movements
+         where reason in ('sale', 'sale_reversal'))                     as sold
+     from products`
+  );
+  const r = rows[0];
+  return {
+    onHand: Number(r.on_hand),
+    productsInStock: Number(r.in_stock),
+    productsLow: Number(r.low),
+    productsOut: Number(r.out),
+    sold: Math.max(0, Number(r.sold)),
+  };
+}
+
 export async function getCountSheet(): Promise<CountSheetRow[]> {
   const { rows } = await pool().query(
     `select id, name, sku, category, stock_on_hand, stock_status

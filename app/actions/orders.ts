@@ -154,3 +154,38 @@ export async function deleteOrderAction(orderId: string) {
   revalidatePath("/products");
   revalidatePath("/account");
 }
+
+/**
+ * Sends the customer their receipt on demand.
+ *
+ * The automatic send fires once, on the first transition into Confirmed. That
+ * is right for the common case and useless for every other one: mail that
+ * bounced, an address corrected after the fact, a customer who deleted it, or
+ * an order confirmed while SMTP was down. This is the manual escape hatch, and
+ * unlike the automatic path it reports what happened rather than logging it —
+ * the admin pressed a button and is entitled to know whether it worked.
+ *
+ * Deliberately not restricted to Confirmed orders: the reason to re-send is
+ * usually that something went wrong, and refusing on a status technicality
+ * would block exactly the case this exists for.
+ */
+export async function sendOrderReceiptAction(orderId: string): Promise<{ ok: true } | { error: string }> {
+  const user = await getCurrentUser();
+  if (!user || !isAdminRole(user.role)) return { error: "Not authorised." };
+
+  const order = await getOrderById(orderId);
+  if (!order) return { error: "That order no longer exists." };
+  if (!order.customer.email) return { error: "This order has no email address on it." };
+
+  const result = await sendOrderReceiptEmail({
+    to: order.customer.email,
+    name: order.customer.name,
+    order,
+  });
+  if ("error" in result) {
+    console.error(`[receipt] manual send for ${order.orderNumber} failed:`, result.error);
+    return { error: result.error };
+  }
+  console.log(`[receipt] manual send for ${order.orderNumber} -> ${order.customer.email}`);
+  return { ok: true };
+}

@@ -31,6 +31,16 @@ function getTransporter(): Transporter {
       port,
       secure: port === 465, // 465 = implicit TLS; 587 (and others) use STARTTLS instead
       auth: { user, pass },
+      // Nodemailer has NO default timeouts, so an unreachable host or an
+      // address whose domain does not resolve leaves the send hanging
+      // indefinitely. On the automatic path that meant a serverless function
+      // held open for nothing; on the admin's "Email receipt" button it meant
+      // a spinner that never resolved and no way to tell whether the customer
+      // got their receipt. Every failure now becomes a reported error within
+      // ~20s at worst.
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
     });
   }
   return transporter;
@@ -148,6 +158,14 @@ export function renderOrderReceiptHtml(params: { name: string; order: Order; ord
     )
     .join("");
 
+  const savingsRow =
+    invoice.productSavings > 0
+      ? `<tr><td style="padding:12px 24px 4px 0;color:#666;">Before discount</td>
+         <td style="padding:12px 0 4px;text-align:right;color:#666;">${money(invoice.grossBeforeProductDiscounts)}</td></tr>
+         <tr><td style="padding:4px 24px 4px 0;color:#666;">Product discount</td>
+         <td style="padding:4px 0;text-align:right;color:#666;">-${money(invoice.productSavings)}</td></tr>`
+      : "";
+
   const discountRow =
     invoice.discount > 0
       ? `<tr><td style="padding:4px 24px 4px 0;color:#666;">Sangu redeemed</td>
@@ -168,6 +186,7 @@ export function renderOrderReceiptHtml(params: { name: string; order: Order; ord
             </thead>
             <tbody>${rows}</tbody>
             <tfoot>
+              ${savingsRow}
               <tr><td style="padding:12px 24px 4px 0;color:#666;">Subtotal (incl. GST)</td>
                   <td style="padding:12px 0 4px;text-align:right;color:#666;">${money(invoice.grossSubtotal)}</td></tr>
               ${discountRow}

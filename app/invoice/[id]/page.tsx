@@ -114,6 +114,13 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
           </div>
         </section>
 
+        {order.customer.notes && (
+          <p className="mt-4 border-l-2 border-line pl-3 text-xs leading-relaxed text-ivory-dim">
+            <span className="font-mono text-[10px] uppercase tracking-[0.15em]">Note: </span>
+            {order.customer.notes}
+          </p>
+        )}
+
         <table className="mt-8 w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-ivory text-left">
@@ -131,7 +138,16 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                 <td className="py-2.5 pr-3 text-ivory">{line.name}</td>
                 <td className="py-2.5 pr-3 text-right font-mono tabular-nums text-ivory-dim">{line.quantity}</td>
                 <td className="py-2.5 pr-3 text-right font-mono tabular-nums text-ivory-dim">
+                  {/* Struck list price above the charged one, so the discount
+                      is visible on the line it applies to rather than only as
+                      a total at the foot. */}
+                  {line.listUnitGross !== null && (
+                    <s className="mr-1.5 text-ivory-dim/60">{line.listUnitGross.toFixed(2)}</s>
+                  )}
                   {line.unitGross.toFixed(2)}
+                  {line.discountPercent !== null && (
+                    <span className="ml-1 text-[10px] text-gold">-{Math.round(line.discountPercent)}%</span>
+                  )}
                 </td>
                 <td className="py-2.5 pr-3 text-right font-mono tabular-nums text-ivory-dim">{line.lineNet.toFixed(2)}</td>
                 <td className="py-2.5 pr-3 text-right font-mono tabular-nums text-ivory-dim">{line.lineGst.toFixed(2)}</td>
@@ -143,6 +159,22 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
         <section className="mt-6 flex justify-end">
           <dl className="w-full max-w-xs text-sm">
+            {invoice.productSavings > 0 && (
+              <>
+                <div className="flex justify-between py-1.5">
+                  <dt className="text-ivory-dim">Before discount</dt>
+                  <dd className="font-mono tabular-nums text-ivory-dim">
+                    {formatMoney(invoice.grossBeforeProductDiscounts, invoice.currency)}
+                  </dd>
+                </div>
+                <div className="flex justify-between py-1.5">
+                  <dt className="text-ivory-dim">Product discount</dt>
+                  <dd className="font-mono tabular-nums text-ivory-dim">
+                    -{formatMoney(invoice.productSavings, invoice.currency)}
+                  </dd>
+                </div>
+              </>
+            )}
             <div className="flex justify-between py-1.5">
               <dt className="text-ivory-dim">Subtotal (incl. GST)</dt>
               <dd className="font-mono tabular-nums text-ivory-dim">{formatMoney(invoice.grossSubtotal, invoice.currency)}</dd>

@@ -39,6 +39,8 @@ export function renderOrderTelegramMessage(order: Order): string {
     `📞 ${esc(order.customer.phone)}`,
     `📍 ${esc(order.customer.address)}`,
     `💳 ${order.paymentMethod === "cash" ? "Cash on delivery" : "Bank transfer"}`,
+    order.customer.notes ? `
+📝 <b>Note:</b> ${esc(order.customer.notes)}` : null,
     "",
     `Awaiting confirmation in the dashboard.`,
   ]

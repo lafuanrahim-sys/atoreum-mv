@@ -1,7 +1,7 @@
 import Link from "next/link";
 import PageHeader from "@/components/dashboard/PageHeader";
 import StockCountSheet from "@/components/dashboard/StockCountSheet";
-import { getCountSheet, listStockCounts, listRecentMovements } from "@/lib/data/stock.server";
+import { getCountSheet, listStockCounts, listRecentMovements, getStockTotals } from "@/lib/data/stock.server";
 
 const REASON_LABEL: Record<string, string> = {
   shipment_received: "Shipment received",
@@ -16,10 +16,11 @@ function formatDate(iso: string) {
 }
 
 export default async function StockCountPage() {
-  const [sheet, counts, movements] = await Promise.all([
+  const [sheet, counts, movements, totals] = await Promise.all([
     getCountSheet(),
     listStockCounts(8),
     listRecentMovements(25),
+    getStockTotals(),
   ]);
 
   // Asia/Male is the only timezone this store operates in, so the count sheet
@@ -42,6 +43,16 @@ export default async function StockCountPage() {
           </Link>
         }
       />
+
+      {/* Totals first: how much stock exists and how much has left. Sold is
+          taken from the movement ledger net of reversals, so a cancelled
+          order does not count as a sale. */}
+      <div className="mt-8 grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-4">
+        <StockStat label="Total stock" value={totals.onHand.toLocaleString()} note="units on the shelf" />
+        <StockStat label="Sold" value={`- ${totals.sold.toLocaleString()}`} note="units, net of cancellations" tone="sold" />
+        <StockStat label="Low stock" value={totals.productsLow.toLocaleString()} note="products at 2 or fewer" tone={totals.productsLow > 0 ? "warn" : undefined} />
+        <StockStat label="Out of stock" value={totals.productsOut.toLocaleString()} note="products at zero" tone={totals.productsOut > 0 ? "bad" : undefined} />
+      </div>
 
       <div className="mt-8">
         <StockCountSheet rows={sheet} todayIso={todayIso} />
@@ -106,6 +117,28 @@ export default async function StockCountPage() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function StockStat({
+  label,
+  value,
+  note,
+  tone,
+}: {
+  label: string;
+  value: string;
+  note: string;
+  tone?: "sold" | "warn" | "bad";
+}) {
+  const colour =
+    tone === "bad" ? "text-red-400" : tone === "warn" ? "text-sand" : tone === "sold" ? "text-ivory-dim" : "text-ivory";
+  return (
+    <div className="bg-ink p-5">
+      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">{label}</p>
+      <p className={`mt-2 font-mono text-2xl tabular-nums ${colour}`}>{value}</p>
+      <p className="mt-1 text-[11px] text-ivory-dim/70">{note}</p>
     </div>
   );
 }
