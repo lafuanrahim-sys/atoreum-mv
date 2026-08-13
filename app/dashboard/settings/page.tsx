@@ -8,6 +8,7 @@ import {
 } from "@/app/actions/storeAdmin";
 import PageHeader from "@/components/dashboard/PageHeader";
 import SubmitButton from "@/components/ui/SubmitButton";
+import TelegramTestButton from "@/components/dashboard/TelegramTestButton";
 
 /**
  * Store settings: bank-transfer details shown at checkout, plus the brand
@@ -170,6 +171,15 @@ export default async function DashboardSettingsPage({
           <p className="mt-4 text-[11px] text-ivory-dim/80">
             Removing a brand doesn&apos;t change existing products. They keep their brand.
           </p>
+
+          <div className="mt-12 border-t border-line pt-8">
+            <h2 className="font-admin-heading text-xl font-semibold text-ivory">Order notifications</h2>
+            <p className="mb-4 mt-1 text-xs text-ivory-dim">
+              Every new order is posted to Telegram. Nothing announces it when that stops working, so
+              check it here rather than finding out from a sale nobody heard about.
+            </p>
+            <TelegramTestButton />
+          </div>
         </div>
       </div>
     </div>

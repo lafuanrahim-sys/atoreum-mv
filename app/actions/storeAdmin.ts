@@ -8,6 +8,7 @@ import { isAdminRole } from "@/lib/auth/userSession";
 import { addBrand, removeBrand } from "@/lib/data/brands.server";
 import { hasCompletedPurchase } from "@/lib/data/orders.server";
 import { getSettings, saveSettings, setMaintenanceMode } from "@/lib/data/settings.server";
+import { sendTelegramMessageDetailed } from "@/lib/telegram";
 import {
   createReview,
   deleteReview,
@@ -77,6 +78,32 @@ export async function updateSettingsAction(formData: FormData): Promise<void> {
   revalidatePath("/dashboard/settings");
   revalidatePath("/checkout");
   redirect("/dashboard/settings?settings=saved");
+}
+
+/* ---------- Telegram order notifications ---------- */
+
+/**
+ * Sends a test notification to every configured chat.
+ *
+ * Order alerts are silent when they break: the bot gets blocked, or removed
+ * from the group, or the chat id is edited wrongly, and nothing announces it
+ * — the next symptom is a sale nobody was told about. This makes the wiring
+ * checkable on demand, and names the chats that didn't take the message,
+ * because "one of your two recipients is unreachable" is the answer worth
+ * having.
+ */
+export async function sendTelegramTestAction(): Promise<{ ok: true; delivered: number; failed: string[] } | { error: string }> {
+  await requireAdmin();
+  const result = await sendTelegramMessageDetailed(
+    "🔔 <b>Test notification</b>\nOrder alerts are reaching this chat."
+  );
+  if (!result.configured) {
+    return { error: "Telegram isn't configured — TELEGRAM_BOT_TOKEN or TELEGRAM_ORDER_CHAT_ID is missing." };
+  }
+  if (result.delivered.length === 0) {
+    return { error: `No chat could be reached (${result.failed.join(", ")}). Check the server logs for Telegram's reason.` };
+  }
+  return { ok: true, delivered: result.delivered.length, failed: result.failed };
 }
 
 /* ---------- Maintenance mode ---------- */

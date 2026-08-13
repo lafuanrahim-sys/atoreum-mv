@@ -117,11 +117,32 @@ async function sendToChat(token: string, chatId: string, html: string): Promise<
  * question that actually matters.
  */
 export async function sendTelegramMessage(html: string): Promise<boolean> {
-  const cfg = config();
-  if (!cfg) return false;
+  const { delivered } = await sendTelegramMessageDetailed(html);
+  return delivered.length > 0;
+}
 
-  const results = await Promise.all(cfg.chatIds.map((id) => sendToChat(cfg.token, id, html)));
-  return results.some(Boolean);
+/**
+ * The same send, reporting which chats took it and which didn't.
+ *
+ * The order path doesn't care — it has no one to tell and nothing to do about
+ * a failure. An admin pressing "test notifications" does care, and the
+ * difference between "one of your two recipients is unreachable" and a bare
+ * "sent" is the entire value of pressing the button.
+ */
+export async function sendTelegramMessageDetailed(
+  html: string
+): Promise<{ delivered: string[]; failed: string[]; configured: boolean }> {
+  const cfg = config();
+  if (!cfg) return { delivered: [], failed: [], configured: false };
+
+  const results = await Promise.all(
+    cfg.chatIds.map(async (id) => ({ id, ok: await sendToChat(cfg.token, id, html) }))
+  );
+  return {
+    delivered: results.filter((r) => r.ok).map((r) => r.id),
+    failed: results.filter((r) => !r.ok).map((r) => r.id),
+    configured: true,
+  };
 }
 
 export function telegramConfigured(): boolean {
