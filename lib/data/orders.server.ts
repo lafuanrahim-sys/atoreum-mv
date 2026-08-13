@@ -115,6 +115,21 @@ async function adjustStockForItems(items: OrderItem[], direction: 1 | -1, orderI
   }
 }
 
+/**
+ * The order a given checkout attempt already created, if it did.
+ *
+ * Checkout calls this before doing any work, so a resubmitted form returns
+ * the original order instead of creating a twin. Two orders four seconds
+ * apart, each with its own uploaded receipt, is what this exists to prevent.
+ */
+export async function getOrderByIdempotencyKey(key: string): Promise<Order | null> {
+  const { rows } = await pool().query<OrderRow>(
+    "select * from orders where idempotency_key = $1",
+    [key]
+  );
+  return rows[0] ? rowToOrder(rows[0]) : null;
+}
+
 export async function createOrder(params: {
   items: OrderItem[];
   subtotal: number;
@@ -127,6 +142,8 @@ export async function createOrder(params: {
   /** Already-validated-and-applied Sangu redemption receipt (see app/actions/checkout.ts) — omit for orders that redeemed nothing. */
   boliRedeemed?: number;
   boliDiscountAmount?: number;
+  /** One per checkout attempt — see the unique index in lib/data/schema.sql. */
+  idempotencyKey?: string | null;
   /**
    * Pre-generated id, when the caller needs to know the order id before the
    * order itself is durably created — checkout.ts does this so it can pass
@@ -144,8 +161,8 @@ export async function createOrder(params: {
 
   const { rows } = await pool().query<OrderRow>(
     `insert into orders
-      (id, order_number, items, user_id, subtotal, currency, customer, payment_method, payment_proof_path, status, boli_redeemed, boli_discount_amount)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      (id, order_number, items, user_id, subtotal, currency, customer, payment_method, payment_proof_path, status, boli_redeemed, boli_discount_amount, idempotency_key)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
      returning *`,
     [
       id,
@@ -160,6 +177,7 @@ export async function createOrder(params: {
       status,
       params.boliRedeemed ?? null,
       params.boliRedeemed ? (params.boliDiscountAmount ?? null) : null,
+      params.idempotencyKey ?? null,
     ]
   );
   // Cash orders land straight on "Confirmed" (see the status assignment

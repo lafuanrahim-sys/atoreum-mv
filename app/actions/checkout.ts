@@ -3,7 +3,7 @@
 import path from "path";
 import crypto from "crypto";
 import { headers } from "next/headers";
-import { createOrder } from "@/lib/data/orders.server";
+import { createOrder, getOrderByIdempotencyKey } from "@/lib/data/orders.server";
 import { getProductById } from "@/lib/data/products.server";
 import { notifyNewOrder } from "@/lib/notify";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
@@ -11,7 +11,7 @@ import { parseBoliAmount, redeemForOrder } from "@/lib/boli/ledger.server";
 import { uploadPublicFile, PAYMENT_PROOFS_BUCKET } from "@/lib/storage";
 import { orderAccessToken } from "@/lib/orderAccessToken";
 import { checkRateLimit } from "@/lib/rateLimit";
-import type { OrderItem, PaymentMethod } from "@/lib/types";
+import type { Order, OrderItem, PaymentMethod } from "@/lib/types";
 
 export type CheckoutResult =
   | { ok: true; orderId: string; accessToken: string }
@@ -45,6 +45,7 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
   // delivery instruction while still bounding what reaches the database, the
   // notification and the invoice.
   const notes = String(formData.get("notes") ?? "").trim().slice(0, 2000);
+  const idempotencyKey = String(formData.get("idempotencyKey") ?? "").trim().slice(0, 100) || null;
   const itemsRaw = String(formData.get("items") ?? "[]");
 
   if (!name || !email || !phone || !address) {
@@ -60,6 +61,22 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
 
   if (!Array.isArray(items) || items.length === 0) {
     return { ok: false, error: "Your cart is empty." };
+  }
+
+  // A second submission of the same checkout is the same order, not a new one.
+  //
+  // This has happened for real: two orders four seconds apart, same customer,
+  // each with its own uploaded transfer receipt. The button had already been
+  // re-enabled while the browser was still navigating away, so a second click
+  // landed here and was honoured. The client no longer re-enables it, but a
+  // double-submit can also come from a retried request or an impatient
+  // refresh, and only the server can settle it. Checked before the upload and
+  // before any Sangu is moved, so a repeat costs nothing.
+  if (idempotencyKey) {
+    const existing = await getOrderByIdempotencyKey(idempotencyKey);
+    if (existing) {
+      return { ok: true, orderId: existing.id, accessToken: orderAccessToken(existing.id) };
+    }
   }
 
   // Re-price every line from the database before anything is totalled.
@@ -178,18 +195,32 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
     boliDiscountMvr = result.mvrValue;
   }
 
-  const order = await createOrder({
-    id: orderId,
-    items,
-    subtotal,
-    currency,
-    customer: { name, email, phone, address, ...(notes ? { notes } : {}) },
-    paymentMethod,
-    paymentProofPath,
-    userId: currentUser?.id,
-    boliRedeemed: boliRedeemedAmount,
-    boliDiscountAmount: boliDiscountMvr,
-  });
+  let order: Order;
+  try {
+    order = await createOrder({
+      id: orderId,
+      items,
+      subtotal,
+      currency,
+      customer: { name, email, phone, address, ...(notes ? { notes } : {}) },
+      paymentMethod,
+      paymentProofPath,
+      userId: currentUser?.id,
+      boliRedeemed: boliRedeemedAmount,
+      boliDiscountAmount: boliDiscountMvr,
+      idempotencyKey,
+    });
+  } catch (err) {
+    // Two requests that both got past the check above race to insert; the
+    // unique index lets exactly one win. The loser isn't an error to show the
+    // customer -- their order exists, it just wasn't this request that made
+    // it. Anything other than that collision is a real failure and rethrows.
+    const existing = idempotencyKey && (err as { code?: string }).code === "23505"
+      ? await getOrderByIdempotencyKey(idempotencyKey)
+      : null;
+    if (!existing) throw err;
+    return { ok: true, orderId: existing.id, accessToken: orderAccessToken(existing.id) };
+  }
 
   notifyNewOrder(order);
 

@@ -178,6 +178,20 @@ create table if not exists users (
 alter table users add column if not exists password_reset_token_hash text;
 alter table users add column if not exists password_reset_token_expires_at timestamptz;
 
+-- Double-submit guard.
+--
+-- A client generates one key per checkout attempt and sends it with the
+-- order. The unique index means a second submission carrying the same key
+-- cannot create a second order, however it arrives -- an impatient second
+-- click, a retried request, a back button, a flaky connection replaying the
+-- POST. Disabling the button is a courtesy; this is the guarantee.
+--
+-- Nullable, because every order placed before this existed has no key, and
+-- Postgres unique indexes permit many NULLs.
+alter table orders add column if not exists idempotency_key text;
+create unique index if not exists orders_idempotency_key_idx on orders (idempotency_key)
+  where idempotency_key is not null;
+
 -- Invoice numbering.
 --
 -- A tax invoice number has to be unique for the life of the business. Order

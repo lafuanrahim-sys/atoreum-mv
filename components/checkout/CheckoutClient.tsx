@@ -79,6 +79,14 @@ export default function CheckoutClient({
   // user saw "No file chosen" again with no idea why.
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // One key per mounted checkout. Sent with the order so the server can
+  // recognise a repeat submission as the same order rather than a new one --
+  // the client-side disabled button is a courtesy, this is the guarantee.
+  // useState with an initializer, not useMemo: it must survive re-renders and
+  // never be recomputed.
+  const [idempotencyKey] = useState(() =>
+    (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`)
+  );
   const [error, setError] = useState<string | null>(null);
 
   const stepIndex = STEPS.findIndex((s) => s.key === step);
@@ -143,15 +151,23 @@ export default function CheckoutClient({
       const result = await submitOrder(formData);
       if (!result.ok) {
         setError(result.error);
+        setSubmitting(false); // recoverable — let them fix it and retry
         return;
       }
       clearCart();
+      // Deliberately NOT re-enabling the button here, and no `finally`.
+      // router.push does not await the navigation, so a finally block ran the
+      // instant the order was created and put "Place Order" back before the
+      // customer had left the page. Seeing nothing happen, they pressed it
+      // again -- which is exactly how ATM-20260811-0006 and -0007 were
+      // created four seconds apart, each with its own uploaded receipt.
+      // The order exists; the only correct state for this button now is
+      // disabled, until the route changes.
       router.push(`/order-confirmation/${result.orderId}?t=${result.accessToken}`);
     } catch {
       // Network / transport failure (offline, request too large, timeout) —
       // without this the rejection left the button stuck on "Placing Order…".
       setError("We couldn't reach the server. Check your connection and try again. Your details are still filled in.");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -184,6 +200,7 @@ export default function CheckoutClient({
           <input type="hidden" name="phone" value={contact.phone} />
           <input type="hidden" name="address" value={contact.address} />
           <input type="hidden" name="notes" value={contact.notes} />
+          <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
           <input type="hidden" name="paymentMethod" value={paymentMethod} />
           {/* Omitted entirely (not just zero) unless the amount clears the minimum — an absent field reads server-side as "no redemption requested" rather than a rejected tiny one. */}
           {boliMeetsMinimum && <input type="hidden" name="boliRedeem" value={boliApplied} />}
