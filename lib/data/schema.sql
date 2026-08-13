@@ -261,6 +261,10 @@ create table if not exists store_settings (
   bank_name text not null default '',
   account_name text not null default '',
   account_number text not null default '',
+  -- Retained, unused. Nothing reads or writes it: every transfer here is a
+  -- local one where the account number is the whole instruction. Kept (it
+  -- defaults, so inserts that omit it are fine) rather than dropped, because
+  -- dropping a column to hide a field is a migration with nothing to gain.
   swift text not null default '',
   -- When true, the public storefront shows a "closed for maintenance" page
   -- to everyone except signed-in admins (see app/layout.tsx) -- an

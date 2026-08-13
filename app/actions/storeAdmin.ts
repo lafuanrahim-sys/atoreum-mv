@@ -73,7 +73,6 @@ export async function updateSettingsAction(formData: FormData): Promise<void> {
     bankName: String(formData.get("bankName") ?? "").trim(),
     accountName: String(formData.get("accountName") ?? "").trim(),
     accountNumber: String(formData.get("accountNumber") ?? "").trim(),
-    swift: String(formData.get("swift") ?? "").trim(),
   });
   revalidatePath("/dashboard/settings");
   revalidatePath("/checkout");

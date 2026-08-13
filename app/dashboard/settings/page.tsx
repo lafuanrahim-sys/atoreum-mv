@@ -90,7 +90,6 @@ export default async function DashboardSettingsPage({
               { name: "bankName", label: "Bank", value: settings.bankName },
               { name: "accountName", label: "Account name", value: settings.accountName },
               { name: "accountNumber", label: "Account number", value: settings.accountNumber },
-              { name: "swift", label: "SWIFT", value: settings.swift },
             ] as const
           ).map((field) => (
             <label key={field.name} className="flex flex-col gap-1.5">

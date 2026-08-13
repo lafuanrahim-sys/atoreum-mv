@@ -11,11 +11,19 @@ import { pool } from "@/lib/db";
  * plus the site-wide maintenance-mode flag (see app/layout.tsx).
  */
 
+/**
+ * No SWIFT code. Every customer paying by transfer is paying from a Maldivian
+ * account to a Maldivian one, where the account number is the whole
+ * instruction — SWIFT is for international wires nobody here is sending, and
+ * a field that means nothing to the person reading it only makes the transfer
+ * look harder than it is. The `swift` column still exists in store_settings
+ * (defaulted, written by nothing) rather than being dropped, so no migration
+ * is needed to stop showing it.
+ */
 export type StoreSettings = {
   bankName: string;
   accountName: string;
   accountNumber: string;
-  swift: string;
   maintenanceMode: boolean;
 };
 
@@ -23,7 +31,6 @@ type SettingsRow = {
   bank_name: string;
   account_name: string;
   account_number: string;
-  swift: string;
   maintenance_mode: boolean;
 };
 
@@ -32,16 +39,17 @@ function rowToSettings(row: SettingsRow): StoreSettings {
     bankName: row.bank_name,
     accountName: row.account_name,
     accountNumber: row.account_number,
-    swift: row.swift,
     maintenanceMode: row.maintenance_mode,
   };
 }
 
+// The real account, so a fresh database is correct on its first read rather
+// than showing a placeholder to a customer about to send money. Still
+// overridable by env, and editable in Dashboard -> Settings.
 const SEED_SETTINGS: StoreSettings = {
-  bankName: process.env.NEXT_PUBLIC_BANK_NAME || "Bank of Maldives (placeholder)",
-  accountName: process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME || "Atoreum MV Pvt Ltd (placeholder)",
-  accountNumber: process.env.NEXT_PUBLIC_BANK_ACCOUNT_NUMBER || "0000-0000-0000 (placeholder)",
-  swift: process.env.NEXT_PUBLIC_BANK_SWIFT || "MALBMVMV (placeholder)",
+  bankName: process.env.NEXT_PUBLIC_BANK_NAME || "Bank of Maldives",
+  accountName: process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME || "ARANZO INVESTMENTS",
+  accountNumber: process.env.NEXT_PUBLIC_BANK_ACCOUNT_NUMBER || "7730000859425",
   maintenanceMode: false,
 };
 
@@ -54,16 +62,15 @@ export async function getSettings(): Promise<StoreSettings> {
 
 export async function saveSettings(settings: StoreSettings): Promise<void> {
   await pool().query(
-    `insert into store_settings (id, bank_name, account_name, account_number, swift, maintenance_mode, updated_at)
-     values (true, $1, $2, $3, $4, $5, now())
+    `insert into store_settings (id, bank_name, account_name, account_number, maintenance_mode, updated_at)
+     values (true, $1, $2, $3, $4, now())
      on conflict (id) do update set
        bank_name = excluded.bank_name,
        account_name = excluded.account_name,
        account_number = excluded.account_number,
-       swift = excluded.swift,
        maintenance_mode = excluded.maintenance_mode,
        updated_at = now()`,
-    [settings.bankName, settings.accountName, settings.accountNumber, settings.swift, settings.maintenanceMode]
+    [settings.bankName, settings.accountName, settings.accountNumber, settings.maintenanceMode]
   );
 }
 

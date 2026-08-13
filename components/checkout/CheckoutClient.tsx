@@ -538,11 +538,9 @@ function PaymentStep({
               </div>
               <div>
                 <dt className="text-ivory-dim">Account Number</dt>
-                <dd className="text-ivory">{bankDetails.accountNumber}</dd>
-              </div>
-              <div>
-                <dt className="text-ivory-dim">SWIFT</dt>
-                <dd className="text-ivory">{bankDetails.swift}</dd>
+                {/* select-all: the one field that has to be transcribed exactly,
+                    so a single click takes the whole number, not a word of it. */}
+                <dd className="select-all font-mono tracking-wide text-ivory">{bankDetails.accountNumber}</dd>
               </div>
             </dl>
             <p className="mt-6 text-sm leading-relaxed text-ivory-dim">
@@ -569,6 +567,21 @@ function PaymentStep({
           </p>
         </div>
       )}
+
+      {/* Outside the payment-method branch on purpose: when the order arrives
+          has nothing to do with how it was paid for, and a cash customer needs
+          to know they'll be home for it just as much as a transfer one. */}
+      <div className="mt-6 flex items-start gap-2.5 border border-line p-4 text-sm leading-relaxed text-ivory-dim">
+        <svg viewBox="0 0 16 16" aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-gold">
+          <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M8 4.5V8l2.3 1.4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span>
+          Deliveries run between <span className="text-ivory">8:00 pm and 9:30 pm</span>. Orders
+          placed after <span className="text-ivory">7:45 pm</span> are delivered the following
+          evening.
+        </span>
+      </div>
 
       {error && (
         <p role="alert" className="mt-4 flex items-start gap-2 text-sm text-red-400">
