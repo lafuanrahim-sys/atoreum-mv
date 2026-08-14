@@ -24,7 +24,13 @@ import { USER_SESSION_COOKIE, isAdminRole, verifyUserSessionToken } from "@/lib/
  * bypassed that way.
  */
 
-const MAINTENANCE_EXEMPT_PREFIXES = ["/login", "/dashboard", "/fx", "/maintenance"];
+// /robots.txt and /sitemap.xml are exempt because search engines must be able
+// to read them even while the storefront is closed. Neither is excluded by the
+// matcher below (it only skips paths ending in an image/asset extension), so
+// without this a maintenance window would 307 every crawler request for them
+// to a page that answers 200 -- and Search Console reports that as a sitemap
+// it "couldn't fetch".
+const MAINTENANCE_EXEMPT_PREFIXES = ["/login", "/dashboard", "/fx", "/maintenance", "/robots.txt", "/sitemap.xml"];
 
 // Maintenance mode lives in Postgres (store_settings), but this file runs
 // on the Edge runtime (see lib/auth/userSession.ts's own comment: no Node

@@ -5,6 +5,11 @@ import MaintenancePage from "@/components/layout/MaintenancePage";
 
 export const metadata: Metadata = {
   title: "We'll be back shortly",
+  // Maintenance mode redirects every storefront URL here. Without this, a
+  // crawl during a maintenance window can replace real indexed pages with
+  // this one -- the whole site reduced to "back shortly" in search results,
+  // which outlasts the maintenance by however long reindexing takes.
+  robots: { index: false, follow: false },
 };
 
 // Without this, Next statically prerenders the page at build time -- the
