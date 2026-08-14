@@ -121,7 +121,12 @@ export default function InlineDiscountField({
           // discount the moment it was toggled past.
           title={`Switch to ${kind === "percent" ? `flat ${currency} off` : "percent off"}`}
           aria-label={`Discount unit: ${kind === "percent" ? "percent" : currency}. Click to switch.`}
-          className="min-w-[26px] cursor-pointer border-b border-dashed border-line/60 font-mono text-[10px] text-ivory-dim transition-colors hover:border-gold-deep hover:text-gold-deep"
+          // Fixed width, not min-width. The label swaps between "%" and a
+          // three-letter currency code, and the table uses auto layout -- so a
+          // button that grows with its text widens the whole Discount column
+          // and shifts every column after it, on every toggle. Sized for the
+          // widest label so both fit without the box ever changing.
+          className="w-8 shrink-0 cursor-pointer border-b border-dashed border-line/60 text-center font-mono text-[10px] text-ivory-dim transition-colors hover:border-gold-deep hover:text-gold-deep"
         >
           {kind === "percent" ? "%" : currency}
         </button>
