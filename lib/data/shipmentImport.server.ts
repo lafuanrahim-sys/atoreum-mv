@@ -101,18 +101,34 @@ function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((c) => c.trim() !== ""));
 }
 
-async function parseXlsx(bytes: Buffer): Promise<string[][]> {
+type NamedGrid = { sheetName: string; grid: string[][] };
+
+/**
+ * Every worksheet, not just the first.
+ *
+ * Reading only worksheets[0] is what broke this on real supplier files: the
+ * workbook that ships this catalogue opens on a "Costs" tab, with the actual
+ * item list on the third sheet. The first tab has no product column, so the
+ * import gave up with "No product-name column found" on a workbook that
+ * plainly contained one.
+ */
+async function parseXlsx(bytes: Buffer): Promise<NamedGrid[]> {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(bytes as unknown as ArrayBuffer);
-  const sheet = workbook.worksheets[0];
-  if (!sheet) return [];
-  const rows: string[][] = [];
-  sheet.eachRow((row) => {
-    // row.values is 1-based with a leading hole; slice(1) drops it.
-    const values = (row.values as unknown[]).slice(1);
-    rows.push(values.map((v) => cellToString(v)));
+  return workbook.worksheets.map((sheet) => {
+    const rows: string[][] = [];
+    sheet.eachRow((row) => {
+      // row.values is 1-based with a leading hole; slice(1) drops it.
+      const values = (row.values as unknown[]).slice(1);
+      // Array.from, not map: a row with blank cells is a SPARSE array, and
+      // map preserves the holes, leaving undefined in the "string[]".
+      rows.push(Array.from(values, (v) => cellToString(v)));
+    });
+    return {
+      sheetName: sheet.name,
+      grid: rows.filter((r) => r.some((c) => c.trim() !== "")),
+    };
   });
-  return rows.filter((r) => r.some((c) => c.trim() !== ""));
 }
 
 function cellToString(value: unknown): string {
@@ -137,6 +153,16 @@ const RECEIVED_HEADER = /(received|delivered|arrived|actual)/i;
 const FAULTY_HEADER = /(faulty|damaged|broken|defect|reject)/i;
 const QTY_HEADER = /(qty|quantity|units|pcs|pieces|count)/i;
 
+/**
+ * A sheet's own totals line, not a product.
+ *
+ * Left unfiltered it lands in "unmatched" with the biggest quantity on the
+ * sheet, which reads as though the import missed the most important row. It
+ * cannot collide with a real product: nothing in the catalogue is called
+ * "Total ...".
+ */
+const SUMMARY_ROW = /^(total|totals|subtotal|sub total|grand total|sum)\b/i;
+
 function toQty(raw: string): number {
   // Tolerates "12 pcs", "1,200", " 5.0 ".
   const cleaned = raw.replace(/,/g, "").replace(/[^0-9.\-]/g, "");
@@ -144,8 +170,56 @@ function toQty(raw: string): number {
   return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0;
 }
 
+/**
+ * How many rows below `headerRow` actually look like line items.
+ *
+ * Used to choose between candidate header rows and between worksheets: a
+ * commercial invoice has letterhead, addresses and totals around the real
+ * table, and several rows can look header-ish. The one with the most usable
+ * items under it is the table.
+ */
+function countDataRows(grid: string[][], headerRow: number, cols: ReturnType<typeof detectColumns>): number {
+  let n = 0;
+  for (let i = headerRow + 1; i < grid.length; i++) {
+    const row = grid[i];
+    const name = (row[cols.nameIdx] ?? "").trim();
+    if (!name) continue;
+    const qty =
+      (cols.expectedIdx >= 0 ? toQty(row[cols.expectedIdx] ?? "") : 0) +
+      (cols.receivedIdx >= 0 ? toQty(row[cols.receivedIdx] ?? "") : 0) +
+      (cols.faultyIdx >= 0 ? toQty(row[cols.faultyIdx] ?? "") : 0);
+    if (qty > 0) n++;
+  }
+  return n;
+}
+
+/** How far down a sheet to look for the header row before giving up. */
+const HEADER_SCAN_ROWS = 25;
+
+/**
+ * Find the header row and its columns, anywhere in the top of the sheet.
+ *
+ * The old code assumed row 1. Real paperwork almost never does: a commercial
+ * invoice opens with the supplier's name, an invoice number and dates, and
+ * the column headings appear well down the page.
+ */
+function findTable(grid: string[][]) {
+  let best: { headerRow: number; cols: ReturnType<typeof detectColumns>; rows: number } | null = null;
+  const limit = Math.min(grid.length - 1, HEADER_SCAN_ROWS);
+  for (let r = 0; r < limit; r++) {
+    const cols = detectColumns(grid[r]);
+    if (cols.nameIdx === -1) continue;
+    if (cols.expectedIdx === -1 && cols.receivedIdx === -1) continue;
+    const rows = countDataRows(grid, r, cols);
+    if (rows > 0 && (!best || rows > best.rows)) best = { headerRow: r, cols, rows };
+  }
+  return best;
+}
+
 function detectColumns(header: string[]) {
-  const find = (re: RegExp) => header.findIndex((h) => re.test(h.trim()));
+  // (h ?? ""): rows are ragged in practice -- a short row, or a hole left by a
+  // blank cell -- and a header scan must survive them rather than throw.
+  const find = (re: RegExp) => header.findIndex((h) => re.test((h ?? "").trim()));
   const nameIdx = find(NAME_HEADER);
   const faultyIdx = find(FAULTY_HEADER);
   const receivedIdx = find(RECEIVED_HEADER);
@@ -172,17 +246,50 @@ export function normalizeName(value: string): string {
     .trim();
 }
 
-type CatalogueProduct = { id: string; name: string; sku: string };
+type CatalogueProduct = { id: string; name: string; sku: string; brand?: string; size?: string };
+
+/**
+ * Every string this product could plausibly be called on a supplier's sheet.
+ *
+ * Suppliers do not write the catalogue's name. This one invoices
+ * "Aloe Bubble Chewy Foam 200ml" for what the shop lists as "Lebelage Aloe
+ * Bubble Chewy Foam" -- the brand is dropped (their whole invoice is that
+ * brand) and the size is appended (it is how they identify the SKU). Neither
+ * string contains the other, so the old containment test failed on nearly
+ * every line of a real packing list.
+ *
+ * Rather than loosen matching -- which risks booking stock against the wrong
+ * product -- each product gets a small set of EXACT aliases, and matching
+ * stays exact against those.
+ */
+function aliasesFor(p: CatalogueProduct): string[] {
+  const name = normalizeName(p.name);
+  const size = normalizeName(p.size ?? "");
+  const brand = normalizeName(p.brand ?? "");
+  // "lebelage aloe bubble chewy foam" -> "aloe bubble chewy foam"
+  const brandless = brand && name.startsWith(`${brand} `) ? name.slice(brand.length + 1) : name;
+
+  const out = [name, brandless];
+  if (size) {
+    out.push(`${name} ${size}`, `${brandless} ${size}`);
+  }
+  return [...new Set(out.filter(Boolean))];
+}
 
 function buildIndex(products: CatalogueProduct[]) {
   const bySku = new Map<string, CatalogueProduct>();
   const byName = new Map<string, CatalogueProduct[]>();
+  const push = (key: string, p: CatalogueProduct) => {
+    const list = byName.get(key) ?? [];
+    // Guard against one product registering the same alias twice (a product
+    // with no size produces name === name+size), which would otherwise look
+    // like an ambiguous two-product collision and block the match.
+    if (!list.some((x) => x.id === p.id)) list.push(p);
+    byName.set(key, list);
+  };
   for (const p of products) {
     if (p.sku) bySku.set(normalizeName(p.sku), p);
-    const key = normalizeName(p.name);
-    const list = byName.get(key) ?? [];
-    list.push(p);
-    byName.set(key, list);
+    for (const alias of aliasesFor(p)) push(alias, p);
   }
   return { bySku, byName };
 }
@@ -204,10 +311,9 @@ function matchOne(rawName: string, products: CatalogueProduct[], index: ReturnTy
   // and the shorter string is substantial enough not to match half the shop
   // (e.g. the bare word "cream").
   if (norm.length >= 6) {
-    const candidates = products.filter((p) => {
-      const pn = normalizeName(p.name);
-      return pn.includes(norm) || norm.includes(pn);
-    });
+    const candidates = products.filter((p) =>
+      aliasesFor(p).some((alias) => alias.includes(norm) || norm.includes(alias))
+    );
     if (candidates.length === 1) return candidates[0];
   }
   return null;
@@ -226,25 +332,38 @@ export async function buildImportPreview(params: {
     return { ...empty, notASheet: true };
   }
 
-  let grid: string[][];
+  let sheets: NamedGrid[];
   try {
-    grid = /\.csv$/i.test(params.fileName) || params.contentType === "text/csv"
-      ? parseCsv(params.bytes.toString("utf8"))
+    sheets = /\.csv$/i.test(params.fileName) || params.contentType === "text/csv"
+      ? [{ sheetName: "", grid: parseCsv(params.bytes.toString("utf8")) }]
       : await parseXlsx(params.bytes);
   } catch {
     return { ...empty, problem: "That file couldn't be read as a spreadsheet." };
   }
 
-  if (grid.length < 2) return { ...empty, problem: "That sheet has no rows under its header." };
+  // Whichever sheet holds the most line items is the packing list. A workbook
+  // routinely carries costing and working tabs alongside it, and the item
+  // list is not reliably the first one.
+  let chosen: { sheet: NamedGrid; table: NonNullable<ReturnType<typeof findTable>> } | null = null;
+  for (const sheet of sheets) {
+    if (sheet.grid.length < 2) continue;
+    const table = findTable(sheet.grid);
+    if (table && (!chosen || table.rows > chosen.table.rows)) chosen = { sheet, table };
+  }
 
-  const header = grid[0];
-  const { nameIdx, expectedIdx, receivedIdx, faultyIdx } = detectColumns(header);
-  if (nameIdx === -1) {
-    return { ...empty, problem: "No product-name column found. Name one column Product, Item, or Description." };
+  if (!chosen) {
+    const looked = sheets.map((s) => s.sheetName).filter(Boolean);
+    return {
+      ...empty,
+      problem:
+        `No product and quantity columns found${looked.length > 1 ? ` on any sheet (${looked.join(", ")})` : ""}. ` +
+        `Name one column Product, Item, or Description, and one Qty or Quantity.`,
+    };
   }
-  if (expectedIdx === -1 && receivedIdx === -1) {
-    return { ...empty, problem: "No quantity column found. Name one column Qty or Quantity." };
-  }
+
+  const grid = chosen.sheet.grid;
+  const headerRow = chosen.table.headerRow;
+  const { nameIdx, expectedIdx, receivedIdx, faultyIdx } = chosen.table.cols;
 
   const index = buildIndex(params.products);
   const matched: MatchedLine[] = [];
@@ -254,10 +373,11 @@ export async function buildImportPreview(params: {
   // stock_shipment_items is unique per (shipment, product).
   const seen = new Map<string, MatchedLine>();
 
-  for (let i = 1; i < grid.length; i++) {
+  for (let i = headerRow + 1; i < grid.length; i++) {
     const row = grid[i];
     const name = (row[nameIdx] ?? "").trim();
     if (!name) continue;
+    if (SUMMARY_ROW.test(name)) continue;
 
     const expected = expectedIdx >= 0 ? toQty(row[expectedIdx] ?? "") : 0;
     const received = receivedIdx >= 0 ? toQty(row[receivedIdx] ?? "") : 0;

@@ -156,7 +156,16 @@ export async function uploadShipmentFileAction(
     }
   }
 
-  const catalogue = (await getAllProducts()).map((p) => ({ id: p.id, name: p.name, sku: p.sku }));
+  // brand and size included: a supplier writes "Aloe Bubble Chewy Foam 200ml"
+  // where the catalogue says "Lebelage Aloe Bubble Chewy Foam", so matching
+  // needs both to build the aliases (see aliasesFor in shipmentImport.server).
+  const catalogue = (await getAllProducts()).map((p) => ({
+    id: p.id,
+    name: p.name,
+    sku: p.sku,
+    brand: p.brand,
+    size: p.size,
+  }));
   const imports: ImportOutcome[] = [];
 
   for (const file of files) {
