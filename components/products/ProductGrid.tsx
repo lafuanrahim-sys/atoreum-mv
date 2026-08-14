@@ -15,6 +15,12 @@ gsap.registerPlugin(ScrollTrigger);
 
 const PAGE_SIZE = 20;
 
+// Cheapest first on arrival. The collection opens on a first page of the most
+// affordable products rather than whatever happens to be flagged featured --
+// price is the first thing a new shopper is deciding on, and the entry point
+// should answer it before they have to touch the sort control.
+const DEFAULT_SORT: SortOption = "price-asc";
+
 const SORT_LABELS: Record<SortOption, string> = {
   featured: "Featured",
   newest: "Newest",
@@ -50,7 +56,7 @@ export default function ProductGrid({
   const pathname = usePathname();
   const [active, setActive] = useState(() => searchParams?.get("category") ?? "All");
   const [query, setQuery] = useState(() => searchParams?.get("q") ?? "");
-  const [sort, setSort] = useState<SortOption>(() => (searchParams?.get("sort") as SortOption) || "featured");
+  const [sort, setSort] = useState<SortOption>(() => (searchParams?.get("sort") as SortOption) || DEFAULT_SORT);
   const [page, setPage] = useState(() => Number(searchParams?.get("page")) || 1);
 
   // `active` above only reads the URL once, at mount -- fine for a fresh
@@ -121,7 +127,7 @@ export default function ProductGrid({
     const params = new URLSearchParams();
     if (active !== "All") params.set("category", active);
     if (query.trim()) params.set("q", query);
-    if (sort !== "featured") params.set("sort", sort);
+    if (sort !== DEFAULT_SORT) params.set("sort", sort);
     if (currentPage !== 1) params.set("page", String(currentPage));
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });

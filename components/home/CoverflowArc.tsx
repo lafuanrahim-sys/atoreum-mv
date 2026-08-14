@@ -291,13 +291,24 @@ export default function CoverflowArc() {
           velocity = 0;
           lastMoveTime = performance.now();
           lastMoveProgress = progress;
-          stage.setPointerCapture(event.pointerId);
+          // Deliberately NOT capturing the pointer here. Capturing on
+          // pointerdown retargets the whole gesture to the stage -- including
+          // the click that follows on release -- so the <Link> under the
+          // pointer never received it and the cards were simply not
+          // clickable. (Verified: the click event's target was the stage div
+          // while hit-testing put the link on top, with nothing calling
+          // preventDefault.) Capture is only needed to keep following a
+          // pointer that leaves the element mid-drag, so it is taken below,
+          // once movement proves this is a drag and not a click.
         };
 
         const onPointerMove = (event: PointerEvent) => {
           if (!isDragging) return;
           const deltaX = event.clientX - dragStartX;
-          if (Math.abs(deltaX) > CLICK_SUPPRESS_PX) draggedPastThreshold = true;
+          if (Math.abs(deltaX) > CLICK_SUPPRESS_PX && !draggedPastThreshold) {
+            draggedPastThreshold = true;
+            stage.setPointerCapture(event.pointerId);
+          }
           const stepPx = cardSizeRef.current * SPACING_RATIO;
           const deltaProgress = -(deltaX / stepPx) / (total - 1);
           progress = gsap.utils.clamp(0, 1, dragStartProgress + deltaProgress);
@@ -325,7 +336,11 @@ export default function CoverflowArc() {
         const endDrag = (event: PointerEvent) => {
           if (!isDragging) return;
           isDragging = false;
-          stage.releasePointerCapture(event.pointerId);
+          // Only released if it was ever taken -- a plain click never
+          // captures, and releasing an uncaptured pointer throws.
+          if (stage.hasPointerCapture(event.pointerId)) {
+            stage.releasePointerCapture(event.pointerId);
+          }
 
           const throwVelocity = gsap.utils.clamp(-MAX_THROW_VELOCITY, MAX_THROW_VELOCITY, velocity);
           const target = gsap.utils.clamp(0, 1, progress + throwVelocity * THROW_PROJECTION_MS);
