@@ -23,6 +23,7 @@ const base: Product = {
   priceMedian: null,
   priceMax: null,
   discountPercent: 0,
+  discountAmount: 0,
   priceEffective: 290,
   currency: "MVR",
   description: "Ampoule for acne & redness calming.",
@@ -46,6 +47,15 @@ describe("productSchema", () => {
     const discounted = { ...base, discountPercent: 20, priceEffective: 232 };
     const offers = productSchema(discounted, undefined).offers as Record<string, unknown>;
     expect(offers.price).toBe("232.00");
+  });
+
+  it("quotes the discounted price for a flat discount too", () => {
+    // priceEffective is the database's generated column, so a flat discount
+    // reaches the schema the same way a percentage does -- this guards against
+    // anyone reintroducing a percent-only price calculation here.
+    const discounted = { ...base, discountAmount: 100, priceEffective: 190 };
+    const offers = productSchema(discounted, undefined).offers as Record<string, unknown>;
+    expect(offers.price).toBe("190.00");
   });
 
   it("makes image URLs absolute — a relative one is dropped by crawlers", () => {

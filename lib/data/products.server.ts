@@ -20,6 +20,7 @@ type ProductRow = {
   price_median: string | null;
   price_max: string | null;
   discount_percent: string;
+  discount_amount: string;
   price_effective: string;
   currency: string;
   description: string;
@@ -47,6 +48,7 @@ function rowToProduct(row: ProductRow): Product {
     priceMedian: row.price_median === null ? null : Number(row.price_median),
     priceMax: row.price_max === null ? null : Number(row.price_max),
     discountPercent: Number(row.discount_percent),
+    discountAmount: Number(row.discount_amount),
     priceEffective: Number(row.price_effective),
     currency: row.currency as Product["currency"],
     description: row.description,
@@ -103,8 +105,8 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   const { rows } = await pool().query<ProductRow>(
     `insert into products
       (id, sku, name, size, brand, category, price, price_min, price_median, price_max, discount_percent,
-       currency, description, headlines, ingredients, how_to_use, images, stock_on_hand, featured)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+       discount_amount, currency, description, headlines, ingredients, how_to_use, images, stock_on_hand, featured)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
      returning *`,
     [
       id,
@@ -118,6 +120,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
       input.priceMedian,
       input.priceMax,
       input.discountPercent,
+      input.discountAmount,
       input.currency,
       input.description,
       JSON.stringify(input.headlines),
@@ -139,9 +142,10 @@ export async function updateProduct(id: string, patch: Partial<ProductInput>): P
   const { rows } = await pool().query<ProductRow>(
     `update products set
       sku = $2, name = $3, size = $4, brand = $5, category = $6, price = $7,
-      price_min = $8, price_median = $9, price_max = $10, discount_percent = $11, currency = $12,
-      description = $13, headlines = $14, ingredients = $15, how_to_use = $16, images = $17,
-      stock_on_hand = $18, featured = $19, updated_at = now()
+      price_min = $8, price_median = $9, price_max = $10, discount_percent = $11,
+      discount_amount = $12, currency = $13,
+      description = $14, headlines = $15, ingredients = $16, how_to_use = $17, images = $18,
+      stock_on_hand = $19, featured = $20, updated_at = now()
      where id = $1
      returning *`,
     [
@@ -156,6 +160,7 @@ export async function updateProduct(id: string, patch: Partial<ProductInput>): P
       merged.priceMedian,
       merged.priceMax,
       merged.discountPercent,
+      merged.discountAmount,
       merged.currency,
       merged.description,
       JSON.stringify(merged.headlines),
@@ -177,10 +182,18 @@ export async function updateProduct(id: string, patch: Partial<ProductInput>): P
  * every other column from whatever the caller happened to have loaded, and
  * quietly clobber a concurrent edit. price_effective recomputes itself.
  */
-export async function setProductDiscount(id: string, percent: number): Promise<void> {
+export async function setProductDiscount(
+  id: string,
+  discount: { percent: number; amount: number }
+): Promise<void> {
+  // Both columns are always written, never just the one that changed. Setting
+  // a flat discount has to clear any percentage still on the row, or the
+  // products_discount_single_kind constraint rejects the write -- and the
+  // rejection would be correct, because two live discounts on one product
+  // have no defined meaning.
   await pool().query(
-    "update products set discount_percent = $2, updated_at = now() where id = $1",
-    [id, percent]
+    "update products set discount_percent = $2, discount_amount = $3, updated_at = now() where id = $1",
+    [id, discount.percent, discount.amount]
   );
 }
 

@@ -94,6 +94,66 @@ function money(raw: FormDataEntryValue | null): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ * Read a discount that may be expressed either way.
+ *
+ * The form posts two fields -- `discountKind` ("percent" | "amount") and
+ * `discountValue` -- rather than two separate number inputs, so there is never
+ * a moment where both a percentage and a flat sum carry a value and something
+ * has to decide which wins. The unit is a choice; the number is the number.
+ *
+ * Returns the pair the database stores, with the unused one zeroed. These
+ * rules are also check constraints on the table, which is where the real
+ * guarantee lives -- repeated here so the admin gets a sentence instead of a
+ * raw Postgres violation.
+ */
+function readDiscount(
+  formData: FormData,
+  price: number,
+  priceMin: number,
+  currency: string
+): { percent: number; amount: number } {
+  const kind = String(formData.get("discountKind") ?? "percent");
+  const raw = String(formData.get("discountValue") ?? "").trim();
+  const value = raw === "" ? 0 : Number(raw);
+
+  if (!Number.isFinite(value) || value < 0) {
+    throw new ProductValidationError("Discount must be a positive number.");
+  }
+
+  // A discount applies to the listing price, so either kind can walk the
+  // customer straight through the floor the minimum exists to defend. Checked
+  // here rather than in the database because it depends on the discount, and a
+  // generated column cannot be referenced from a check constraint.
+  const belowFloor = (effective: number, described: string) => {
+    if (effective < priceMin) {
+      throw new ProductValidationError(
+        `${described} takes the price to ${effective.toLocaleString()}, ` +
+          `below the minimum of ${priceMin.toLocaleString()}. Reduce the discount.`
+      );
+    }
+  };
+
+  if (kind === "amount") {
+    if (value > price) {
+      throw new ProductValidationError(
+        `A flat discount of ${currency} ${value.toLocaleString()} is more than the ` +
+          `listing price of ${price.toLocaleString()}.`
+      );
+    }
+    const effective = Math.round((price - value) * 100) / 100;
+    belowFloor(effective, `${currency} ${value.toLocaleString()} off`);
+    return { percent: 0, amount: value };
+  }
+
+  if (value > 95) {
+    throw new ProductValidationError("Discount must be between 0 and 95%.");
+  }
+  const effective = Math.round(price * (1 - value / 100) * 100) / 100;
+  belowFloor(effective, `A ${value}% discount`);
+  return { percent: value, amount: 0 };
+}
+
 function readProductFields(formData: FormData): Omit<ProductInput, "images"> {
   const category = String(formData.get("category")) as Category;
   if (!CATEGORIES.includes(category)) {
@@ -104,7 +164,6 @@ function readProductFields(formData: FormData): Omit<ProductInput, "images"> {
   const priceMin = Math.max(0, money(formData.get("priceMin")));
   const priceMedian = optionalMoney(formData.get("priceMedian"));
   const priceMax = optionalMoney(formData.get("priceMax"));
-  const discountPercent = money(formData.get("discountPercent"));
 
   // These same rules are check constraints on the table, which is where the
   // real guarantee lives -- a crafted POST never reaches this function's
@@ -116,26 +175,15 @@ function readProductFields(formData: FormData): Omit<ProductInput, "images"> {
         `Raise the listing price, or lower the minimum first.`
     );
   }
-  if (discountPercent < 0 || discountPercent > 95) {
-    throw new ProductValidationError("Discount must be between 0 and 95%.");
-  }
   if (priceMax !== null && priceMax < priceMin) {
     throw new ProductValidationError("Maximum price cannot be below the minimum price.");
   }
   if (priceMedian !== null && (priceMedian < priceMin || (priceMax !== null && priceMedian > priceMax))) {
     throw new ProductValidationError("Median price must sit between the minimum and the maximum.");
   }
-  // A discount is applied to the listing price, so it can walk the customer
-  // straight through the floor the minimum exists to defend. Checked here
-  // rather than in the database because it depends on the discount, and a
-  // generated column cannot be referenced from a check constraint.
-  const effective = Math.round(price * (1 - discountPercent / 100) * 100) / 100;
-  if (effective < priceMin) {
-    throw new ProductValidationError(
-      `A ${discountPercent}% discount takes the price to ${effective.toLocaleString()}, ` +
-        `below the minimum of ${priceMin.toLocaleString()}. Reduce the discount.`
-    );
-  }
+  const currency = String(formData.get("currency") ?? "MVR");
+  const discount = readDiscount(formData, price, priceMin, currency);
+
   const headlines: [string, string, string] = [
     String(formData.get("headline1") ?? "").trim(),
     String(formData.get("headline2") ?? "").trim(),
@@ -152,8 +200,9 @@ function readProductFields(formData: FormData): Omit<ProductInput, "images"> {
     priceMin,
     priceMedian,
     priceMax,
-    discountPercent,
-    currency: (String(formData.get("currency") ?? "MVR") as ProductInput["currency"]),
+    discountPercent: discount.percent,
+    discountAmount: discount.amount,
+    currency: currency as ProductInput["currency"],
     description: String(formData.get("description") ?? "").trim(),
     headlines,
     ingredients: String(formData.get("ingredients") ?? "").trim(),
@@ -185,26 +234,24 @@ export async function setProductDiscountAction(id: string, formData: FormData) {
     backRaw.startsWith("/dashboard/products") && !backRaw.startsWith("//") && !backRaw.includes("\\")
       ? backRaw
       : "/dashboard/products";
-  const raw = String(formData.get("discountPercent") ?? "").trim();
-  const percent = raw === "" ? 0 : Number(raw);
-
   const product = await getProductById(id);
   if (!product) redirect(errorHref("/dashboard/products", "That product no longer exists."));
 
-  let message: string | null = null;
-  if (!Number.isFinite(percent) || percent < 0 || percent > 95) {
-    message = "Discount must be a number between 0 and 95.";
-  } else {
-    const effective = Math.round(product.price * (1 - percent / 100) * 100) / 100;
-    if (effective < product.priceMin) {
-      message =
-        `${product.name}: a ${percent}% discount gives ${effective.toLocaleString()}, ` +
-        `below its minimum of ${product.priceMin.toLocaleString()}.`;
+  // Same parser the full product form uses, so the inline field and the edit
+  // page cannot disagree about what a valid discount is. Its errors are
+  // thrown; here they become a redirect carrying the message, because this
+  // one submits from a table row with nowhere to render an exception.
+  let discount: { percent: number; amount: number };
+  try {
+    discount = readDiscount(formData, product.price, product.priceMin, product.currency);
+  } catch (err) {
+    if (err instanceof ProductValidationError) {
+      redirect(errorHref(back, `${product.name}: ${err.message}`));
     }
+    throw err;
   }
-  if (message) redirect(errorHref(back, message));
 
-  await setProductDiscount(id, percent);
+  await setProductDiscount(id, discount);
   revalidatePath("/dashboard/products");
   revalidatePath("/products");
   revalidatePath(`/products/${id}`);

@@ -43,7 +43,7 @@ export default function ProductCard({
   const [justAdded, setJustAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const outOfStock = product.stockStatus === "out-of-stock";
-  const onOffer = product.discountPercent > 0;
+  const onOffer = product.discountPercent > 0 || product.discountAmount > 0;
   const thumbnail = product.images[0] ?? null;
   const isNew = Date.now() - new Date(product.createdAt).getTime() < NEW_WINDOW_MS;
 
@@ -197,7 +197,9 @@ export default function ProductCard({
                   {product.price.toLocaleString("en-US")}
                 </s>
                 <span className="rounded-sm bg-gold/15 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.1em] text-gold uppercase">
-                  -{Math.round(product.discountPercent)}%
+                  {product.discountAmount > 0
+                    ? `-${product.currency} ${product.discountAmount.toLocaleString("en-US")}`
+                    : `-${Math.round(product.discountPercent)}%`}
                 </span>
               </>
             )}

@@ -47,6 +47,12 @@ export type Product = {
   /** Percent off the listing price; 0 when not on offer. */
   discountPercent: number;
   /**
+   * Flat sum off the listing price, in this product's currency; 0 when not on
+   * offer. Mutually exclusive with discountPercent -- the database refuses
+   * both at once (see products_discount_single_kind in lib/data/schema.sql).
+   */
+  discountAmount: number;
+  /**
    * What the customer actually pays. Read-only here because it is a Postgres
    * generated column (`round(price * (1 - discount_percent / 100), 2)`) — the
    * discounted price has exactly one definition and the database owns it, so

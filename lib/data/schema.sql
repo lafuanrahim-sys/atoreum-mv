@@ -61,24 +61,74 @@ alter table products add column if not exists price_min numeric(12, 2) not null 
 alter table products add column if not exists price_median numeric(12, 2);
 alter table products add column if not exists price_max numeric(12, 2);
 
--- Percentage off the listing price, 0 when not on offer. Capped at 95 so a
--- slipped decimal cannot hand the shop away; negative is meaningless.
+-- A discount is expressed ONE of two ways, never both:
+--
+--   discount_percent  percentage off the listing price. Capped at 95 so a
+--                     slipped decimal cannot hand the shop away.
+--   discount_amount   a flat sum off, in the product's own currency --
+--                     "MVR 100 off" rather than "23.5% off". Round numbers
+--                     read better on a shelf and are what a promotion is
+--                     usually decided in.
+--
+-- Both default to 0, which means "not on offer". A check constraint below
+-- refuses to let both be set at once: two live discounts on one product would
+-- need a precedence rule, and a precedence rule is a thing to get wrong.
 alter table products add column if not exists discount_percent numeric(5, 2) not null default 0;
+alter table products add column if not exists discount_amount numeric(12, 2) not null default 0;
 
 -- What the customer actually pays. GENERATED, not computed in TypeScript,
 -- for the same reason every other money figure in this schema is: there is
 -- exactly one definition of the discounted price and the database owns it,
 -- so the storefront, the cart and the order total cannot drift from each
 -- other or from what the admin thinks the discount was.
-alter table products
-  add column if not exists price_effective numeric(12, 2)
-  generated always as (round(price * (1 - discount_percent / 100), 2)) stored;
+--
+-- Rebuilt in place when the expression changes. `add column if not exists`
+-- would silently keep an older definition -- the column exists, so nothing
+-- happens -- and the flat-discount arm would never take effect on a database
+-- created before it. So the current expression is read back from the
+-- catalogue and the column is only dropped and re-added when it is stale.
+do $$
+declare expr text;
+begin
+  select pg_get_expr(ad.adbin, ad.adrelid) into expr
+    from pg_attribute a
+    join pg_attrdef ad on ad.adrelid = a.attrelid and ad.adnum = a.attnum
+   where a.attrelid = 'products'::regclass
+     and a.attname = 'price_effective'
+     and not a.attisdropped;
+
+  if expr is null or position('discount_amount' in expr) = 0 then
+    alter table products drop column if exists price_effective;
+    alter table products
+      add column price_effective numeric(12, 2)
+      generated always as (
+        case
+          when discount_amount > 0 then greatest(round(price - discount_amount, 2), 0)
+          else round(price * (1 - discount_percent / 100), 2)
+        end
+      ) stored;
+  end if;
+end $$;
 
 -- The constraints. These are the enforcement -- form validation is a
 -- convenience that a crafted POST walks straight past.
 do $$ begin
   alter table products add constraint products_discount_range
     check (discount_percent >= 0 and discount_percent <= 95);
+exception when duplicate_object then null; end $$;
+
+-- A flat discount cannot exceed the listing price -- that is a free product,
+-- or with a bigger typo a negative one. Bounded against `price` rather than
+-- against 0 so the failure is caught at the point the number is entered.
+do $$ begin
+  alter table products add constraint products_discount_amount_range
+    check (discount_amount >= 0 and discount_amount <= price);
+exception when duplicate_object then null; end $$;
+
+-- One discount, one unit. See the column comments above.
+do $$ begin
+  alter table products add constraint products_discount_single_kind
+    check (discount_percent = 0 or discount_amount = 0);
 exception when duplicate_object then null; end $$;
 
 do $$ begin

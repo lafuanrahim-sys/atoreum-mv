@@ -58,7 +58,8 @@ export default async function DashboardProductsPage({
       : true;
     const matchesCategory = category ? p.category === category : true;
     const matchesStock = stock ? p.stockStatus === stock : true;
-    const matchesOffer = offer === "on" ? p.discountPercent > 0 : offer === "off" ? p.discountPercent === 0 : true;
+    const onOffer = p.discountPercent > 0 || p.discountAmount > 0;
+    const matchesOffer = offer === "on" ? onOffer : offer === "off" ? !onOffer : true;
     const matchesFeatured = featured === "yes" ? p.featured : featured === "no" ? !p.featured : true;
     const matchesFloor = Number.isFinite(priceFloor) && min !== "" ? p.priceEffective >= priceFloor : true;
     const matchesCeil = Number.isFinite(priceCeil) && max !== "" ? p.priceEffective <= priceCeil : true;
@@ -186,7 +187,6 @@ export default async function DashboardProductsPage({
             <th className="py-3 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Minimum</th>
             <th className="py-3 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Price</th>
             <th className="py-3 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Median</th>
-            <th className="py-3 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Maximum</th>
             <th className="py-3 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Discount</th>
             <th className="py-3 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">On Hand</th>
             <th className="py-3 pr-4 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-ivory-dim">Stock</th>
@@ -206,11 +206,18 @@ export default async function DashboardProductsPage({
                 {p.priceMin > 0 ? formatPrice(p.priceMin, p.currency) : "—"}
               </td>
               <td className="py-3 pr-4 font-mono tabular-nums text-ivory-dim">
-                {p.discountPercent > 0 ? (
+                {p.discountPercent > 0 || p.discountAmount > 0 ? (
                   <span className="flex items-baseline gap-2">
                     <s className="text-ivory-dim/50">{formatPrice(p.price, p.currency)}</s>
                     <span className="text-ivory">{formatPrice(p.priceEffective, p.currency)}</span>
-                    <span className="font-mono text-[10px] text-gold">-{p.discountPercent}%</span>
+                    {/* Shown in the unit it was set in, not converted: an
+                        offer entered as "MVR 100 off" should read back as
+                        that, not as "-23.5%". */}
+                    <span className="font-mono text-[10px] text-gold">
+                      {p.discountAmount > 0
+                        ? `-${formatPrice(p.discountAmount, p.currency)}`
+                        : `-${p.discountPercent}%`}
+                    </span>
                   </span>
                 ) : (
                   formatPrice(p.price, p.currency)
@@ -219,13 +226,11 @@ export default async function DashboardProductsPage({
               <td className="py-3 pr-4 font-mono tabular-nums text-ivory-dim/60">
                 {p.priceMedian !== null ? formatPrice(p.priceMedian, p.currency) : "—"}
               </td>
-              <td className="py-3 pr-4 font-mono tabular-nums text-ivory-dim/60">
-                {p.priceMax !== null ? formatPrice(p.priceMax, p.currency) : "—"}
-              </td>
               <td className="py-3 pr-4">
                 <InlineDiscountField
                   productId={p.id}
-                  value={p.discountPercent}
+                  percent={p.discountPercent}
+                  amount={p.discountAmount}
                   currency={p.currency}
                   price={p.price}
                   priceEffective={p.priceEffective}

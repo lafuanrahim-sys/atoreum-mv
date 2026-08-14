@@ -109,8 +109,18 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
       price: product.priceEffective,
       // Only recorded when there is a discount, so a full-price line stays
       // exactly the shape it has always been.
-      ...(product.discountPercent > 0
-        ? { listPrice: product.price, discountPercent: product.discountPercent }
+      //
+      // listPrice is what carries the saving onto the receipt and the tax
+      // invoice -- both derive the discount from (listPrice - price), so a
+      // flat discount has to set it just as a percentage one does. The
+      // percentage is recorded only when that is how the offer was expressed;
+      // back-computing one from a flat sum would print "-23.5%" on an invoice
+      // for an offer the customer was told was "MVR 100 off".
+      ...(product.discountPercent > 0 || product.discountAmount > 0
+        ? {
+            listPrice: product.price,
+            ...(product.discountPercent > 0 ? { discountPercent: product.discountPercent } : {}),
+          }
         : {}),
       currency: product.currency,
       quantity,

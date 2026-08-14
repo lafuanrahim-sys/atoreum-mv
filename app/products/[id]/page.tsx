@@ -132,12 +132,14 @@ export default async function ProductDetailPage({
             <ProductHeadlines headlines={product.headlines} />
 
             <div className="mt-4 flex items-center gap-4">
-              {product.discountPercent > 0 ? (
+              {product.discountPercent > 0 || product.discountAmount > 0 ? (
                 <span className="flex items-baseline gap-2.5">
                   <s className="text-sm text-ivory-dim/70 tabular-nums">{formatPrice(product.price, product.currency)}</s>
                   <span className="text-lg text-ivory tabular-nums">{formatPrice(product.priceEffective, product.currency)}</span>
                   <span className="rounded-sm bg-gold/15 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.1em] text-gold uppercase">
-                    -{Math.round(product.discountPercent)}%
+                    {product.discountAmount > 0
+                      ? `-${product.currency} ${product.discountAmount.toLocaleString("en-US")}`
+                      : `-${Math.round(product.discountPercent)}%`}
                   </span>
                 </span>
               ) : (

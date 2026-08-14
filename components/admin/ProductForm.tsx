@@ -158,20 +158,7 @@ export default function ProductForm({
           />
         </div>
         <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-          <TextField
-            label="Discount %"
-            name="discountPercent"
-            type="number"
-            step="0.01"
-            min={0}
-            max={95}
-            defaultValue={product?.discountPercent ?? 0}
-            hint={
-              product && product.discountPercent > 0
-                ? `Now selling at ${product.currency} ${product.priceEffective.toLocaleString("en-US")}`
-                : "0 = no offer"
-            }
-          />
+          <DiscountField product={product} />
           <TextField label="On-hand stock" name="stockOnHand" type="number" step="1" defaultValue={product?.stockOnHand ?? 0} />
           <SelectField label="Currency" name="currency" defaultValue={product?.currency ?? "MVR"}>
             <option value="MVR" className="bg-ink-2">MVR</option>
@@ -326,6 +313,61 @@ function FormSection({ eyebrow, title, children }: { eyebrow: string; title: str
       </legend>
       {children}
     </fieldset>
+  );
+}
+
+/**
+ * Discount, expressed as a percentage or a flat sum off.
+ *
+ * A segmented unit control plus one number, rather than two number inputs:
+ * with separate "Discount %" and "Discount MVR" fields, filling both is the
+ * obvious mistake to make, and the database rejects it (see
+ * products_discount_single_kind). Making the unit a choice means the invalid
+ * state cannot be typed.
+ */
+function DiscountField({ product }: { product?: Product }) {
+  const initialKind: "percent" | "amount" = (product?.discountAmount ?? 0) > 0 ? "amount" : "percent";
+  const [kind, setKind] = useState<"percent" | "amount">(initialKind);
+  const saved = (product?.discountAmount ?? 0) > 0 ? product!.discountAmount : (product?.discountPercent ?? 0);
+  const currency = product?.currency ?? "MVR";
+
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Discount</span>
+      <input type="hidden" name="discountKind" value={kind} />
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          name="discountValue"
+          step={kind === "amount" ? "1" : "0.01"}
+          min={0}
+          max={kind === "amount" ? undefined : 95}
+          defaultValue={saved}
+          key={kind}
+          className="min-w-0 flex-1 border-b border-line bg-transparent px-1 py-2 font-mono text-sm text-ivory focus:border-gold-deep focus:outline-none"
+        />
+        <div className="flex shrink-0 overflow-hidden rounded border border-line">
+          {(["percent", "amount"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setKind(k)}
+              aria-pressed={kind === k}
+              className={`px-2 py-1 font-mono text-[10px] transition-colors ${
+                kind === k ? "bg-gold-deep text-ink" : "text-ivory-dim hover:text-gold-deep"
+              }`}
+            >
+              {k === "percent" ? "%" : currency}
+            </button>
+          ))}
+        </div>
+      </div>
+      <span className="text-[10px] leading-tight text-ivory-dim/70">
+        {product && (product.discountPercent > 0 || product.discountAmount > 0)
+          ? `Now selling at ${product.currency} ${product.priceEffective.toLocaleString("en-US")}`
+          : "0 = no offer"}
+      </span>
+    </label>
   );
 }
 
