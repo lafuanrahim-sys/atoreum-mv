@@ -10,10 +10,15 @@ import PageHeader from "@/components/dashboard/PageHeader";
 
 const PAGE_SIZE = 20;
 
+// No "Shipped". The real flow is Pending Verification -> Confirmed ->
+// Completed: orders are delivered the same evening (see the delivery window
+// at checkout), so there is no period where "shipped but not delivered"
+// describes anything. The value stays in the OrderStatus union and in the
+// table's check constraint so any historical row carrying it is still valid
+// and still readable -- it simply cannot be chosen again.
 const STATUSES: OrderStatus[] = [
   "Pending Verification",
   "Confirmed",
-  "Shipped",
   "Completed",
   "Cancelled",
 ];

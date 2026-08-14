@@ -46,6 +46,17 @@ export default async function DashboardOrderDetailPage({
           </div>
         </div>
 
+        {/* One button, showing the one step this order is actually up to:
+            Pending Verification -> Confirmed -> Completed.
+
+            It used to say "Mark as Completed" at every stage, which let an
+            unverified order jump straight to Completed -- skipping the
+            transition into Confirmed, and with it the receipt email, which
+            only ever fires on that transition (see sendReceiptOnConfirm in
+            app/actions/orders.ts). The customer would have been charged,
+            had stock deducted, and never been sent anything.
+
+            The dropdown below still reaches any status, for corrections. */}
         {order.status === "Completed" ? (
           <p className="flex items-center gap-2 border-2 border-emerald-600 px-5 py-3 font-mono text-xs uppercase tracking-[0.2em] text-emerald-600">
             <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
@@ -53,21 +64,40 @@ export default async function DashboardOrderDetailPage({
             </svg>
             Completed
           </p>
+        ) : order.status === "Pending Verification" ? (
+          <AdminActionButton
+            action={async () => {
+              "use server";
+              await changeOrderStatus(order.id, "Confirmed");
+            }}
+            label="Confirm Order"
+            pendingLabel="Confirming…"
+            variant="success"
+            className="px-6 py-3 text-xs shadow-lg"
+            toastMessage={`${order.orderNumber} confirmed — receipt sent and stock deducted.`}
+            icon={
+              <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
+                <path d="M3 8.5l3.2 3.2L13 4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            }
+          />
         ) : (
-          order.status !== "Cancelled" && (
+          order.status === "Confirmed" && (
             <AdminActionButton
               action={async () => {
                 "use server";
                 await changeOrderStatus(order.id, "Completed");
               }}
-              label="Mark as Completed"
+              label="Mark as Delivered"
               pendingLabel="Updating…"
               variant="success"
               className="px-6 py-3 text-xs shadow-lg"
-              toastMessage={`${order.orderNumber} marked as completed.`}
+              toastMessage={`${order.orderNumber} delivered — Sangu credited.`}
               icon={
                 <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
-                  <path d="M3 8.5l3.2 3.2L13 4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M2 9.5h9V4H2v5.5zM11 6.5h2.2L15 8.6v1.9h-4V6.5z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                  <circle cx="4.6" cy="11.4" r="1.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
+                  <circle cx="12.2" cy="11.4" r="1.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
                 </svg>
               }
             />
