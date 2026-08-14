@@ -144,12 +144,20 @@ export default function ContactClient({ sent, error }: { sent: boolean; error: b
               className="absolute -right-7 -top-7 h-24 w-24 text-gold opacity-70 will-change-transform"
             >
               <defs>
-                <path id="stamp-arc" d="M 50,50 m -37,0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" />
+                {/* Starts at 6 o'clock and runs clockwise, so the halfway
+                    point of the path is 12 o'clock. Paired with startOffset
+                    50% and textAnchor middle below, that centres the legend on
+                    top of the stamp and keeps it symmetrical about the
+                    vertical axis whatever the text says. */}
+                <path id="stamp-arc" d="M 50,50 m 0,36 a 36,36 0 1,1 0,-72 a 36,36 0 1,1 0,72" />
               </defs>
               <circle cx="50" cy="50" r="47" fill="var(--ink)" stroke="currentColor" strokeWidth="1" />
               <circle cx="50" cy="50" r="26" fill="none" stroke="currentColor" strokeWidth="0.75" />
-              <text fill="currentColor" fontSize="11" letterSpacing="4">
-                <textPath href="#stamp-arc" startOffset="8">ATOREUM MV · MALÉ 20-02</textPath>
+              {/* 8/2.2 rather than 11/4: at the old size the legend was longer
+                  than the circle it sat on, so it ran past the outer ring and
+                  out of the viewBox, and its two ends overlapped. */}
+              <text fill="currentColor" fontSize="8" letterSpacing="2.2" textAnchor="middle">
+                <textPath href="#stamp-arc" startOffset="50%">ATOREUM MV · MALÉ 20-02</textPath>
               </text>
             </svg>
 
@@ -180,24 +188,13 @@ export default function ContactClient({ sent, error }: { sent: boolean; error: b
 
           <dl data-reveal className="mt-12 flex flex-col gap-6 border-t border-line pt-10">
             <div>
-              <dt className="text-xs uppercase tracking-[0.2em] text-ivory-dim">Phone</dt>
-              <dd className="mt-2">
-                <a
-                  href="tel:+9607439030"
-                  className="font-display text-2xl text-ivory transition-colors hover:text-gold"
-                >
-                  +960 743 9030
-                </a>
-              </dd>
-            </div>
-            <div>
               <dt className="text-xs uppercase tracking-[0.2em] text-ivory-dim">Inquiries</dt>
               <dd className="mt-2">
                 <a
-                  href="mailto:sales@atoreum.mv"
+                  href="mailto:sales@aranzo.co"
                   className="font-display text-2xl text-ivory transition-colors hover:text-gold"
                 >
-                  sales@atoreum.mv
+                  sales@aranzo.co
                 </a>
               </dd>
             </div>
@@ -214,9 +211,9 @@ export default function ContactClient({ sent, error }: { sent: boolean; error: b
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-ivory-dim">
                 We&apos;ll get back to you on the number you left. For anything urgent,
-                call{" "}
-                <a href="tel:+9607439030" className="text-gold hover:underline">
-                  +960 743 9030
+                email{" "}
+                <a href="mailto:sales@aranzo.co" className="text-gold hover:underline">
+                  sales@aranzo.co
                 </a>
                 .
               </p>
@@ -263,7 +260,7 @@ export default function ContactClient({ sent, error }: { sent: boolean; error: b
                 />
               </Field>
 
-              <Field label="Notes or suggestions">
+              <Field label="Notes, suggestions or collab">
                 <textarea
                   name="message"
                   rows={6}
