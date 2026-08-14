@@ -11,7 +11,7 @@ import {
 } from "@/lib/boli/config";
 
 export const metadata: Metadata = {
-  title: "Sangu Terms | Atoreum MV",
+  title: "Sangu Terms",
   description: "Terms governing Sangu, Atoreum MV's in-store loyalty currency.",
 };
 

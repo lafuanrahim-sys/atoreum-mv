@@ -8,7 +8,7 @@ import { buildInvoice, formatMoney, invoiceNumber } from "@/lib/invoice";
 import { STORE_DETAILS } from "@/lib/storeDetails";
 import PrintButton from "@/components/dashboard/PrintButton";
 
-export const metadata: Metadata = { title: "Invoice | Atoreum MV" };
+export const metadata: Metadata = { title: "Invoice", robots: { index: false, follow: false } };
 
 /**
  * A tax invoice for one order, GST broken out, laid out to be printed or

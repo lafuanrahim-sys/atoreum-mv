@@ -13,6 +13,8 @@ import TrackRecentlyViewed from "@/components/products/TrackRecentlyViewed";
 import { listApprovedReviews, getRatingSummaries } from "@/lib/data/reviews.server";
 import { hasCompletedPurchase } from "@/lib/data/orders.server";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbSchema, productSchema } from "@/lib/seo/schema";
 
 function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;
@@ -25,10 +27,44 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const product = await getProductById(id);
-  if (!product) return { title: "Product not found | Atoreum MV" };
+  if (!product) return { title: "Product not found" };
+
+  const path = `/products/${product.id}`;
+  // "Maldives" earns the page the local search it can actually win: competing
+  // with global retailers on the bare product name is not winnable, competing
+  // on "lebelage cica ampoule maldives" is.
+  //
+  // The brand is only added when the name doesn't already carry it. Product
+  // names here mostly begin with "Lebelage", and "Lebelage Dr. Cica Derma
+  // Ampoule — Lebelage in the Maldives | Atoreum MV" is 71 characters that say
+  // Lebelage twice — Google truncates around 60, so the repetition would cost
+  // the words that matter.
+  const brandPrefix = product.name.toLowerCase().includes(product.brand.toLowerCase())
+    ? ""
+    : `${product.brand} `;
+  const title = `${product.name} — ${brandPrefix}Maldives`;
+  const description = `${product.description} ${product.currency} ${product.priceEffective.toLocaleString("en-US")}, delivered in Malé.`.slice(0, 300);
+
   return {
-    title: `${product.name} | Atoreum MV`,
-    description: product.description,
+    title,
+    description,
+    alternates: { canonical: path },
+    openGraph: {
+      // "product" isn't in Next's OpenGraph union; website is the correct
+      // fallback and the Product JSON-LD below carries the commerce detail
+      // that actually drives the rich result.
+      type: "website",
+      url: path,
+      title,
+      description,
+      images: product.images.map((src) => ({ url: src, alt: product.name })),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: product.images,
+    },
   };
 }
 
@@ -54,6 +90,16 @@ export default async function ProductDetailPage({
 
   return (
     <div className="bg-ink pt-10 pb-28 md:pt-14">
+      {/* Price, stock and stars in the search result itself — the difference
+          between a bare blue link and a listing someone can shop from. */}
+      <JsonLd data={productSchema(product, ratings[product.id])} />
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Collection", path: "/products" },
+          { name: product.category, path: `/products?category=${encodeURIComponent(product.category)}` },
+          { name: product.name, path: `/products/${product.id}` },
+        ])}
+      />
       <TrackRecentlyViewed productId={product.id} />
       <div className="page-gutter">
         <nav aria-label="Breadcrumb" className="text-xs uppercase tracking-[0.15em] text-ivory-dim">

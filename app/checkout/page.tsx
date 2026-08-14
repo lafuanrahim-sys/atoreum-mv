@@ -6,7 +6,10 @@ import { getBalance } from "@/lib/boli/ledger.server";
 import { MIN_REDEMPTION_BOLI } from "@/lib/boli/config";
 
 export const metadata: Metadata = {
-  title: "Checkout | Atoreum MV",
+  title: "Checkout",
+  // Belt and braces alongside app/robots.ts. A crawler that reaches this
+  // page anyway -- from a pasted link, say -- is told plainly not to index it.
+  robots: { index: false, follow: false },
 };
 
 /**

@@ -8,9 +8,10 @@ import { getAllProducts } from "@/lib/data/products.server";
 import { getRatingSummaries } from "@/lib/data/reviews.server";
 
 export const metadata: Metadata = {
-  title: "Atoreum MV Curated Skincare | Maldives launch",
+  title: "Shop Korean Skincare",
   description:
-    "Discover Atoreum MV's curated Lebelage launch collection for the Maldives.",
+    "Browse the full Lebelage range in the Maldives: cleansing foams, toners, serums, ampoules, creams, sheet masks and sun care. Delivered in Malé.",
+  alternates: { canonical: "/products" },
 };
 
 export default async function ProductsPage() {

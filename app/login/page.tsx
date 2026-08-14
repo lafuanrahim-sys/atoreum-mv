@@ -15,7 +15,10 @@ import SubmitButton from "@/components/ui/SubmitButton";
 import PasswordField from "@/components/ui/PasswordField";
 
 export const metadata: Metadata = {
-  title: "Sign in | Atoreum MV",
+  title: "Sign in",
+  // Belt and braces alongside app/robots.ts. A crawler that reaches this
+  // page anyway -- from a pasted link, say -- is told plainly not to index it.
+  robots: { index: false, follow: false },
   description: "Sign in to your Atoreum MV account.",
 };
 

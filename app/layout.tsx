@@ -10,6 +10,7 @@ import { SessionProvider } from "@/lib/auth/SessionContext";
 import CartDrawer from "@/components/cart/CartDrawer";
 import { ChromeVisibilityProvider } from "@/lib/layout/ChromeVisibility";
 import VisualViewportSync from "@/lib/layout/VisualViewportSync";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, STORE } from "@/lib/site";
 
 // Display serif for headlines — editorial, luxury-catalogue register.
 const playfair = Playfair_Display({
@@ -66,9 +67,70 @@ const marcellusSC = Marcellus_SC({
 });
 
 export const metadata: Metadata = {
-  title: "Atoreum MV | Lebelage launch in the Maldives",
-  description:
-    "Atoreum MV introduces Lebelage to the Maldives with premium Korean skincare curated for island life.",
+  // Every relative URL in metadata — canonicals, Open Graph images — is
+  // resolved against this. Without it Next emits relative og:image URLs, which
+  // no social scraper can fetch, so shared links render with no picture.
+  metadataBase: new URL(SITE_URL),
+  title: {
+    // Pages set only their own name; this appends the brand, so every tab and
+    // every search result reads "<page> | Atoreum MV" without each page
+    // repeating it. `default` covers the pages that set no title at all.
+    default: "Atoreum MV | Korean Skincare in the Maldives",
+    template: "%s | Atoreum MV",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  // What someone would actually type into Google. Meta keywords are ignored
+  // for ranking; these are here because some non-Google crawlers and internal
+  // site searches still read them, and they cost nothing.
+  keywords: [
+    "Korean skincare Maldives",
+    "Lebelage Maldives",
+    "skincare Malé",
+    "K-beauty Maldives",
+    "serum Maldives",
+    "sunscreen Maldives",
+    "Atoreum MV",
+  ],
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: STORE.legalName,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "en_US",
+    url: SITE_URL,
+    title: "Atoreum MV | Korean Skincare in the Maldives",
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    // summary_large_image, not summary: the preview is the whole reason a
+    // link gets tapped when it's pasted into a WhatsApp or Instagram DM,
+    // which is how most of this shop's traffic will actually arrive.
+    card: "summary_large_image",
+    title: "Atoreum MV | Korean Skincare in the Maldives",
+    description: SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      // Defaults cap the text snippet and forbid large image previews, which
+      // makes a product listing look thin next to competitors.
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
+  },
+  category: "shopping",
+  // Adding a Search Console property is a one-line change here once the
+  // verification token exists; left unset rather than faked.
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+    : {}),
 };
 
 // minimumScale pins the page at 100% or tighter -- can't pinch out past the

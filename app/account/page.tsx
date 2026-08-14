@@ -17,7 +17,10 @@ import { EXPIRY_WARNING_WINDOW_DAYS, UNLIMITED_DIVE_PLAYS_FOR_ADMINS } from "@/l
 import PageTransition from "@/components/ui/PageTransition";
 
 export const metadata: Metadata = {
-  title: "My Account | Atoreum MV",
+  title: "My Account",
+  // Belt and braces alongside app/robots.ts. A crawler that reaches this
+  // page anyway -- from a pasted link, say -- is told plainly not to index it.
+  robots: { index: false, follow: false },
   description: "Your orders, favorites, and profile.",
 };
 

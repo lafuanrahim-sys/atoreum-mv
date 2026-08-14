@@ -1,8 +1,20 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderById } from "@/lib/data/orders.server";
 import { verifyOrderAccessToken } from "@/lib/orderAccessToken";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
+
+/**
+ * Never indexed. The URL carries an access token and the page shows a
+ * customer's name, address and order contents -- exactly what must not appear
+ * in a search result. app/robots.ts disallows the path too; this covers the
+ * case where the link is shared and a crawler reaches it regardless.
+ */
+export const metadata: Metadata = {
+  title: "Order confirmed",
+  robots: { index: false, follow: false },
+};
 
 function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString("en-US")}`;

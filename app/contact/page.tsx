@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import ContactClient from "@/components/contact/ContactClient";
 
 export const metadata: Metadata = {
-  title: "Contact | Atoreum MV",
-  description: "Get in touch with Atoreum MV: call, email, or send us a note.",
+  title: "Contact",
+  description:
+    "Questions, suggestions or collaborations: email sales@aranzo.co or send Atoreum MV a note. We reply from Malé within the day.",
+  alternates: { canonical: "/contact" },
 };
 
 /**
