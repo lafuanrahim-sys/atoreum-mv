@@ -15,6 +15,19 @@ gsap.registerPlugin(ScrollTrigger);
 
 const PAGE_SIZE = 20;
 
+/**
+ * The category rail above the grid — parked, not removed.
+ *
+ * Flip to true to bring it back. Everything it needs is still here and still
+ * compiled: the component, its routine ordering, and the per-category counts
+ * below. Kept behind a flag rather than deleted or commented out so it cannot
+ * quietly rot — a rename or a prop change still has to typecheck against it.
+ *
+ * Category filtering itself is unaffected: ?category= in the URL still
+ * filters, which is how the collection cards on this page navigate.
+ */
+const SHOW_CATEGORY_RAIL = false;
+
 // Cheapest first on arrival. The collection opens on a first page of the most
 // affordable products rather than whatever happens to be flagged featured --
 // price is the first thing a new shopper is deciding on, and the entry point
@@ -237,19 +250,21 @@ export default function ProductGrid({
   return (
     <div>
       <div className="flex flex-col gap-6 border-b border-line pb-8">
-        <CategoryRail
-          categories={categories}
-          active={active}
-          onChange={setActive}
-          counts={Object.fromEntries(
-            categories.map((category) => [
-              category,
-              category === "All"
-                ? products.length
-                : products.filter((p) => p.category === category).length,
-            ])
-          )}
-        />
+        {SHOW_CATEGORY_RAIL && (
+          <CategoryRail
+            categories={categories}
+            active={active}
+            onChange={setActive}
+            counts={Object.fromEntries(
+              categories.map((category) => [
+                category,
+                category === "All"
+                  ? products.length
+                  : products.filter((p) => p.category === category).length,
+              ])
+            )}
+          />
+        )}
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
           <input
