@@ -38,7 +38,7 @@ export default function Footer() {
             <p className="text-xs tracking-[0.2em] text-sand uppercase">Shop</p>
             <div className="mt-4 flex flex-col gap-3">
               <Link href="/products" className="text-sm text-ivory-dim transition-colors hover:text-gold">
-                Full Collection
+                Collection
               </Link>
             </div>
           </div>
