@@ -9,24 +9,6 @@ import StockBadge from "@/components/products/StockBadge";
 import FavoriteButton from "@/components/products/FavoriteButton";
 import StarRating from "@/components/ui/StarRating";
 
-// The handful of supplier photos that are full-bleed lifestyle shots (a
-// styled scene behind the bottle) rather than a cutout on a plain/transparent
-// backdrop. Only these leave a visible flat photo-well bar above/below in the
-// 4:5 card — everything else already reads fine with plain object-contain,
-// so only this set gets the blurred-backdrop fill treatment.
-const BACKGROUNDED_PRODUCT_IDS = new Set([
-  "amp-004",
-  "amp-005",
-  "amp-006",
-  "amp-008",
-  "amp-009",
-  "crm-002",
-  "crm-010",
-  "crm-011",
-  "emu-001",
-  "ton-002",
-]);
-
 // "New" until 30 days after the product was added — long enough to matter,
 // short enough that the badge keeps meaning something.
 const NEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
@@ -71,9 +53,12 @@ export default function ProductCard({
         <Link href={`/products/${product.id}`} className="absolute inset-0 block" aria-label={product.name}>
           {thumbnail ? (
             <div data-card-media className="absolute inset-0">
-              {BACKGROUNDED_PRODUCT_IDS.has(product.id) && (
+              {product.imageHasBackground && (
                 // This photo is a full-bleed lifestyle shot (its own scene,
-                // no transparency) — square in a taller 4:5 card, which
+                // no transparency) — detected from the image's mean alpha and
+                // stored on the row, since a client component can't open the
+                // file (see scripts/detect-image-backgrounds.ts). Square in a
+                // taller 4:5 card, which
                 // otherwise leaves a flat photo-well bar above/below. Filling
                 // that gap with a blurred, scaled-up copy of the same photo
                 // reads as an intentional frame instead of dead space.

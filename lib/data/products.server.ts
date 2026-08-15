@@ -21,6 +21,7 @@ type ProductRow = {
   price_max: string | null;
   discount_percent: string;
   discount_amount: string;
+  image_has_background: boolean;
   price_effective: string;
   currency: string;
   description: string;
@@ -49,6 +50,7 @@ function rowToProduct(row: ProductRow): Product {
     priceMax: row.price_max === null ? null : Number(row.price_max),
     discountPercent: Number(row.discount_percent),
     discountAmount: Number(row.discount_amount),
+    imageHasBackground: row.image_has_background ?? false,
     priceEffective: Number(row.price_effective),
     currency: row.currency as Product["currency"],
     description: row.description,

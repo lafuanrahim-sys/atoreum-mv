@@ -242,6 +242,21 @@ alter table orders add column if not exists idempotency_key text;
 create unique index if not exists orders_idempotency_key_idx on orders (idempotency_key)
   where idempotency_key is not null;
 
+-- Does the product's photo carry its own background?
+--
+-- A cutout (the product floating on transparency) reads best centred with
+-- room around it. A lifestyle shot -- the bottle on a styled surface -- has
+-- its own edges, and centring it leaves flat bars above and below inside the
+-- 4:5 card, so those are filled edge-to-edge instead.
+--
+-- Stored rather than computed at render time: the card is a client component
+-- and cannot open the image file, and reading every product's pixels per
+-- request to answer a styling question would be absurd. Set by
+-- scripts/detect-image-backgrounds.ts, which measures the mean alpha of the
+-- image -- a cutout averages ~35, a photograph exactly 255, with nothing in
+-- between.
+alter table products add column if not exists image_has_background boolean not null default false;
+
 -- Invoice numbering.
 --
 -- A tax invoice number has to be unique for the life of the business. Order

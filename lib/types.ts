@@ -61,6 +61,12 @@ export type Product = {
    */
   priceEffective: number;
   currency: Currency;
+  /**
+   * True when images[0] is a photo with its own background rather than a
+   * cutout on transparency. Drives whether the card centres the shot or
+   * fills the frame with it -- see components/products/ProductCard.tsx.
+   */
+  imageHasBackground: boolean;
   /** Short summary shown on cards and near the top of the detail page. */
   description: string;
   /** Three alternate marketing headlines, rotated on the detail page. */
@@ -89,10 +95,14 @@ export type Product = {
  * `priceEffective` is omitted as well: it is a generated column, and Postgres
  * refuses any statement that supplies a value for one, so leaving it in the
  * input type would only invite a write that fails at runtime.
+ *
+ * `imageHasBackground` is omitted for the same reason in spirit: it is
+ * measured from the image itself, not decided by whoever fills in the form
+ * (see scripts/detect-image-backgrounds.ts).
  */
 export type ProductInput = Omit<
   Product,
-  "id" | "createdAt" | "updatedAt" | "priceEffective" | "stockStatus"
+  "id" | "createdAt" | "updatedAt" | "priceEffective" | "stockStatus" | "imageHasBackground"
 >;
 
 export type OrderStatus =
