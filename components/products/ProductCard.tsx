@@ -74,10 +74,16 @@ export default function ProductCard({
                   <div className="absolute inset-0 bg-photo-well/10" />
                 </>
               )}
-              {/* inset-6 (not inset-0 + padding) — padding on a position:absolute
+              {/* inset (not inset-0 + padding) — padding on a position:absolute
                   element doesn't constrain a `fill` child's containing block,
-                  it'd be silently ignored and the image would paint edge-to-edge. */}
-              <div className="absolute inset-6">
+                  it'd be silently ignored and the image would paint edge-to-edge.
+
+                  inset-2 rather than the original inset-6: at 24px a side the
+                  frame was spending 13% of its width on empty margin, and with
+                  object-contain that comes straight off the product. Every
+                  card gains from the smaller gutter; a wide composition, where
+                  width is the binding dimension, gains most. */}
+              <div className="absolute inset-2 sm:inset-3">
                 <Image
                   src={thumbnail}
                   alt={product.name}
