@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/CartContext";
 import { submitOrder } from "@/app/actions/checkout";
+import VoucherField from "@/components/checkout/VoucherField";
 import { MAX_REDEMPTION_SUBTOTAL_FRACTION, MIN_REDEMPTION_BOLI, REDEMPTION_BOLI_PER_MVR } from "@/lib/boli/config";
 import type { StoreSettings } from "@/lib/data/settings.server";
 import type { PaymentMethod } from "@/lib/types";
@@ -567,6 +568,10 @@ function PaymentStep({
           </p>
         </div>
       )}
+
+      {/* Above the delivery note, below the payment method: a voucher is part
+          of settling up, and it applies whether paying by cash or transfer. */}
+      <VoucherField payableMvr={total} />
 
       {/* Outside the payment-method branch on purpose: when the order arrives
           has nothing to do with how it was paid for, and a cash customer needs

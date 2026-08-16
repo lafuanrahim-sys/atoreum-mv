@@ -15,6 +15,8 @@ import { isAdminRole } from "@/lib/auth/userSession";
 import { getBalance, listLedger, getExpiringSoon, estimatePurchaseEarn } from "@/lib/boli/ledger.server";
 import { EXPIRY_WARNING_WINDOW_DAYS, UNLIMITED_DIVE_PLAYS_FOR_ADMINS } from "@/lib/boli/config";
 import PageTransition from "@/components/ui/PageTransition";
+import VouchersPanel from "@/components/account/VouchersPanel";
+import { listVouchersForPurchaser } from "@/lib/vouchers/vouchers.server";
 
 export const metadata: Metadata = {
   title: "My Account",
@@ -40,6 +42,7 @@ const TABS = [
   { key: "orders", label: "My Orders" },
   { key: "favorites", label: "Favorites" },
   { key: "boli", label: "Sangu" },
+  { key: "vouchers", label: "Vouchers" },
   { key: "profile", label: "Profile" },
 ] as const;
 
@@ -85,6 +88,10 @@ export default async function AccountPage({
   // unavailable must never stop the profile rendering, hence the try/catch and
   // the null-tolerant shape downstream.
   let profileOverview: ProfileOverviewData | null = null;
+  // Only ever the signed-in account's own vouchers -- the code is a bearer
+  // secret, so the query is keyed on the session's user id and nothing else.
+  const vouchers = tab === "vouchers" ? await listVouchersForPurchaser(user.id) : [];
+
   if (tab === "profile") {
     const activeOrders = myOrders.filter((o) => o.status !== "Cancelled");
     const sorted = [...myOrders].sort(
@@ -335,6 +342,8 @@ export default async function AccountPage({
               )}
             </div>
           )}
+
+          {tab === "vouchers" && <VouchersPanel vouchers={vouchers} />}
 
           {tab === "profile" && (
             <div className="flex flex-col gap-14">
