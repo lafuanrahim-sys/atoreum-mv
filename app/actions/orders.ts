@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getOrderById, updateOrderStatus, deleteOrder } from "@/lib/data/orders.server";
-import { getUserById, getUserByEmail } from "@/lib/data/users.server";
+import { getUserById } from "@/lib/data/users.server";
 import { sendOrderReceiptEmail } from "@/lib/email";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { isAdminRole } from "@/lib/auth/userSession";
@@ -31,12 +31,18 @@ async function runBoliHook(orderId: string, previousStatus: OrderStatus, nextSta
     const order = await getOrderById(orderId);
     if (!order) return;
 
-    // userId (set at checkout from the session) is authoritative — it
-    // survives the shipping-form email differing from the account's login
-    // email. Falls back to email match for orders placed before userId
-    // existed.
-    const user = (order.userId ? await getUserById(order.userId) : null) ?? (await getUserByEmail(order.customer.email));
-    if (!user) return; // guest checkout, no account — Sangu is account-only
+    // userId, set at checkout from the session, is the ONLY link between an
+    // order and a Sangu account.
+    //
+    // There used to be a fallback that matched order.customer.email against
+    // the account list. It meant a guest checkout typed with a registered
+    // address credited that account -- so guests did accumulate Sangu, just
+    // into someone else's balance, and anyone could push Sangu into any
+    // account they knew the email of without ever signing in. An order
+    // belongs to an account because a session said so, or it belongs to no
+    // account at all.
+    const user = order.userId ? await getUserById(order.userId) : null;
+    if (!user) return; // guest checkout — Sangu is account-only, by design
 
     if (nextStatus === "Completed" && previousStatus !== "Completed") {
       await creditPurchaseEarn({

@@ -105,7 +105,17 @@ export default async function DashboardOrdersPage({
           {paged.map((o) => (
             <tr key={o.id} className="border-b border-line">
               <td className="py-3 pr-4 font-mono text-ivory">{o.orderNumber}</td>
-              <td className="py-3 pr-4 text-ivory-dim">{o.customer.name}</td>
+              <td className="py-3 pr-4 text-ivory-dim">
+                {o.customer.name}
+                {/* No account behind this order: nothing was earned on it and
+                    there is no customer record to open. Worth seeing at a
+                    glance rather than discovering on the detail page. */}
+                {!o.userId && (
+                  <span className="ml-2 rounded-sm border border-line px-1.5 py-0.5 font-mono text-[9px] tracking-[0.1em] text-ivory-dim/70 uppercase">
+                    Guest
+                  </span>
+                )}
+              </td>
               <td className="py-3 pr-4 font-mono tabular-nums text-ivory-dim">{formatPrice(o.subtotal, o.currency)}</td>
               <td className="py-3 pr-4 text-ivory-dim">
                 {(o.paymentMethod ?? "transfer") === "cash" ? "Cash" : "Transfer"}

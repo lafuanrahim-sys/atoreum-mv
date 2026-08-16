@@ -124,6 +124,13 @@ export default async function DashboardOrderDetailPage({
         </div>
 
         <div>
+          {/* Says plainly what a missing account means for this order, rather
+              than leaving it to be inferred from an empty space. */}
+          {!order.userId && (
+            <p className="mb-4 border border-line px-3 py-2 font-mono text-[10px] leading-relaxed tracking-[0.05em] text-ivory-dim">
+              GUEST ORDER — no account. No Sangu is earned on it and none can be redeemed against it.
+            </p>
+          )}
           <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Status</h2>
           <OrderStatusForm orderId={order.id} currentStatus={order.status} changeStatus={changeOrderStatus} />
         </div>
