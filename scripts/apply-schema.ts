@@ -8,7 +8,9 @@ import { pool } from "@/lib/db";
  */
 async function main() {
   const db = pool();
-  for (const file of ["lib/data/schema.sql", "lib/boli/schema.sql"]) {
+  // Vouchers last: voucher_expire() calls boli_ledger_write(), so the Boli
+  // schema has to exist first.
+  for (const file of ["lib/data/schema.sql", "lib/boli/schema.sql", "lib/vouchers/schema.sql"]) {
     console.log(`Applying ${file}...`);
     await db.query(fs.readFileSync(file, "utf8"));
     console.log(`  done.`);
