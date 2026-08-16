@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { isAdminRole } from "@/lib/auth/userSession";
 import { creditPurchaseEarn, reverseOrder } from "@/lib/boli/ledger.server";
 import { flagRefundPatternIfNeeded } from "@/lib/boli/fraud.server";
+import { activateVoucherForOrder, reverseVoucherForOrder } from "@/lib/vouchers/vouchers.server";
 import type { OrderStatus } from "@/lib/types";
 
 /**
@@ -96,6 +97,40 @@ async function sendReceiptOnConfirm(orderId: string, previousStatus: OrderStatus
   }
 }
 
+/**
+ * The two things an order status change means for gift vouchers.
+ *
+ * Confirmed  -> a voucher this order BOUGHT becomes spendable. This is the
+ *               gate: until an admin has seen the payment, the code the buyer
+ *               is holding buys nothing.
+ * Cancelled  -> a voucher this order SPENT gets its balance back, onto the
+ *               voucher itself rather than into anyone's Sangu. The recipient
+ *               keeps the gift, the buyer is not paid twice.
+ *
+ * Both are idempotent in the database, so a repeated transition is harmless.
+ * Failures are logged and swallowed for the same reason the Sangu hook does
+ * it: a voucher problem must not block an admin from managing orders.
+ */
+async function runVoucherHook(orderId: string, previousStatus: OrderStatus, nextStatus: OrderStatus) {
+  if (previousStatus === nextStatus) return;
+  try {
+    if (nextStatus === "Confirmed" && previousStatus !== "Confirmed") {
+      const voucher = await activateVoucherForOrder(orderId);
+      if (voucher) console.log(`[voucher] ${voucher.code} activated by ${orderId}`);
+    } else if (nextStatus === "Cancelled" && previousStatus !== "Cancelled") {
+      const owed = await reverseVoucherForOrder(orderId);
+      // Non-zero means the voucher had already expired or been voided, so the
+      // value could not go back onto it. Surfaced rather than silently
+      // dropped -- somebody is owed this.
+      if (owed > 0) {
+        console.warn(`[voucher] ${orderId} cancelled but its voucher is closed; ${owed} Sangu owed to the purchaser`);
+      }
+    }
+  } catch (err) {
+    console.error(`[voucher] order hook failed for ${orderId} (${previousStatus} -> ${nextStatus}):`, err);
+  }
+}
+
 export async function changeOrderStatus(orderId: string, status: OrderStatus) {
   // Server actions are public endpoints — role-check inside, not just at the page.
   const user = await getCurrentUser();
@@ -108,6 +143,7 @@ export async function changeOrderStatus(orderId: string, status: OrderStatus) {
   await updateOrderStatus(orderId, status);
   if (previous) {
     await runBoliHook(orderId, previous.status, status);
+    await runVoucherHook(orderId, previous.status, status);
     await sendReceiptOnConfirm(orderId, previous.status, status);
   }
 
@@ -149,6 +185,7 @@ export async function deleteOrderAction(orderId: string) {
   if (order.status !== "Cancelled") {
     await updateOrderStatus(orderId, "Cancelled");
     await runBoliHook(orderId, order.status, "Cancelled");
+    await runVoucherHook(orderId, order.status, "Cancelled");
   }
   await deleteOrder(orderId);
 

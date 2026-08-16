@@ -185,6 +185,12 @@ export type Order = {
   boliRedeemed?: number;
   /** MVR value of `boliRedeemed`, at REDEMPTION_BOLI_PER_MVR — kept alongside it so this receipt is readable without re-deriving the conversion rate later if that rate ever changes. */
   boliDiscountAmount?: number;
+  /** False when the order's lines are not stockable goods (a gift voucher). */
+  movesStock: boolean;
+  /** Gift voucher applied to this order, if one was. */
+  voucherCode?: string;
+  voucherBoli?: number;
+  voucherDiscountAmount?: number;
   createdAt: string;
   updatedAt: string;
 };

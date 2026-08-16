@@ -8,9 +8,12 @@ import { getProductById } from "@/lib/data/products.server";
 import { notifyNewOrder } from "@/lib/notify";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { parseBoliAmount, redeemForOrder } from "@/lib/boli/ledger.server";
+import { BOLI_TO_MVR } from "@/lib/boli/config";
 import { uploadPublicFile, PAYMENT_PROOFS_BUCKET } from "@/lib/storage";
 import { orderAccessToken } from "@/lib/orderAccessToken";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { normalizeVoucherCode } from "@/lib/vouchers/code";
+import { redeemVoucher, reverseVoucherForOrder } from "@/lib/vouchers/vouchers.server";
 import type { Order, OrderItem, PaymentMethod } from "@/lib/types";
 
 export type CheckoutResult =
@@ -205,6 +208,40 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
     boliDiscountMvr = result.mvrValue;
   }
 
+  // Gift voucher, applied after any Sangu redemption.
+  //
+  // Deliberately NOT subject to the 30%-of-subtotal cap or the 1,000 minimum
+  // that govern Sangu. Those exist so loyalty points cannot replace revenue;
+  // a voucher is not loyalty, it is money the shop has already been paid, at
+  // par. Capping it would leave a customer holding credit they bought and
+  // cannot spend.
+  //
+  // Spent against the order id that is about to be used, so if createOrder
+  // fails below the spend is handed straight back (see the catch).
+  const voucherCode = normalizeVoucherCode(String(formData.get("voucherCode") ?? ""));
+  let voucherBoli = 0;
+  let voucherDiscountMvr = 0;
+  if (voucherCode) {
+    const payable = Math.max(0, subtotal - (boliDiscountMvr ?? 0));
+    const wantBoli = Math.floor(payable / BOLI_TO_MVR);
+    if (wantBoli > 0) {
+      try {
+        voucherBoli = await redeemVoucher({
+          code: voucherCode,
+          orderId,
+          wantBoli,
+          redeemer: { name, email, phone },
+        });
+        voucherDiscountMvr = Math.round(voucherBoli * BOLI_TO_MVR * 100) / 100;
+      } catch (err) {
+        // Postgres raises these with customer-readable text on purpose --
+        // "voucher has expired", "voucher has no balance left".
+        const message = String((err as Error).message ?? "").replace(/^.*voucher_redeem: /, "");
+        return { ok: false, error: message || "That voucher couldn't be applied." };
+      }
+    }
+  }
+
   let order: Order;
   try {
     order = await createOrder({
@@ -219,8 +256,19 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
       boliRedeemed: boliRedeemedAmount,
       boliDiscountAmount: boliDiscountMvr,
       idempotencyKey,
+      voucherCode: voucherCode || null,
+      voucherBoli: voucherBoli || null,
+      voucherDiscountAmount: voucherDiscountMvr || null,
     });
   } catch (err) {
+    // The voucher was spent a moment ago against an order that now does not
+    // exist. Hand it straight back, or the customer has paid for credit that
+    // vanished into a failed insert.
+    if (voucherBoli > 0) {
+      await reverseVoucherForOrder(orderId).catch((e) =>
+        console.error(`[voucher] could not reverse ${voucherCode} for failed order ${orderId}:`, e)
+      );
+    }
     // Two requests that both got past the check above race to insert; the
     // unique index lets exactly one win. The loser isn't an error to show the
     // customer -- their order exists, it just wasn't this request that made

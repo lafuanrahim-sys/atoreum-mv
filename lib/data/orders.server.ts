@@ -24,6 +24,10 @@ type OrderRow = {
   status: string;
   boli_redeemed: string | null;
   boli_discount_amount: string | null;
+  moves_stock: boolean;
+  voucher_code: string | null;
+  voucher_boli: string | null;
+  voucher_discount_amount: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -43,6 +47,14 @@ function rowToOrder(row: OrderRow): Order {
     status: row.status as OrderStatus,
     ...(row.boli_redeemed !== null
       ? { boliRedeemed: Number(row.boli_redeemed), boliDiscountAmount: Number(row.boli_discount_amount) }
+      : {}),
+    movesStock: row.moves_stock ?? true,
+    ...(row.voucher_code
+      ? {
+          voucherCode: row.voucher_code,
+          voucherBoli: Number(row.voucher_boli ?? 0),
+          voucherDiscountAmount: Number(row.voucher_discount_amount ?? 0),
+        }
       : {}),
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
@@ -145,6 +157,18 @@ export async function createOrder(params: {
   /** One per checkout attempt — see the unique index in lib/data/schema.sql. */
   idempotencyKey?: string | null;
   /**
+   * False for orders whose lines are not stockable goods — a gift voucher is
+   * the only such case today. Stock moves through stock_movements, whose
+   * product_id is a foreign key, so a line that is not a catalogue product
+   * would fail the insert rather than quietly skip it. Explicit here rather
+   * than inferred, so the one order type that means it has to say so.
+   */
+  movesStock?: boolean;
+  /** Gift voucher applied at checkout, if any. */
+  voucherCode?: string | null;
+  voucherBoli?: number | null;
+  voucherDiscountAmount?: number | null;
+  /**
    * Pre-generated id, when the caller needs to know the order id before the
    * order itself is durably created — checkout.ts does this so it can pass
    * the same id to the Sangu ledger's redemption idempotency key
@@ -161,8 +185,9 @@ export async function createOrder(params: {
 
   const { rows } = await pool().query<OrderRow>(
     `insert into orders
-      (id, order_number, items, user_id, subtotal, currency, customer, payment_method, payment_proof_path, status, boli_redeemed, boli_discount_amount, idempotency_key)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      (id, order_number, items, user_id, subtotal, currency, customer, payment_method, payment_proof_path, status, boli_redeemed, boli_discount_amount, idempotency_key,
+       voucher_code, voucher_boli, voucher_discount_amount, moves_stock)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
      returning *`,
     [
       id,
@@ -178,6 +203,10 @@ export async function createOrder(params: {
       params.boliRedeemed ?? null,
       params.boliRedeemed ? (params.boliDiscountAmount ?? null) : null,
       params.idempotencyKey ?? null,
+      params.voucherCode ?? null,
+      params.voucherBoli ?? null,
+      params.voucherDiscountAmount ?? null,
+      params.movesStock !== false,
     ]
   );
   // Cash orders land straight on "Confirmed" (see the status assignment
@@ -185,7 +214,7 @@ export async function createOrder(params: {
   // this deduction, so it has to happen here. Bank-transfer orders start
   // at "Pending Verification" and get deducted later, in
   // updateOrderStatus, when an admin actually confirms them.
-  if (status === "Confirmed") {
+  if (status === "Confirmed" && params.movesStock !== false) {
     await adjustStockForItems(params.items, -1, rows[0].id);
   }
   return rowToOrder(rows[0]);
@@ -259,7 +288,12 @@ export async function updateOrderStatus(id: string, status: OrderStatus): Promis
 
   const wasCommitted = STOCK_COMMITTED_STATUSES.has(before.status);
   const isCommitted = STOCK_COMMITTED_STATUSES.has(status);
-  if (!wasCommitted && isCommitted) {
+  // A gift voucher order has no shelf to take anything off. Its lines are not
+  // catalogue products, and stock_movements.product_id is a foreign key, so
+  // this is not a no-op if attempted -- it fails the whole status change.
+  if (!before.movesStock) {
+    // nothing to move either way
+  } else if (!wasCommitted && isCommitted) {
     await adjustStockForItems(before.items, -1, before.id);
   } else if (wasCommitted && status === "Cancelled") {
     // Only give back what was actually taken. Orders placed before the stock

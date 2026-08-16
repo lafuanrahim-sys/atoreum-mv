@@ -257,6 +257,26 @@ create unique index if not exists orders_idempotency_key_idx on orders (idempote
 -- between.
 alter table products add column if not exists image_has_background boolean not null default false;
 
+-- Gift voucher applied to this order, when one was.
+--
+-- Recorded on the order so the receipt, the tax invoice and the admin view can
+-- all show what was paid with credit rather than money, and so a cancellation
+-- knows there is a voucher spend to put back. The voucher itself is the
+-- authority on its balance (see lib/vouchers/schema.sql); these columns are a
+-- record of what this order took, not a second source of truth about it.
+-- Do this order's lines represent stockable goods?
+--
+-- False for a gift voucher purchase, which has nothing to take off a shelf.
+-- Persisted on the order rather than decided at each call site, because BOTH
+-- createOrder (cash, confirmed immediately) and updateOrderStatus (a transfer
+-- confirmed later by an admin) deduct stock, and a rule that lives in one of
+-- them is a rule the other will get wrong -- as it did.
+alter table orders add column if not exists moves_stock boolean not null default true;
+
+alter table orders add column if not exists voucher_code text;
+alter table orders add column if not exists voucher_boli bigint;
+alter table orders add column if not exists voucher_discount_amount numeric(12, 2);
+
 -- Invoice numbering.
 --
 -- A tax invoice number has to be unique for the life of the business. Order
