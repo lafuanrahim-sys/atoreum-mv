@@ -90,7 +90,14 @@ export default async function AccountPage({
   let profileOverview: ProfileOverviewData | null = null;
   // Only ever the signed-in account's own vouchers -- the code is a bearer
   // secret, so the query is keyed on the session's user id and nothing else.
-  const vouchers = tab === "vouchers" ? await listVouchersForPurchaser(user.id) : [];
+  //
+  // A pending voucher's code is REMOVED here rather than merely hidden in the
+  // component. Hiding it with CSS still ships it inside the page payload,
+  // where "not revealed yet" is one View Source away from being sent to
+  // somebody. It is not revealed until it is worth something.
+  const vouchers = (tab === "vouchers" ? await listVouchersForPurchaser(user.id) : []).map((v) =>
+    v.status === "pending" ? { ...v, code: "" } : v
+  );
 
   if (tab === "profile") {
     const activeOrders = myOrders.filter((o) => o.status !== "Cancelled");

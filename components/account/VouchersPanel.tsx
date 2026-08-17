@@ -20,7 +20,7 @@ const STATUS_COPY: Record<Voucher["status"], { label: string; tone: string; note
   pending: {
     label: "Awaiting payment",
     tone: "text-ivory-dim",
-    note: "This code cannot be spent until we've confirmed your payment.",
+    note: "We'll show the code here as soon as we've confirmed your payment.",
   },
   active: { label: "Ready to use", tone: "text-emerald-600", note: "" },
   exhausted: { label: "Fully spent", tone: "text-ivory-dim", note: "" },
@@ -36,6 +36,8 @@ function VoucherRow({ voucher }: { voucher: Voucher }) {
   const [copied, setCopied] = useState(false);
   const status = STATUS_COPY[voucher.status];
   const spent = voucher.faceValueBoli - voucher.balanceBoli;
+  // Pending means paid-for-but-unconfirmed: there is nothing to send yet.
+  const locked = voucher.status === "pending";
 
   return (
     <li className="flex flex-col gap-3 border-b border-line py-5">
@@ -44,23 +46,41 @@ function VoucherRow({ voucher }: { voucher: Voucher }) {
         <span className={`font-mono text-[10px] uppercase tracking-[0.15em] ${status.tone}`}>{status.label}</span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <code className="select-all rounded border border-line bg-ink-2 px-3 py-2 font-mono text-sm tracking-[0.15em] text-gold">
-          {voucher.code}
-        </code>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard?.writeText(voucher.code).then(
-              () => { setCopied(true); setTimeout(() => setCopied(false), 2000); },
-              () => setCopied(false)
-            );
-          }}
-          className="border border-line px-3 py-2 font-mono text-[10px] uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:border-gold-deep hover:text-gold-deep"
-        >
-          {copied ? "Copied" : "Copy code"}
-        </button>
-      </div>
+      {/* The code is withheld until the voucher is actually worth something.
+          Showing it while payment is unconfirmed invites the buyer to send a
+          gift that cannot be spent yet -- the recipient tries it, is told it
+          is not active, and both of them think something is broken. */}
+      {locked ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <code
+            aria-label="Code hidden until payment is confirmed"
+            className="rounded border border-dashed border-line bg-ink-2 px-3 py-2 font-mono text-sm tracking-[0.15em] text-ivory-dim/50 select-none"
+          >
+            ATO-••••-••••-••••-••••
+          </code>
+          <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-ivory-dim/70">
+            Shown once payment is confirmed
+          </span>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <code className="select-all rounded border border-line bg-ink-2 px-3 py-2 font-mono text-sm tracking-[0.15em] text-gold">
+            {voucher.code}
+          </code>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(voucher.code).then(
+                () => { setCopied(true); setTimeout(() => setCopied(false), 2000); },
+                () => setCopied(false)
+              );
+            }}
+            className="border border-line px-3 py-2 font-mono text-[10px] uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:border-gold-deep hover:text-gold-deep"
+          >
+            {copied ? "Copied" : "Copy code"}
+          </button>
+        </div>
+      )}
 
       <p className="font-mono text-[11px] text-ivory-dim">
         {voucher.balanceBoli > 0

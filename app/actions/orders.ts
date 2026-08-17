@@ -111,12 +111,22 @@ async function sendReceiptOnConfirm(orderId: string, previousStatus: OrderStatus
  * Failures are logged and swallowed for the same reason the Sangu hook does
  * it: a voucher problem must not block an admin from managing orders.
  */
+/** Statuses that mean the purchase has been paid for. */
+const VOUCHER_SETTLED_STATUSES: ReadonlySet<OrderStatus> = new Set(["Confirmed", "Shipped", "Completed"]);
+
 async function runVoucherHook(orderId: string, previousStatus: OrderStatus, nextStatus: OrderStatus) {
   if (previousStatus === nextStatus) return;
   try {
-    if (nextStatus === "Confirmed" && previousStatus !== "Confirmed") {
+    // Any status that means the money is settled activates the voucher, not
+    // Confirmed alone. The status dropdown can move an order straight from
+    // Pending Verification to Completed, and an admin doing that has plainly
+    // decided they have been paid -- gating on Confirmed only would leave the
+    // buyer holding a code that never came alive and no obvious way to fix it.
+    // voucher_activate() only acts on a pending voucher, so passing through
+    // several of these in turn activates once.
+    if (VOUCHER_SETTLED_STATUSES.has(nextStatus) && !VOUCHER_SETTLED_STATUSES.has(previousStatus)) {
       const voucher = await activateVoucherForOrder(orderId);
-      if (voucher) console.log(`[voucher] ${voucher.code} activated by ${orderId}`);
+      if (voucher) console.log(`[voucher] ${voucher.code} activated by ${orderId} (${nextStatus})`);
     } else if (nextStatus === "Cancelled" && previousStatus !== "Cancelled") {
       const owed = await reverseVoucherForOrder(orderId);
       // Non-zero means the voucher had already expired or been voided, so the
