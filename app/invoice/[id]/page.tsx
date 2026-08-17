@@ -187,6 +187,16 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                 <dd className="font-mono tabular-nums text-ivory-dim">-{formatMoney(invoice.discount, invoice.currency)}</dd>
               </div>
             )}
+            {invoice.voucherApplied > 0 && (
+              <div className="flex justify-between py-1.5">
+                <dt className="text-ivory-dim">
+                  Gift voucher{order.voucherCode ? ` (${order.voucherCode})` : ""}
+                </dt>
+                <dd className="font-mono tabular-nums text-ivory-dim">
+                  -{formatMoney(invoice.voucherApplied, invoice.currency)}
+                </dd>
+              </div>
+            )}
             <div className="flex justify-between border-t border-line py-1.5">
               <dt className="text-ivory-dim">Taxable value</dt>
               <dd className="font-mono tabular-nums text-ivory-dim">{formatMoney(invoice.netTotal, invoice.currency)}</dd>

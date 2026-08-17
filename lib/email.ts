@@ -172,6 +172,12 @@ export function renderOrderReceiptHtml(params: { name: string; order: Order; ord
          <td style="padding:4px 0;text-align:right;color:#666;">-${money(invoice.discount)}</td></tr>`
       : "";
 
+  const voucherRow =
+    invoice.voucherApplied > 0
+      ? `<tr><td style="padding:4px 24px 4px 0;color:#666;">Gift voucher</td>
+         <td style="padding:4px 0;text-align:right;color:#666;">-${money(invoice.voucherApplied)}</td></tr>`
+      : "";
+
   return `
         <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a;">
           <p>Hi ${escapeHtml(params.name)},</p>
@@ -190,6 +196,7 @@ export function renderOrderReceiptHtml(params: { name: string; order: Order; ord
               <tr><td style="padding:12px 24px 4px 0;color:#666;">Subtotal (incl. GST)</td>
                   <td style="padding:12px 0 4px;text-align:right;color:#666;">${money(invoice.grossSubtotal)}</td></tr>
               ${discountRow}
+          ${voucherRow}
               <tr><td style="padding:4px 24px 4px 0;color:#666;">Taxable value</td>
                   <td style="padding:4px 0;text-align:right;color:#666;">${money(invoice.netTotal)}</td></tr>
               <tr><td style="padding:4px 24px 4px 0;color:#666;">GST @ ${invoice.gstRatePercent}%</td>

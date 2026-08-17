@@ -32,6 +32,7 @@ export function renderOrderTelegramMessage(order: Order): string {
     "",
     `Subtotal: ${esc(formatMoney(invoice.grossSubtotal, invoice.currency))}`,
     invoice.discount > 0 ? `Sangu: −${esc(formatMoney(invoice.discount, invoice.currency))}` : null,
+    invoice.voucherApplied > 0 ? `Gift voucher: −${esc(formatMoney(invoice.voucherApplied, invoice.currency))}` : null,
     `GST 8%: ${esc(formatMoney(invoice.gstTotal, invoice.currency))}`,
     `<b>Total: ${esc(formatMoney(invoice.grossTotal, invoice.currency))}</b>`,
     "",

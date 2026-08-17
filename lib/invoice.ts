@@ -51,6 +51,9 @@ export type Invoice = {
   grossSubtotal: number;
   /** Sangu redemption applied at checkout, GST-inclusive. */
   discount: number;
+  /** Gift voucher applied at checkout, GST-inclusive. Reduces the taxable
+   * value: it is payment already made, not a discount the shop is funding. */
+  voucherApplied: number;
   /** Total taken off by per-product discounts, GST-inclusive. */
   productSavings: number;
   /** What the lines would have come to at full list price. */
@@ -106,7 +109,19 @@ export function buildInvoice(order: Order): Invoice {
   // nowhere. Not a taxable figure -- GST is charged on what was actually paid.
   const grossBeforeProductDiscounts = toLaari(grossSubtotal + productSavings);
   const discount = toLaari(order.boliDiscountAmount ?? 0);
-  const grossTotal = toLaari(Math.max(0, grossSubtotal - discount));
+
+  // A gift voucher reduces what is actually charged, so it has to reduce the
+  // taxable value with it. Leaving it out declared the full price of the goods
+  // while the customer had paid less -- a tax invoice stating a figure that
+  // was never collected, and 8% of the voucher paid to MIRA out of the shop's
+  // own pocket on every redemption.
+  //
+  // Separate from `discount` on purpose. Sangu is a loyalty give-back the shop
+  // funds; a voucher is money the shop was already paid. They are different
+  // things to a customer reading the invoice and to whoever reconciles it.
+  const voucherApplied = toLaari(order.voucherDiscountAmount ?? 0);
+
+  const grossTotal = toLaari(Math.max(0, grossSubtotal - discount - voucherApplied));
   const netTotal = toLaari(grossTotal / (1 + GST_RATE));
 
   return {
@@ -115,6 +130,7 @@ export function buildInvoice(order: Order): Invoice {
     productSavings,
     grossBeforeProductDiscounts,
     discount,
+    voucherApplied,
     grossTotal,
     netTotal,
     gstTotal: toLaari(grossTotal - netTotal),
