@@ -89,13 +89,27 @@ export default async function DashboardHomePage() {
   const customers = allUsers.filter((u) => u.role === "customer");
 
   const activeOrders = orders.filter((o) => o.status !== "Cancelled");
-  const totalRevenue = activeOrders.reduce((sum, o) => sum + o.subtotal, 0);
+
+  // The headline is money that is actually EARNED -- delivered and done.
+  //
+  // It used to be every order that had not been cancelled, which counted a
+  // bank transfer nobody had verified yet, and a gift voucher sale, as
+  // revenue. That number could only ever fall: it read as takings while some
+  // of it was still a claim. What is not yet completed is worth seeing, so it
+  // sits underneath rather than being folded in.
+  const completedOrders = activeOrders.filter((o) => o.status === "Completed");
+  const totalRevenue = completedOrders.reduce((sum, o) => sum + o.subtotal, 0);
+
+  const inFlightOrders = activeOrders.filter((o) => o.status !== "Completed");
+  const inFlightRevenue = inFlightOrders.reduce((sum, o) => sum + o.subtotal, 0);
   const currency = orders[0]?.currency ?? "MVR";
   const pendingCount = orders.filter((o) => o.status === "Pending Verification").length;
 
+  // The sparkline tracks the same money the headline does -- completed
+  // orders -- so the trend under the number is a trend in that number.
   const revenueSeries = dailySeries(
-    activeOrders.map((o) => o.createdAt),
-    activeOrders.map((o) => o.subtotal),
+    completedOrders.map((o) => o.createdAt),
+    completedOrders.map((o) => o.subtotal),
     14
   );
   const orderSeries = dailySeries(
@@ -181,8 +195,16 @@ export default async function DashboardHomePage() {
           </div>
           <div className="mt-4 flex items-center gap-4">
             <Sparkline values={revenueSeries} className="h-7 w-24 text-gold-deep" />
-            <p className="text-xs text-ivory-dim">{activeOrders.length} paid-or-pending orders</p>
+            <p className="text-xs text-ivory-dim">
+              {completedOrders.length} completed order{completedOrders.length === 1 ? "" : "s"}
+            </p>
           </div>
+          {inFlightOrders.length > 0 && (
+            <p className="mt-2 font-mono text-[11px] tracking-[0.05em] text-ivory-dim/70">
+              + {currency} {formatNumber(inFlightRevenue)} from {inFlightOrders.length} order
+              {inFlightOrders.length === 1 ? "" : "s"} not yet completed
+            </p>
+          )}
         </div>
 
         <div className="sm:px-10">

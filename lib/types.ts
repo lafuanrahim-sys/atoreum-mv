@@ -185,6 +185,11 @@ export type Order = {
   boliRedeemed?: number;
   /** MVR value of `boliRedeemed`, at REDEMPTION_BOLI_PER_MVR — kept alongside it so this receipt is readable without re-deriving the conversion rate later if that rate ever changes. */
   boliDiscountAmount?: number;
+  /**
+   * Which run of invoice numbers this order belongs to. Goods and gift
+   * vouchers are numbered separately — see lib/data/schema.sql.
+   */
+  invoiceSeries: "INV" | "GVINV";
   /** False when the order's lines are not stockable goods (a gift voucher). */
   movesStock: boolean;
   /** Gift voucher applied to this order, if one was. */

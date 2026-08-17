@@ -302,7 +302,52 @@ update orders o
 -- Keep the sequence ahead of anything backfilled above.
 select setval('invoice_seq', greatest((select coalesce(max(invoice_seq), 0) from orders), 1));
 
-create unique index if not exists orders_invoice_seq_idx on orders (invoice_seq);
+-- Two runs of invoice numbers, not one.
+--
+-- A gift voucher sale and a sale of goods are different documents: the goods
+-- carry GST on what was delivered, the voucher is money taken against nothing
+-- yet supplied. Sharing one counter meant buying a voucher silently advanced
+-- the number the next real sale would get, leaving gaps in the run that has
+-- to reconcile against actual deliveries -- observed for real: two orders and
+-- a voucher purchase, and the shop was already on INV-0003.
+--
+--   INV     ATO-INV-0001    sales of goods
+--   GVINV   ATO-GVINV-0001  gift voucher sales
+alter table orders add column if not exists invoice_series text not null default 'INV'
+  constraint orders_invoice_series_known check (invoice_series in ('INV', 'GVINV'));
+
+create sequence if not exists gift_voucher_invoice_seq as bigint start 1;
+
+-- The number is assigned by a trigger rather than a column DEFAULT, because a
+-- default cannot look at another column to decide which counter to draw from.
+-- The guarantee the default gave us is kept: no code path can insert an order
+-- without a number, because this runs whether or not the caller supplied one.
+alter table orders alter column invoice_seq drop default;
+
+create or replace function orders_assign_invoice_number() returns trigger
+language plpgsql
+as $$
+begin
+  if new.invoice_seq is null then
+    new.invoice_seq := case
+      when new.invoice_series = 'GVINV' then nextval('gift_voucher_invoice_seq')
+      else nextval('invoice_seq')
+    end;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists orders_assign_invoice_number_trg on orders;
+create trigger orders_assign_invoice_number_trg
+  before insert on orders
+  for each row execute function orders_assign_invoice_number();
+
+-- Uniqueness is per series now: ATO-INV-0001 and ATO-GVINV-0001 are different
+-- documents and both may exist. The old index was on invoice_seq alone, which
+-- would have refused the second one.
+drop index if exists orders_invoice_seq_idx;
+create unique index if not exists orders_invoice_series_seq_idx on orders (invoice_series, invoice_seq);
 
 create table if not exists reviews (
   id text primary key,

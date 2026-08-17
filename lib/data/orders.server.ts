@@ -24,6 +24,7 @@ type OrderRow = {
   status: string;
   boli_redeemed: string | null;
   boli_discount_amount: string | null;
+  invoice_series: "INV" | "GVINV";
   moves_stock: boolean;
   voucher_code: string | null;
   voucher_boli: string | null;
@@ -48,6 +49,7 @@ function rowToOrder(row: OrderRow): Order {
     ...(row.boli_redeemed !== null
       ? { boliRedeemed: Number(row.boli_redeemed), boliDiscountAmount: Number(row.boli_discount_amount) }
       : {}),
+    invoiceSeries: row.invoice_series ?? "INV",
     movesStock: row.moves_stock ?? true,
     ...(row.voucher_code
       ? {
@@ -164,6 +166,8 @@ export async function createOrder(params: {
    * than inferred, so the one order type that means it has to say so.
    */
   movesStock?: boolean;
+  /** 'GVINV' for a gift voucher sale, which is numbered in its own run. */
+  invoiceSeries?: "INV" | "GVINV";
   /** Gift voucher applied at checkout, if any. */
   voucherCode?: string | null;
   voucherBoli?: number | null;
@@ -186,8 +190,8 @@ export async function createOrder(params: {
   const { rows } = await pool().query<OrderRow>(
     `insert into orders
       (id, order_number, items, user_id, subtotal, currency, customer, payment_method, payment_proof_path, status, boli_redeemed, boli_discount_amount, idempotency_key,
-       voucher_code, voucher_boli, voucher_discount_amount, moves_stock)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+       voucher_code, voucher_boli, voucher_discount_amount, moves_stock, invoice_series)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
      returning *`,
     [
       id,
@@ -207,6 +211,7 @@ export async function createOrder(params: {
       params.voucherBoli ?? null,
       params.voucherDiscountAmount ?? null,
       params.movesStock !== false,
+      params.invoiceSeries ?? "INV",
     ]
   );
   // Cash orders land straight on "Confirmed" (see the status assignment

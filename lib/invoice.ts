@@ -140,5 +140,8 @@ export function formatMoney(value: number, currency: string): string {
  * 10,000th invoice prints as ATO-INV-10000 rather than wrapping.
  */
 export function invoiceNumber(order: Order): string {
-  return `ATO-INV-${String(order.invoiceSeq).padStart(4, "0")}`;
+  // Two independent runs. A gift voucher sale is not a sale of goods -- it is
+  // money taken against nothing yet supplied -- so it is numbered apart, and
+  // the run that has to reconcile against deliveries stays unbroken.
+  return `ATO-${order.invoiceSeries ?? "INV"}-${String(order.invoiceSeq).padStart(4, "0")}`;
 }

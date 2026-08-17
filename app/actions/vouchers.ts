@@ -117,6 +117,8 @@ export async function purchaseVoucherAction(formData: FormData): Promise<Voucher
     userId: user.id,
     // A voucher is not a stockable good; see createOrder.
     movesStock: false,
+    // ...and not a sale of goods, so it takes a number from its own run.
+    invoiceSeries: "GVINV",
   });
 
   await createPendingVoucher({
