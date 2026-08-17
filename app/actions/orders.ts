@@ -45,6 +45,16 @@ async function runBoliHook(orderId: string, previousStatus: OrderStatus, nextSta
     const user = order.userId ? await getUserById(order.userId) : null;
     if (!user) return; // guest checkout — Sangu is account-only, by design
 
+    // A gift voucher purchase earns nothing.
+    //
+    // Sangu is a give-back on money spent ON GOODS. A voucher is not spent
+    // yet -- it is credit, and the goods it eventually buys earn their own
+    // Sangu for whoever buys them. Paying out on both ends would mint Sangu
+    // from the same rufiyaa twice, and would reward buying vouchers over
+    // buying anything. Observed for real before this: a MVR 10 voucher
+    // purchase credited 20 Sangu.
+    if (order.invoiceSeries === "GVINV") return;
+
     if (nextStatus === "Completed" && previousStatus !== "Completed") {
       await creditPurchaseEarn({
         userId: user.id,
