@@ -37,8 +37,15 @@ const MARGIN = 0.04;
  * photograph, not a cutout. Matches detect-image-backgrounds.ts. */
 const OPAQUE_MEAN_ALPHA = 250;
 
-/** Not worth rewriting a file to reclaim a sliver. */
-const MIN_GAIN = 0.05;
+/**
+ * Not worth rewriting a file to reclaim a sliver.
+ *
+ * Must sit ABOVE the margin this script itself adds, or re-running it is not
+ * a no-op: it strips its own 4% margin, sees that as a ~9% gain, and writes
+ * the same picture back with fresh bytes. A second run rewrote 40 files that
+ * way and produced a diff with no visible change in it.
+ */
+const MIN_GAIN = (1 / (1 - 2 * 0.04) - 1) + 0.02; // margin round-trip, plus headroom
 
 const APPLY = process.argv.includes("--apply");
 
