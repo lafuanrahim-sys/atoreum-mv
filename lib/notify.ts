@@ -30,11 +30,16 @@ export function renderOrderTelegramMessage(order: Order): string {
     "",
     lines,
     "",
-    `Subtotal: ${esc(formatMoney(invoice.grossSubtotal, invoice.currency))}`,
+    // Ordered so the lines actually reconcile as read. GST here is EXTRACTED
+    // from the total, not added to it, so listing it between the deductions
+    // and the total made the message look like 2,100 − 50 + 151.85 = 2,201.85
+    // when the customer pays 2,050. It now sits under the total, as the tax
+    // contained within it.
+    `Subtotal (incl. GST): ${esc(formatMoney(invoice.grossSubtotal, invoice.currency))}`,
     invoice.discount > 0 ? `Sangu: −${esc(formatMoney(invoice.discount, invoice.currency))}` : null,
     invoice.voucherApplied > 0 ? `Gift voucher: −${esc(formatMoney(invoice.voucherApplied, invoice.currency))}` : null,
-    `GST 8%: ${esc(formatMoney(invoice.gstTotal, invoice.currency))}`,
     `<b>Total: ${esc(formatMoney(invoice.grossTotal, invoice.currency))}</b>`,
+    `<i>of which GST ${invoice.gstRatePercent}%: ${esc(formatMoney(invoice.gstTotal, invoice.currency))}</i>`,
     "",
     `👤 ${esc(order.customer.name)}`,
     `📞 ${esc(order.customer.phone)}`,
