@@ -7,7 +7,7 @@ import BuyVoucherForm from "@/components/vouchers/BuyVoucherForm";
 export const metadata: Metadata = {
   title: "Gift Vouchers",
   description:
-    "Give Korean skincare in the Maldives. Buy an Atoreum MV gift voucher, send the code, and they spend it at checkout — no account needed.",
+    "Give Korean skincare in the Maldives. Buy an Atoreum MV gift voucher, send the code, and they spend it at checkout. No account needed.",
   alternates: { canonical: "/gift-vouchers" },
 };
 
@@ -32,8 +32,8 @@ export default async function GiftVouchersPage() {
           Give someone their next favourite thing.
         </h1>
         <p className="mt-5 max-w-xl text-base leading-relaxed text-ivory-dim">
-          An Atoreum MV voucher is spent like money at checkout. Send the code to whoever it&apos;s for —
-          they don&apos;t need an account, and they can use it across more than one order until it runs out.
+          An Atoreum MV voucher is spent like money at checkout. Send the code to whoever it&apos;s for.
+          They don&apos;t need an account, and they can use it across more than one order until it runs out.
         </p>
 
         <div className="mt-12 border-t border-line pt-10">

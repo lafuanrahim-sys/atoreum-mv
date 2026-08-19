@@ -48,7 +48,7 @@ export default function VoucherField({ payableMvr }: { payableMvr: number }) {
 
       {applied && (
         <p className="mt-3 font-mono text-[11px] text-emerald-600">
-          Voucher accepted — up to MVR {willApply.toLocaleString("en-US")} comes off this order.
+          Voucher accepted. Up to MVR {willApply.toLocaleString("en-US")} comes off this order.
         </p>
       )}
       {result && !result.ok && (
@@ -58,7 +58,7 @@ export default function VoucherField({ payableMvr }: { payableMvr: number }) {
       )}
       {!result && (
         <p className="mt-3 text-[11px] leading-relaxed text-ivory-dim/80">
-          Got a gift code? Enter it here — no account needed. Anything you don&apos;t use stays on the
+          Got a gift code? Enter it here, no account needed. Anything you don&apos;t use stays on the
           voucher for next time.
         </p>
       )}

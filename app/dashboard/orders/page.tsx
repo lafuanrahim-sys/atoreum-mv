@@ -164,7 +164,7 @@ export default async function DashboardOrdersPage({
                     variant="danger"
                     toastMessage={`${o.orderNumber} deleted and reverted.`}
                     confirmTitle="Delete this order?"
-                    confirmMessage={`${o.orderNumber} will be removed permanently. Its stock goes back on the shelf and any Sangu it earned is taken back. Cancel it instead if the sale was real — a refunded order should be kept as a record.`}
+                    confirmMessage={`${o.orderNumber} will be removed permanently. Its stock goes back on the shelf and any Sangu it earned is taken back. Cancel it instead if the sale was real. A refunded order should be kept as a record.`}
                     confirmLabel="Delete"
                   />
                 </div>

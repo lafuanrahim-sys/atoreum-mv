@@ -102,7 +102,7 @@ export async function purchaseVoucherAction(formData: FormData): Promise<Voucher
     items: [
       {
         productId: `gift-voucher-${faceValueBoli}`,
-        name: `Gift Voucher — ${faceValueBoli.toLocaleString("en-US")} Sangu`,
+        name: `Gift Voucher (${faceValueBoli.toLocaleString("en-US")} Sangu)`,
         price,
         currency: "MVR",
         quantity: 1,
@@ -111,7 +111,7 @@ export async function purchaseVoucherAction(formData: FormData): Promise<Voucher
     ],
     subtotal: price,
     currency: "MVR",
-    customer: { name, email, phone, address: "Gift voucher — nothing to deliver", ...(notes ? { notes } : {}) },
+    customer: { name, email, phone, address: "Gift voucher, nothing to deliver", ...(notes ? { notes } : {}) },
     paymentMethod,
     paymentProofPath,
     userId: user.id,

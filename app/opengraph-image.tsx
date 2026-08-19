@@ -15,7 +15,7 @@ import { SITE_NAME } from "@/lib/site";
  * next/font does not expose the file; fetching a webfont at build time would
  * add a network failure mode to the build for a small gain in fidelity.
  */
-export const alt = "Atoreum MV — Korean skincare in the Maldives";
+export const alt = "Atoreum MV: Korean skincare in the Maldives";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

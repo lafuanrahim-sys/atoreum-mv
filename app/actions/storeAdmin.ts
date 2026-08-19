@@ -98,7 +98,7 @@ export async function sendTelegramTestAction(): Promise<{ ok: true; delivered: n
     "🔔 <b>Test notification</b>\nOrder alerts are reaching this chat."
   );
   if (!result.configured) {
-    return { error: "Telegram isn't configured — TELEGRAM_BOT_TOKEN or TELEGRAM_ORDER_CHAT_ID is missing." };
+    return { error: "Telegram isn't configured. TELEGRAM_BOT_TOKEN or TELEGRAM_ORDER_CHAT_ID is missing." };
   }
   if (result.delivered.length === 0) {
     return { error: `No chat could be reached (${result.failed.join(", ")}). Check the server logs for Telegram's reason.` };

@@ -239,7 +239,7 @@ export default function CheckoutClient({
                 textarea
                 value={contact.notes}
                 onChange={(v) => setContact((c) => ({ ...c, notes: v }))}
-                hint="Delivery instructions, a landmark, a preferred time — anything we should know."
+                hint="Delivery instructions, a landmark, a preferred time. Anything we should know."
               />
 
               <button

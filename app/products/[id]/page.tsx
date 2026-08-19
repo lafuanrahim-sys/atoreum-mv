@@ -42,7 +42,7 @@ export async function generateMetadata({
   const brandPrefix = product.name.toLowerCase().includes(product.brand.toLowerCase())
     ? ""
     : `${product.brand} `;
-  const title = `${product.name} — ${brandPrefix}Maldives`;
+  const title = `${product.name}, ${brandPrefix}Maldives`;
   const description = `${product.description} ${product.currency} ${product.priceEffective.toLocaleString("en-US")}, delivered in Malé.`.slice(0, 300);
 
   return {

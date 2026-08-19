@@ -74,7 +74,7 @@ export default async function DashboardOrderDetailPage({
             pendingLabel="Confirming…"
             variant="success"
             className="px-6 py-3 text-xs shadow-lg"
-            toastMessage={`${order.orderNumber} confirmed — receipt sent and stock deducted.`}
+            toastMessage={`${order.orderNumber} confirmed. Receipt sent and stock deducted.`}
             icon={
               <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
                 <path d="M3 8.5l3.2 3.2L13 4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -92,7 +92,7 @@ export default async function DashboardOrderDetailPage({
               pendingLabel="Updating…"
               variant="success"
               className="px-6 py-3 text-xs shadow-lg"
-              toastMessage={`${order.orderNumber} delivered — Sangu credited.`}
+              toastMessage={`${order.orderNumber} delivered. Sangu credited.`}
               icon={
                 <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
                   <path d="M2 9.5h9V4H2v5.5zM11 6.5h2.2L15 8.6v1.9h-4V6.5z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
@@ -128,7 +128,7 @@ export default async function DashboardOrderDetailPage({
               than leaving it to be inferred from an empty space. */}
           {!order.userId && (
             <p className="mb-4 border border-line px-3 py-2 font-mono text-[10px] leading-relaxed tracking-[0.05em] text-ivory-dim">
-              GUEST ORDER — no account. No Sangu is earned on it and none can be redeemed against it.
+              GUEST ORDER: no account. No Sangu is earned on it and none can be redeemed against it.
             </p>
           )}
           <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">Status</h2>
