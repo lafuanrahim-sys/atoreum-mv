@@ -113,7 +113,7 @@ export const CHAT_TOOLS: Anthropic.Tool[] = [
 function summariseOrder(o: Awaited<ReturnType<typeof getAllOrders>>[number]) {
   return {
     order: o.orderNumber,
-    invoice: invoiceNumber(o),
+    invoice: invoiceNumber(o) ?? "not issued yet (issued when payment is confirmed)",
     placed: o.createdAt.slice(0, 10),
     status: o.status,
     payment: o.paymentMethod ?? "bank transfer",

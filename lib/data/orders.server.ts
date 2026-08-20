@@ -14,6 +14,7 @@ type OrderRow = {
   id: string;
   order_number: string;
   invoice_seq: string | number | null;
+  guest_ref: string | null;
   items: OrderItem[];
   user_id: string | null;
   subtotal: string;
@@ -37,7 +38,11 @@ function rowToOrder(row: OrderRow): Order {
   return {
     id: row.id,
     orderNumber: row.order_number,
-    invoiceSeq: Number(row.invoice_seq ?? 0),
+    // Null means no invoice has been issued yet, which is a different thing
+    // from invoice zero -- coercing it would render ATO-INV-0000 on every
+    // unconfirmed order.
+    invoiceSeq: row.invoice_seq === null || row.invoice_seq === undefined ? null : Number(row.invoice_seq),
+    guestRef: row.guest_ref ?? null,
     items: row.items,
     ...(row.user_id ? { userId: row.user_id } : {}),
     subtotal: Number(row.subtotal),
@@ -73,15 +78,22 @@ export async function getOrderById(id: string): Promise<Order | null> {
   return rows[0] ? rowToOrder(rows[0]) : null;
 }
 
+/**
+ * The lowest unused order number for today.
+ *
+ * Was a count of today's rows plus one, which collides the moment anything is
+ * deleted: three orders, delete the second, count says 2, and the next order
+ * is handed -0003, which already exists. The database looks for the first free
+ * slot instead (see next_order_number in lib/data/invoicing.sql), so a deleted
+ * number is reused and a live one never is.
+ */
 async function nextOrderNumber(): Promise<string> {
-  const today = new Date();
-  const datePart = today.toISOString().slice(0, 10).replace(/-/g, "");
-  const { rows } = await pool().query<{ count: string }>(
-    "select count(*)::text as count from orders where order_number like $1",
-    [`%${datePart}%`]
+  const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const { rows } = await pool().query<{ next_order_number: string }>(
+    "select next_order_number($1, $2)",
+    ["ATM", datePart]
   );
-  const todayCount = Number(rows[0]?.count ?? 0);
-  return `ATM-${datePart}-${String(todayCount + 1).padStart(4, "0")}`;
+  return rows[0].next_order_number;
 }
 
 /** Statuses at which an order's items are treated as a committed sale —
@@ -258,10 +270,29 @@ export async function hasCompletedPurchase(email: string, productId: string): Pr
  * order is gone the ledger entries reference nothing, and a movement whose
  * source cannot be inspected is worse than no movement at all.
  */
+/**
+ * Statuses at which the money is considered received, and a tax invoice is
+ * therefore a document about something that happened.
+ *
+ * Cash orders reach Confirmed when the courier reports the cash was handed
+ * over; bank transfers when someone has looked at the receipt. Either way,
+ * this is the line at which an invoice becomes real.
+ */
+const INVOICED_STATUSES = new Set<OrderStatus>(["Confirmed", "Completed"]);
+
+/** Issue this order's invoice number if it has none. Idempotent. */
+async function issueInvoice(id: string): Promise<void> {
+  await pool().query("select orders_issue_invoice($1)", [id]);
+}
+
 export async function deleteOrder(id: string): Promise<boolean> {
   const client = await pool().connect();
   try {
     await client.query("BEGIN");
+    // Give the invoice number back when this was the last one issued, so
+    // deleting an order confirmed by mistake leaves the run unbroken. It
+    // refuses when a later invoice exists -- see orders_reclaim_invoice.
+    await client.query("select orders_reclaim_invoice($1)", [id]);
     await client.query("delete from stock_movements where source_type = 'order' and source_id = $1", [id]);
     const { rowCount } = await client.query("delete from orders where id = $1", [id]);
     await client.query("COMMIT");
@@ -290,6 +321,14 @@ export async function updateOrderStatus(id: string, status: OrderStatus): Promis
     [id, status]
   );
   if (!rows[0]) return null;
+
+  // The invoice is issued here, not at checkout: until someone confirms the
+  // money arrived there is no sale to document, and numbering unpaid orders is
+  // what put holes in the run that was filed with MIRA. Idempotent, so
+  // Confirmed -> Completed does not mint a second one.
+  if (INVOICED_STATUSES.has(status) && before.invoiceSeq === null) {
+    await issueInvoice(id);
+  }
 
   const wasCommitted = STOCK_COMMITTED_STATUSES.has(before.status);
   const isCommitted = STOCK_COMMITTED_STATUSES.has(status);

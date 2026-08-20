@@ -216,7 +216,14 @@ export function renderOrderReceiptHtml(params: { name: string; order: Order; ord
           }
           <p style="font-size:12px;color:#888;">
             Prices are GST-inclusive; the GST shown is the tax contained within the total.
-            Invoice reference ${escapeHtml(invoiceNumber(params.order))}.
+            ${
+              // No invoice number until the payment is confirmed. Printing a
+              // placeholder would give the customer something to quote back
+              // that corresponds to no tax invoice anywhere.
+              invoiceNumber(params.order)
+                ? `Invoice reference ${escapeHtml(invoiceNumber(params.order)!)}.`
+                : `A tax invoice follows once your payment is confirmed.`
+            }
           </p>
           <!-- The supplier's registered name and TIN are mandatory particulars
                on a Maldivian tax invoice. This email is the copy the customer

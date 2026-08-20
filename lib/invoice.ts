@@ -155,7 +155,12 @@ export function formatMoney(value: number, currency: string): string {
  * Padded to four digits for legibility and allowed to run past it -- the
  * 10,000th invoice prints as ATO-INV-10000 rather than wrapping.
  */
-export function invoiceNumber(order: Order): string {
+export function invoiceNumber(order: Order): string | null {
+  // Null until the order is confirmed. An unpaid order has no tax invoice, so
+  // there is no number to show and callers must render that absence rather
+  // than a plausible-looking placeholder someone might quote back at us.
+  if (order.invoiceSeq === null) return null;
+
   // Two independent runs. A gift voucher sale is not a sale of goods -- it is
   // money taken against nothing yet supplied -- so it is numbered apart, and
   // the run that has to reconcile against deliveries stays unbroken.

@@ -154,7 +154,12 @@ export type Order = {
    * from orderNumber because that one resets daily and a tax invoice number
    * must never repeat. Renders as ATO-INV-0001 -- see lib/invoice.ts.
    */
-  invoiceSeq: number;
+  /**
+   * Null until the order is confirmed. A tax invoice documents a sale that
+   * happened, so an unpaid or unverified order has nothing to number -- see
+   * lib/data/invoicing.sql. Anything rendering an invoice must handle null.
+   */
+  invoiceSeq: number | null;
   items: OrderItem[];
   /**
    * The signed-in account that placed this order, if any — set once at
@@ -166,6 +171,13 @@ export type Order = {
    * order placed before this field existed.
    */
   userId?: string;
+  /**
+   * Shop-assigned reference for an order placed without an account, e.g.
+   * "Guest-ATO-001". Null on account orders, which have an account to be
+   * identified by. Assigned by the database, so unlike the name on the
+   * shipping form it cannot be spoofed by typing.
+   */
+  guestRef?: string | null;
   /** Cart subtotal BEFORE any Sangu discount — this is the base the 30%-of-subtotal redemption cap and the purchase-Sangu earn rate are both computed against. Orders predating Sangu have no discount and this is the full charged amount. */
   subtotal: number;
   currency: Currency;

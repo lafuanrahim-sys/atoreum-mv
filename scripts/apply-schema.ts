@@ -11,7 +11,7 @@ async function main() {
   // Vouchers last: voucher_expire() calls boli_ledger_write(), so the Boli
   // schema has to exist first.
   // chat last: it stands alone, depending on nothing above it.
-  for (const file of ["lib/data/schema.sql", "lib/boli/schema.sql", "lib/vouchers/schema.sql", "lib/chat/schema.sql"]) {
+  for (const file of ["lib/data/schema.sql", "lib/boli/schema.sql", "lib/vouchers/schema.sql", "lib/chat/schema.sql", "lib/data/invoicing.sql"]) {
     console.log(`Applying ${file}...`);
     await db.query(fs.readFileSync(file, "utf8"));
     console.log(`  done.`);

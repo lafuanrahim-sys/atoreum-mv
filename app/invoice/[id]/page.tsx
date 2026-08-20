@@ -37,6 +37,36 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   const order = await getOrderById(id);
   if (!order) notFound();
 
+  const number = invoiceNumber(order);
+
+  /**
+   * No invoice exists until the payment is confirmed.
+   *
+   * A tax invoice asserts that a sale took place and money changed hands. For
+   * an order still waiting on a bank transfer neither is true yet, so there is
+   * nothing to print -- and a page that rendered one anyway would be a
+   * document the shop cannot stand behind, in the customer's hands, with a
+   * number that appears in no filed run.
+   */
+  if (!number) {
+    return (
+      <div className="mx-auto max-w-lg px-6 py-24 text-center">
+        <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ivory-dim">No invoice yet</p>
+        <h1 className="mt-4 font-display text-2xl text-ivory">Order {order.orderNumber}</h1>
+        <p className="mt-4 text-sm leading-relaxed text-ivory-dim">
+          This order is <span className="text-ivory">{order.status}</span>. A tax invoice is issued when the
+          payment is confirmed, so that the invoice run contains only real sales and no gaps to explain.
+        </p>
+        <Link
+          href={`/dashboard/orders/${order.id}`}
+          className="mt-8 inline-block border border-line px-6 py-3 font-mono text-[11px] uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:border-gold-deep hover:text-gold-deep"
+        >
+          Back to the order
+        </Link>
+      </div>
+    );
+  }
+
   const invoice = buildInvoice(order);
   const issued = new Date(order.createdAt);
 
@@ -87,7 +117,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
           </div>
           <div className="text-right">
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Tax Invoice</p>
-            <p className="mt-2 font-mono text-lg tabular-nums">{invoiceNumber(order)}</p>
+            <p className="mt-2 font-mono text-lg tabular-nums">{number}</p>
             <p className="mt-1 font-mono text-[11px] text-ivory-dim tabular-nums">
               {issued.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
             </p>
