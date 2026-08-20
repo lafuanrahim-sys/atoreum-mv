@@ -64,6 +64,17 @@ type ChatState = {
   messages: Message[];
   isOpen: boolean;
   /**
+   * The newest staff message this browser has shown, as an ISO timestamp.
+   *
+   * Persisted alongside the conversation so a refresh resumes from the right
+   * point. It also has to survive being ABSENT correctly: a fresh
+   * sessionStorage with a live cookie still attached to an old conversation
+   * must not poll from the beginning of time, or every reply ever sent
+   * reappears in an empty panel as though it had just arrived. See how this
+   * is seeded on first render below.
+   */
+  lastStaffAt: string | null;
+  /**
    * Ids of staff messages already displayed.
    *
    * The poll also passes a "since" cursor, but a cursor is an optimisation and
@@ -77,7 +88,7 @@ type ChatState = {
   seenStaffIds: string[];
 };
 
-const EMPTY_STATE: ChatState = { messages: [], isOpen: false, seenStaffIds: [] };
+const EMPTY_STATE: ChatState = { messages: [], isOpen: false, seenStaffIds: [], lastStaffAt: null };
 
 let state: ChatState = EMPTY_STATE;
 let hydrated = false;
@@ -92,6 +103,7 @@ function readPersisted(): ChatState {
       messages: Array.isArray(saved.messages) ? saved.messages : [],
       isOpen: Boolean(saved.isOpen),
       seenStaffIds: Array.isArray(saved.seenStaffIds) ? saved.seenStaffIds : [],
+      lastStaffAt: typeof saved.lastStaffAt === "string" ? saved.lastStaffAt : null,
     };
   } catch {
     // Corrupt, or a private mode that throws on access. Start fresh.
@@ -119,6 +131,12 @@ function subscribe(callback: () => void) {
   if (!hydrated) {
     hydrated = true;
     state = readPersisted();
+    // Nothing restored, yet the cookie may still point at a conversation from
+    // a tab that was closed. Start the cursor at now, so replies that predate
+    // this panel stay in the past where the customer left them.
+    if (state.messages.length === 0 && !state.lastStaffAt) {
+      state = { ...state, lastStaffAt: new Date().toISOString() };
+    }
     callback();
   }
   listeners.add(callback);
@@ -172,7 +190,7 @@ function RichText({ text }: { text: string }) {
 
 export default function ChatWidget() {
   const pathname = usePathname();
-  const { addItem, lines, subtotal, currency } = useCart();
+  const { addItem, lines } = useCart();
   const { messages, isOpen } = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   // Draft text and in-flight status are per-tab and worthless after a reload,
@@ -182,7 +200,6 @@ export default function ChatWidget() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const lastStaffAtRef = useRef<string | null>(null);
   const busyRef = useRef(false);
 
   const started = messages.length > 0;
@@ -231,7 +248,10 @@ export default function ChatWidget() {
 
     const poll = async () => {
       try {
-        const since = lastStaffAtRef.current;
+        // Read from the store, not a ref: a ref resets on every mount, and a
+        // mount with a live cookie is exactly when replaying the whole thread
+        // would be most confusing.
+        const since = state.lastStaffAt;
         const res = await fetch(`/api/chat/poll${since ? `?since=${encodeURIComponent(since)}` : ""}`);
         if (!res.ok || cancelled) return;
         const { messages: incoming } = (await res.json()) as {
@@ -239,7 +259,6 @@ export default function ChatWidget() {
         };
         if (cancelled || incoming.length === 0) return;
 
-        lastStaffAtRef.current = incoming[incoming.length - 1].createdAt;
         setState((prev) => {
           // Identity, not timing, decides what is new.
           const seen = new Set(prev.seenStaffIds);
@@ -255,6 +274,7 @@ export default function ChatWidget() {
             // Bounded: a conversation nobody will scroll back through does not
             // need an unbounded list of ids following it around sessionStorage.
             seenStaffIds: [...prev.seenStaffIds, ...fresh.map((i) => i.id)].slice(-200),
+            lastStaffAt: incoming[incoming.length - 1].createdAt,
           };
         });
       } catch {
