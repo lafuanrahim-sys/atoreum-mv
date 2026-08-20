@@ -91,6 +91,21 @@ function customerFacingError(err: unknown): string {
   return "Something went wrong on our side. Please try again, or email sales@aranzo.co.";
 }
 
+/**
+ * Strips em and en dashes out of the assistant's text.
+ *
+ * The prompt already forbids them and the model uses them anyway, which is the
+ * whole argument for doing it here: a house style that depends on a model
+ * remembering is not a house style. Applied per delta, which is safe because
+ * these are single code points and the decoder never splits one across chunks.
+ *
+ * The replacement is a comma-free ", " only where the dash was already spaced,
+ * since that is how the model uses it -- as a pause, not as a range.
+ */
+function stripDashes(text: string): string {
+  return text.replace(/\s+[\u2014\u2013]\s+/g, ", ").replace(/[\u2014\u2013]/g, "-");
+}
+
 /** One complete SSE response: a single message, then done. */
 function sseOnce(text: string): string {
   return (
@@ -304,8 +319,9 @@ export async function POST(req: Request) {
           });
 
           response.on("text", (delta) => {
-            answer += delta;
-            send("text", { delta });
+            const clean = stripDashes(delta);
+            answer += clean;
+            send("text", { delta: clean });
           });
 
           const final = await response.finalMessage();
