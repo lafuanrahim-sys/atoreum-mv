@@ -57,8 +57,22 @@ const RATE_LIMIT_WINDOW_SECONDS = 600;
  * output tokens: the limiter shapes ordinary abuse, and the caps bound what a
  * determined caller can cost even after defeating it.
  */
-function clientKey(req: Request, userId: string | null): string {
+function clientKey(req: Request, userId: string | null, visitorToken: string | null): string {
   if (userId) return `u:${userId}`;
+
+  // The conversation cookie identifies a BROWSER, which is much closer to "a
+  // person" than an address is. It matters here more than most places: Dhiraagu
+  // and Ooredoo put large numbers of mobile customers behind shared carrier
+  // NAT, so an IP in Malé can be dozens of unrelated people, and a per-visitor
+  // limit keyed on it locks out everyone who shares with whoever spent it.
+  //
+  // Someone can clear the cookie for a fresh allowance. That is fine: this
+  // limit exists to stop one person monopolising the assistant, and the daily
+  // global cap is what actually bounds the bill.
+  if (visitorToken) return `c:${visitorToken}`;
+
+  // First message of a first visit: no cookie has been issued yet. IP is all
+  // there is, and it only ever applies to that one opening message.
   const fwd = req.headers.get("x-forwarded-for") ?? "";
   return `ip:${fwd.split(",")[0]?.trim() || "unknown"}`;
 }
@@ -168,7 +182,13 @@ export async function POST(req: Request) {
   }
 
   const user = await getCurrentUser();
-  const key = clientKey(req, user?.id ?? null);
+
+  // Read before the rate limit, because the limit is keyed on it.
+  const jar = await cookies();
+  const existingToken = jar.get(CHAT_COOKIE)?.value ?? null;
+  const visitorToken = existingToken ?? newVisitorToken();
+
+  const key = clientKey(req, user?.id ?? null, existingToken);
 
   if (!checkRateLimit(`chat:${key}`, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS)) {
     return NextResponse.json(
@@ -201,10 +221,6 @@ export async function POST(req: Request) {
    * if the database is down. So conversationId stays null and the request
    * carries on.
    */
-  const jar = await cookies();
-  const existingToken = jar.get(CHAT_COOKIE)?.value;
-  const visitorToken = existingToken ?? newVisitorToken();
-
   let conversationId: string | null = null;
   try {
     conversationId = await getOrCreateConversation({ visitorToken, userId: user?.id ?? null });
@@ -305,7 +321,8 @@ export async function POST(req: Request) {
         error:
           claim.scope === "global"
             ? "The assistant has taken more questions than usual today and is resting. Please email sales@aranzo.co and we will help."
-            : "You have reached today's limit for the assistant. Please email sales@aranzo.co if you still need help.",
+            : "That is as much as the assistant can help with today, sorry. It resets tomorrow. " +
+              "If you need an answer before then, email sales@aranzo.co and a person will help you.",
       },
       { status: 429, headers: { "Cache-Control": "no-store" } }
     );

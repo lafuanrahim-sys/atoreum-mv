@@ -5,10 +5,16 @@ import { pool } from "@/lib/db";
  *
  * Two limits, doing different jobs:
  *
- *   PER VISITOR  stops one person monopolising the assistant. Keyed on session
- *                id where there is one and IP otherwise, so it is defeated by
- *                anyone willing to rotate IPs. That is fine; it is not the
- *                thing protecting the bill.
+ *   PER VISITOR  stops one person monopolising the assistant. Keyed on the
+ *                account, else the conversation cookie, and only falling back
+ *                to IP for the very first message of a visit -- see clientKey
+ *                in app/api/chat/route.ts. Keying it on IP throughout was
+ *                wrong for this shop in particular: Maldivian mobile networks
+ *                put many customers behind shared carrier NAT, so one address
+ *                is often a crowd, and one person spending the allowance
+ *                locked out everybody who happened to share it. Clearing a
+ *                cookie defeats it, which is fine; it is not the thing
+ *                protecting the bill.
  *
  *   GLOBAL       is the thing protecting the bill. One counter for the whole
  *                shop, per day, that no amount of IP rotation, cold starting,
@@ -25,8 +31,16 @@ import { pool } from "@/lib/db";
 /** Requests per day across the entire shop. */
 export const GLOBAL_DAILY_REQUESTS = Number(process.env.CHAT_DAILY_LIMIT ?? 500);
 
-/** Requests per day per visitor. */
-export const VISITOR_DAILY_REQUESTS = Number(process.env.CHAT_VISITOR_DAILY_LIMIT ?? 40);
+/**
+ * Requests per day per visitor.
+ *
+ * Its job is to stop one person eating the shop's whole allowance, not to
+ * ration a real customer, so it sits at a comfortable fraction of the global
+ * cap rather than close to a plausible conversation. Someone genuinely
+ * choosing between four cleansers asks a lot of questions, and being cut off
+ * mid-decision is a lost sale to save a fraction of a rufiyaa.
+ */
+export const VISITOR_DAILY_REQUESTS = Number(process.env.CHAT_VISITOR_DAILY_LIMIT ?? 60);
 
 export type ClaimResult =
   | { ok: true }
