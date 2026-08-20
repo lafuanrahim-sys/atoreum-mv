@@ -267,84 +267,95 @@ export default function ProductGrid({
         )}
 
         {/*
-          The way back out of a filter.
-          
-          Clearing existed only in the empty state, which is the one case where
-          the customer can already tell something is filtered. Land on a
-          category from a collection card and get results, and there was
-          nothing at all: the rail that used to hold an "All" tab is parked,
-          the grid looks like the whole shop, and the only escape was editing
-          the URL or hitting back.
+          One row: what is being filtered on the left, the controls that change
+          it on the right.
+
+          It used to be two stacked rows with "show everything" floated to the
+          far edge by ml-auto, which on a wide screen put the control that
+          undoes a filter about a metre away from the chip it undoes, with
+          search and sort orphaned on a line of their own below. Everything
+          that acts on the result set now sits in one line and wraps together.
         */}
-        {(active !== "All" || query.trim() !== "") && (
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">
-              Showing
-            </span>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-2">
+            {active !== "All" || query.trim() !== "" ? (
+              <>
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">
+                  Showing
+                </span>
 
-            {active !== "All" && (
-              <button
-                type="button"
-                onClick={() => setActive("All")}
-                aria-label={`Stop filtering by ${active}`}
-                className="group inline-flex min-h-9 items-center gap-2 rounded-full border border-gold/40 bg-gold/5 px-4 text-xs text-ivory transition-colors hover:border-gold hover:bg-gold/10"
-              >
-                {active}
-                <svg viewBox="0 0 12 12" aria-hidden="true" className="h-2.5 w-2.5 text-gold">
-                  <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                </svg>
-              </button>
-            )}
+                {active !== "All" && (
+                  <button
+                    type="button"
+                    onClick={() => setActive("All")}
+                    aria-label={`Stop filtering by ${active}`}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gold/40 bg-gold/5 px-4 text-xs text-ivory transition-colors hover:border-gold hover:bg-gold/10"
+                  >
+                    {active}
+                    <svg viewBox="0 0 12 12" aria-hidden="true" className="h-2.5 w-2.5 text-gold">
+                      <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                )}
 
-            {query.trim() !== "" && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                aria-label={`Clear the search for ${query.trim()}`}
-                className="inline-flex min-h-9 items-center gap-2 rounded-full border border-line px-4 text-xs text-ivory-dim transition-colors hover:border-gold hover:text-gold"
-              >
-                &ldquo;{query.trim()}&rdquo;
-                <svg viewBox="0 0 12 12" aria-hidden="true" className="h-2.5 w-2.5">
-                  <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                </svg>
-              </button>
-            )}
+                {query.trim() !== "" && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery("")}
+                    aria-label={`Clear the search for ${query.trim()}`}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-full border border-line px-4 text-xs text-ivory-dim transition-colors hover:border-gold hover:text-gold"
+                  >
+                    &ldquo;{query.trim()}&rdquo;
+                    <svg viewBox="0 0 12 12" aria-hidden="true" className="h-2.5 w-2.5">
+                      <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                )}
 
+              </>
+            ) : null}
+
+            {/* Always present, so the count does not jump position when a
+                filter is applied or cleared. */}
             <span className="font-mono text-[10px] text-ivory-dim/70 tabular-nums">
               {filtered.length} {filtered.length === 1 ? "product" : "products"}
             </span>
 
-            <button
-              type="button"
-              onClick={() => {
-                setActive("All");
-                setQuery("");
-              }}
-              className="ml-auto font-mono text-[10px] uppercase tracking-[0.15em] text-ivory-dim underline decoration-line underline-offset-4 transition-colors hover:text-gold hover:decoration-gold"
-            >
-              Show everything
-            </button>
+            {/* Last, so the line reads "showing X, N products, show everything"
+                rather than putting the undo between a filter and its count. */}
+            {(active !== "All" || query.trim() !== "") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActive("All");
+                  setQuery("");
+                }}
+                className="font-mono text-[10px] uppercase tracking-[0.15em] text-ivory-dim underline decoration-line underline-offset-4 transition-colors hover:text-gold hover:decoration-gold"
+              >
+                Show everything
+              </button>
+            )}
           </div>
-        )}
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search products…"
-            aria-label="Search products"
-            className="min-h-11 rounded-md border border-line bg-transparent px-4 py-2.5 text-sm text-ivory placeholder:text-ivory-dim focus:border-gold focus:outline-none"
-          />
-          <LuxSelect
-            label="Sort by"
-            value={sort}
-            onChange={(v) => setSort(v as SortOption)}
-            options={(Object.keys(SORT_LABELS) as SortOption[]).map((option) => ({
-              value: option,
-              label: SORT_LABELS[option],
-            }))}
-          />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search products…"
+              aria-label="Search products"
+              className="min-h-11 rounded-md border border-line bg-transparent px-4 py-2.5 text-sm text-ivory placeholder:text-ivory-dim focus:border-gold focus:outline-none"
+            />
+            <LuxSelect
+              label="Sort by"
+              value={sort}
+              onChange={(v) => setSort(v as SortOption)}
+              options={(Object.keys(SORT_LABELS) as SortOption[]).map((option) => ({
+                value: option,
+                label: SORT_LABELS[option],
+              }))}
+            />
+          </div>
         </div>
       </div>
 
