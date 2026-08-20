@@ -14,7 +14,6 @@ const NAV_ITEMS = [
   { href: "/dashboard/customers", label: "Customers" },
   { href: "/dashboard/reviews", label: "Reviews" },
   { href: "/dashboard/boli", label: "Sangu" },
-  { href: "/dashboard/vouchers", label: "Vouchers" },
   { href: "/dashboard/messages", label: "Messages" },
   { href: "/dashboard/profile", label: "My Profile" },
   { href: "/dashboard/settings", label: "Settings" },

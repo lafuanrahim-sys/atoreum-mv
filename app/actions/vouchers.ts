@@ -9,6 +9,7 @@ import { uploadPublicFile, PAYMENT_PROOFS_BUCKET } from "@/lib/storage";
 import { orderAccessToken } from "@/lib/orderAccessToken";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { normalizeVoucherCode } from "@/lib/vouchers/code";
+import { VOUCHERS_ENABLED } from "@/lib/vouchers/feature";
 import {
   createPendingVoucher,
   previewVoucher,
@@ -43,6 +44,10 @@ export type VoucherPurchaseResult =
  * transfer slip turning into spendable credit.
  */
 export async function purchaseVoucherAction(formData: FormData): Promise<VoucherPurchaseResult> {
+  if (!VOUCHERS_ENABLED) {
+    return { ok: false, error: "Gift vouchers aren't available at the moment." };
+  }
+
   const user = await getCurrentUser();
   if (!user) {
     return { ok: false, error: "Please sign in to buy a gift voucher." };
@@ -141,6 +146,9 @@ export async function purchaseVoucherAction(formData: FormData): Promise<Voucher
 export async function checkVoucherAction(
   rawCode: string
 ): Promise<{ ok: true; balanceBoli: number; discountMvr: number } | { ok: false; error: string }> {
+  if (!VOUCHERS_ENABLED) {
+    return { ok: false, error: "That code isn't valid, or has no balance left." };
+  }
   if (!checkRateLimit(`voucher:check:${await clientIp()}`, 20, 600)) {
     return { ok: false, error: "Too many attempts. Please wait a few minutes and try again." };
   }

@@ -1,6 +1,8 @@
 import { listAllVouchers, listVoucherEvents } from "@/lib/vouchers/vouchers.server";
 import { maskVoucherCode } from "@/lib/vouchers/code";
 import PageHeader from "@/components/dashboard/PageHeader";
+import { VOUCHERS_ENABLED } from "@/lib/vouchers/feature";
+import { notFound } from "next/navigation";
 
 /**
  * Gift vouchers, for the admin.
@@ -22,6 +24,8 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 export default async function DashboardVouchersPage() {
+  if (!VOUCHERS_ENABLED) notFound();
+
   const vouchers = await listAllVouchers();
 
   // Money the shop has taken and not yet delivered goods against. Worth seeing

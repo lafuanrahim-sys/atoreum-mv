@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { getSettings } from "@/lib/data/settings.server";
 import BuyVoucherForm from "@/components/vouchers/BuyVoucherForm";
+import { VOUCHERS_ENABLED } from "@/lib/vouchers/feature";
 
 export const metadata: Metadata = {
   title: "Gift Vouchers",
@@ -21,6 +23,10 @@ export const metadata: Metadata = {
  * (see purchaseVoucherAction) — this is the courteous half of that rule.
  */
 export default async function GiftVouchersPage() {
+  // Parked. A hidden link is not a closed door -- the URL has to stop working
+  // too, or someone who kept the address can still start a purchase.
+  if (!VOUCHERS_ENABLED) notFound();
+
   const user = await getCurrentUser();
   const settings = await getSettings();
 

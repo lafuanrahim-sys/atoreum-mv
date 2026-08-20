@@ -17,6 +17,7 @@ import { EXPIRY_WARNING_WINDOW_DAYS, UNLIMITED_DIVE_PLAYS_FOR_ADMINS } from "@/l
 import PageTransition from "@/components/ui/PageTransition";
 import VouchersPanel from "@/components/account/VouchersPanel";
 import { listVouchersForPurchaser } from "@/lib/vouchers/vouchers.server";
+import { VOUCHERS_ENABLED } from "@/lib/vouchers/feature";
 
 export const metadata: Metadata = {
   title: "My Account",
@@ -42,7 +43,6 @@ const TABS = [
   { key: "orders", label: "My Orders" },
   { key: "favorites", label: "Favorites" },
   { key: "boli", label: "Sangu" },
-  { key: "vouchers", label: "Vouchers" },
   { key: "profile", label: "Profile" },
 ] as const;
 
@@ -95,7 +95,7 @@ export default async function AccountPage({
   // component. Hiding it with CSS still ships it inside the page payload,
   // where "not revealed yet" is one View Source away from being sent to
   // somebody. It is not revealed until it is worth something.
-  const vouchers = (tab === "vouchers" ? await listVouchersForPurchaser(user.id) : []).map((v) =>
+  const vouchers = (VOUCHERS_ENABLED && tab === "vouchers" ? await listVouchersForPurchaser(user.id) : []).map((v) =>
     v.status === "pending" ? { ...v, code: "" } : v
   );
 
@@ -350,7 +350,7 @@ export default async function AccountPage({
             </div>
           )}
 
-          {tab === "vouchers" && <VouchersPanel vouchers={vouchers} />}
+          {VOUCHERS_ENABLED && tab === "vouchers" && <VouchersPanel vouchers={vouchers} />}
 
           {tab === "profile" && (
             <div className="flex flex-col gap-14">

@@ -14,6 +14,7 @@ import { orderAccessToken } from "@/lib/orderAccessToken";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { normalizeVoucherCode } from "@/lib/vouchers/code";
 import { redeemVoucher, reverseVoucherForOrder } from "@/lib/vouchers/vouchers.server";
+import { VOUCHERS_ENABLED } from "@/lib/vouchers/feature";
 import type { Order, OrderItem, PaymentMethod } from "@/lib/types";
 
 export type CheckoutResult =
@@ -218,7 +219,11 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
   //
   // Spent against the order id that is about to be used, so if createOrder
   // fails below the spend is handed straight back (see the catch).
-  const voucherCode = normalizeVoucherCode(String(formData.get("voucherCode") ?? ""));
+  // Ignored entirely while the feature is off, so a posted code cannot spend
+  // anything even though no field on the page offers to send one.
+  const voucherCode = VOUCHERS_ENABLED
+    ? normalizeVoucherCode(String(formData.get("voucherCode") ?? ""))
+    : "";
   let voucherBoli = 0;
   let voucherDiscountMvr = 0;
   if (voucherCode) {
