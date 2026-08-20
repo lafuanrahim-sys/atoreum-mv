@@ -415,7 +415,15 @@ export default function ChatWidget() {
           </button>
         </header>
 
-        <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-5" aria-live="polite">
+        <div
+          ref={scrollRef}
+          className="flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-5"
+          aria-live="polite"
+          // Lenis drives the page scroll by swallowing wheel events at the
+          // window, which leaves any nested scroller dead to the mouse wheel.
+          // This is how you tell it to keep its hands off one element.
+          data-lenis-prevent
+        >
           {shown.map((m, i) => (
             <div key={i} className={m.role === "user" ? "flex justify-end" : "flex flex-col items-start"}>
               {/* Attributed, because a customer who asked for a person needs to

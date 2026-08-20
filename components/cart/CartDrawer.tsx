@@ -52,7 +52,12 @@ export default function CartDrawer() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain px-6 py-6"
+          // Same Lenis problem as the chat panel: without this the wheel does
+          // nothing over a cart long enough to need scrolling.
+          data-lenis-prevent
+        >
           {lines.length === 0 ? (
             <p className="text-sm text-ivory-dim">Your cart is empty.</p>
           ) : (
