@@ -8,6 +8,7 @@ import Footer from "@/components/layout/Footer";
 import { CartProvider } from "@/lib/cart/CartContext";
 import { SessionProvider } from "@/lib/auth/SessionContext";
 import CartDrawer from "@/components/cart/CartDrawer";
+import ChatWidget from "@/components/chat/ChatWidget";
 import { ChromeVisibilityProvider } from "@/lib/layout/ChromeVisibility";
 import VisualViewportSync from "@/lib/layout/VisualViewportSync";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, STORE } from "@/lib/site";
@@ -177,6 +178,7 @@ export default function RootLayout({
                 <Footer />
               </SmoothScroll>
               <CartDrawer />
+              <ChatWidget />
             </ChromeVisibilityProvider>
           </CartProvider>
         </SessionProvider>

@@ -75,3 +75,6 @@ next-env.d.ts
 .vercel
 .env*
 !.env.example
+
+# Video masters kept for re-encoding. Large, and git would keep them forever.
+data/video-sources/

@@ -13,6 +13,7 @@
     "boli:verify-chain": "tsx scripts/boli-verify-chain.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.120.0",
     "@barba/core": "^2.10.3",
     "@supabase/supabase-js": "^2.111.0",
     "clsx": "^2.1.1",
