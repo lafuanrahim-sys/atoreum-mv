@@ -72,6 +72,35 @@ export async function POST(req: Request) {
   const replyTo = msg?.reply_to_message?.message_id;
   const text = (msg?.text ?? "").trim();
 
+  /**
+   * /id -- the bot tells you which chat you are in.
+   *
+   * Setting up a second group means finding its chat id, and the usual routes
+   * are both closed: getUpdates is disabled while a webhook is registered, and
+   * the third-party "what is my id" bots run with privacy mode on so they
+   * cannot see group messages at all.
+   *
+   * Answering here costs nothing and gives away nothing. A chat id is not a
+   * secret -- anyone in a chat can learn its id, and knowing it grants no
+   * ability to write there without the bot token. Deliberately placed BEFORE
+   * the configured-chat check, since the entire point is to run in a group
+   * that is not configured yet.
+   *
+   * A command, not a reply, because Telegram's privacy mode delivers commands
+   * to a bot but withholds ordinary group chatter.
+   */
+  if (chatId && /^\/id(@\w+)?\b/i.test(text) && !msg?.from?.is_bot) {
+    await replyInTelegram({
+      chatId,
+      replyToMessageId: msg!.message_id!,
+      html:
+        `This chat's id is <code>${escapeTelegramHtml(chatId)}</code>\n\n` +
+        `Set it as <b>TELEGRAM_SUPPORT_CHAT_ID</b> to route customer chat here, ` +
+        `or <b>TELEGRAM_ORDER_CHAT_ID</b> for order alerts.`,
+    });
+    return NextResponse.json({ ok: true });
+  }
+
   // Not a reply, not text, or the bot's own message: nothing to route.
   if (!chatId || !replyTo || !text || msg?.from?.is_bot) {
     return NextResponse.json({ ok: true });
