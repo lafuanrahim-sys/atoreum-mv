@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/fx-rate",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/voucher-expiry",
+      "schedule": "30 3 * * *"
     }
   ]
 }

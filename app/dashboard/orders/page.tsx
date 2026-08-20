@@ -111,7 +111,10 @@ export default async function DashboardOrdersPage({
                     there is no customer record to open. Worth seeing at a
                     glance rather than discovering on the detail page. */}
                 {!o.userId && (
-                  <span className="ml-2 rounded-sm border border-line px-1.5 py-0.5 font-mono text-[9px] tracking-[0.1em] text-ivory-dim/70 uppercase">
+                  // Loud on purpose. At 9px in the same grey as everything
+                  // else this was read straight past -- an order placed
+                  // without an account looked like the account holder's.
+                  <span className="ml-2 rounded-sm border border-gold/50 bg-gold/10 px-2 py-0.5 font-mono text-[10px] font-semibold tracking-[0.12em] text-gold uppercase">
                     Guest
                   </span>
                 )}

@@ -192,3 +192,52 @@ export async function expireVoucher(voucherId: string): Promise<number> {
   const { rows } = await pool().query<{ voucher_expire: string }>("select voucher_expire($1)", [voucherId]);
   return Number(rows[0].voucher_expire);
 }
+
+/** Every voucher, newest first, with who bought it and what it has done.
+ * Admin-only: the code is masked by the caller, never shown in full. */
+export async function listAllVouchers(): Promise<
+  (Voucher & { purchaserName: string; purchaserEmail: string; redemptions: number; orderNumber: string })[]
+> {
+  const { rows } = await pool().query<
+    Row & { purchaser_name: string | null; purchaser_email: string | null; redemptions: string; order_number: string | null }
+  >(
+    `select gv.*,
+            u.name  as purchaser_name,
+            u.email as purchaser_email,
+            o.order_number,
+            (select count(*) from gift_voucher_events e
+              where e.voucher_id = gv.id and e.kind = 'redeemed')::text as redemptions
+       from gift_vouchers gv
+       left join users u on u.id = gv.purchaser_user_id
+       left join orders o on o.id = gv.order_id
+      order by gv.created_at desc`
+  );
+  return rows.map((r) => ({
+    ...toVoucher(r),
+    purchaserName: r.purchaser_name ?? "(account removed)",
+    purchaserEmail: r.purchaser_email ?? "",
+    orderNumber: r.order_number ?? "(order removed)",
+    redemptions: Number(r.redemptions),
+  }));
+}
+
+/** What a single voucher has done, for the admin detail view. */
+export async function listVoucherEvents(voucherId: string): Promise<
+  { kind: string; deltaBoli: number; orderId: string | null; redeemer: { name?: string; email?: string; phone?: string } | null; note: string; createdAt: string }[]
+> {
+  const { rows } = await pool().query<{
+    kind: string; delta_boli: string; order_id: string | null;
+    redeemer: { name?: string; email?: string; phone?: string } | null; note: string; created_at: Date;
+  }>(
+    "select kind, delta_boli, order_id, redeemer, note, created_at from gift_voucher_events where voucher_id = $1 order by created_at",
+    [voucherId]
+  );
+  return rows.map((r) => ({
+    kind: r.kind,
+    deltaBoli: Number(r.delta_boli),
+    orderId: r.order_id,
+    redeemer: r.redeemer,
+    note: r.note,
+    createdAt: r.created_at.toISOString(),
+  }));
+}
