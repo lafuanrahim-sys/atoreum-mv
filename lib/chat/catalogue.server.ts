@@ -27,9 +27,23 @@ function line(p: Awaited<ReturnType<typeof getAllProducts>>[number]): string {
   const wasPrice =
     p.priceEffective < p.price ? ` (was MVR ${p.price}, on offer)` : "";
 
-  // Ingredient copy runs long and most of it is INCI boilerplate. The first
-  // sentence carries the hero ingredient, which is what a customer asks about.
-  const hero = p.ingredients.split(/(?<=\.)\s/)[0]?.trim() ?? "";
+  /**
+   * The hero ingredient, or nothing.
+   *
+   * This field was 48% of the catalogue, and a large part of that was paying
+   * to say nothing: seventeen products carry "Full ingredient list (INCI)
+   * pending confirmation from the manufacturer", which cost ~670 tokens on
+   * every single request and told the assistant precisely as much as an empty
+   * string would. Another ~290 went on repeating the words "Formulated around"
+   * seventy-two times.
+   *
+   * A placeholder is dropped entirely; a real ingredient is reduced to the
+   * ingredient. The assistant knows what column it is reading.
+   */
+  const firstSentence = p.ingredients.split(/(?<=\.)\s/)[0]?.trim() ?? "";
+  const hero = /pending confirmation|INCI\) pending|not yet|unavailable/i.test(firstSentence)
+    ? ""
+    : firstSentence.replace(/^Formulated around\s+/i, "").replace(/\.$/, "");
 
   return [
     `${p.id} | ${p.name}`,

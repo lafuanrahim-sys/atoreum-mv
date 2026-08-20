@@ -428,7 +428,7 @@ export default function ChatWidget() {
         onClick={() => setOpen(!isOpen)}
         aria-label={isOpen ? "Close assistant" : "Ask a question"}
         aria-expanded={isOpen}
-        className="chat-press fixed bottom-5 right-5 z-[45] flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-ink-2/75 text-gold shadow-lg backdrop-blur-xl backdrop-saturate-150 transition-all duration-200 hover:border-gold hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:bottom-8 md:right-8"
+        className="chat-press fixed bottom-5 right-5 z-[45] flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-ink-2/75 text-gold backdrop-blur-xl backdrop-saturate-150 transition-all duration-200 hover:border-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:bottom-8 md:right-8"
       >
         {isOpen ? (
           <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
@@ -463,9 +463,13 @@ export default function ChatWidget() {
         // The inset ring is the debossing: a hairline highlight along the top
         // edge and a soft dark bloom below it, so the surface reads as pressed
         // into the page rather than laid on top of it.
+        // Inset only. The outer drop shadow was a dark bloom cast onto an
+        // already-dark page: it read as a smudge around the panel rather than
+        // as elevation, which is what a shadow is for. The glass and the
+        // hairline edge do that job here, and they do it without muddying the
+        // background behind them.
         style={{
-          boxShadow:
-            "inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.35), 0 24px 48px -12px rgba(0,0,0,0.55)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.35)",
         }}
         // data-open drives the entrance; the geometry and easing live in
         // globals.css so the stagger and the reduced-motion fallback can be

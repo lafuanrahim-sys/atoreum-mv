@@ -351,7 +351,22 @@ export async function POST(req: Request) {
     {
       type: "text",
       text: `${SYSTEM_RULES}\n\n=== SHOP FACTS ===\n${SHOP_FACTS}\n\n=== ${payment} ===\n\n=== CATALOGUE ===\n${catalogue}`,
-      cache_control: { type: "ephemeral" },
+      /**
+       * An hour, not the default five minutes.
+       *
+       * This block is ~8,000 tokens of rules and catalogue, identical on every
+       * request, and it is three quarters of what each question costs. Five
+       * minutes is the right TTL for a busy chat; it is the wrong one for a
+       * shop getting a question every twenty minutes, where the cache has
+       * always expired and every request pays the write price rather than the
+       * read price -- roughly three times more, indefinitely.
+       *
+       * A one-hour write costs more than a five-minute one, so this is a bet
+       * that a second question arrives within the hour. For a shop with any
+       * traffic that bet wins; for one with none, the difference either way is
+       * a fraction of a rufiyaa a day.
+       */
+      cache_control: { type: "ephemeral", ttl: "1h" },
     },
     {
       type: "text",
