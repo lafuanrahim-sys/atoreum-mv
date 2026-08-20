@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderById } from "@/lib/data/orders.server";
-import { verifyOrderAccessToken } from "@/lib/orderAccessToken";
+import { orderAccessToken, verifyOrderAccessToken } from "@/lib/orderAccessToken";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import KeepYourOrderNumber from "@/components/checkout/KeepYourOrderNumber";
 
@@ -90,6 +90,10 @@ export default async function OrderConfirmationPage({
         <div className="text-left">
           <KeepYourOrderNumber
             orderId={order.id}
+            // Minted here rather than taken from the URL: a signed-in owner
+            // reaches this page without a token at all, and should still be
+            // able to resend their own receipt.
+            accessToken={orderAccessToken(order.id)}
             orderNumber={order.orderNumber}
             guestRef={order.guestRef}
             sentTo={order.customer.email}

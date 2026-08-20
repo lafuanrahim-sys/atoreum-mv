@@ -18,11 +18,15 @@ import { resendOrderEmailAction } from "@/app/actions/orderEmail";
  */
 export default function KeepYourOrderNumber({
   orderId,
+  accessToken,
   orderNumber,
   guestRef,
   sentTo,
 }: {
   orderId: string;
+  /** Proves this browser legitimately reached this order's confirmation page.
+   *  Without it the resend would accept any order id anyone could guess. */
+  accessToken: string;
   orderNumber: string;
   guestRef?: string | null;
   sentTo: string;
@@ -87,7 +91,7 @@ export default function KeepYourOrderNumber({
               disabled={pending || !email.includes("@")}
               onClick={() =>
                 startTransition(async () => {
-                  setResult(await resendOrderEmailAction(orderId, email));
+                  setResult(await resendOrderEmailAction(orderId, accessToken, email));
                 })
               }
               className="min-h-11 bg-gold-deep px-6 font-mono text-[11px] uppercase tracking-[0.15em] text-ink transition-colors hover:bg-gold-deep/90 disabled:cursor-not-allowed disabled:opacity-40"
