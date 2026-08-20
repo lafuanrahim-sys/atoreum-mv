@@ -1,7 +1,14 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import type { PublicUser } from "@/lib/data/users.server";
 import { getAllOrders } from "@/lib/data/orders.server";
-import { sendTelegramMessage, escapeTelegramHtml, telegramConfigured } from "@/lib/telegram";
+import { getProductById } from "@/lib/data/products.server";
+import { sendTelegramMessageAnchored, escapeTelegramHtml, telegramConfigured } from "@/lib/telegram";
+import {
+  linkTelegramMessage,
+  setConversationContact,
+  getRecentMessages,
+  setConversationMode,
+} from "@/lib/chat/conversations.server";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { invoiceNumber } from "@/lib/invoice";
 
@@ -29,6 +36,30 @@ export const CHAT_TOOLS: Anthropic.Tool[] = [
       "Use it for questions about order status, payment verification, delivery timing, or past purchases. " +
       "If the customer is not signed in this returns nothing, which means you should ask them to sign in.",
     input_schema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "add_to_cart",
+    description:
+      "Put a product in the customer's basket. Use it when they ask you to add something, " +
+      "or agree to a suggestion. Always name the product and the price in your reply afterwards, " +
+      "so they can see what went in. Only products from the catalogue can be added, and only " +
+      "when in stock. Do not use this to check a price; the catalogue already has prices.",
+    input_schema: {
+      type: "object",
+      properties: {
+        product_id: {
+          type: "string",
+          description: "The catalogue id, e.g. fom-001. Not the name.",
+        },
+        quantity: {
+          type: "integer",
+          description: "How many. Defaults to 1. Ask the customer before adding more than a few.",
+          minimum: 1,
+          maximum: 10,
+        },
+      },
+      required: ["product_id"],
+    },
   },
   {
     name: "escalate_to_team",
@@ -106,7 +137,8 @@ async function runGetMyOrders(user: PublicUser | null) {
 async function runEscalate(
   args: { question?: unknown; contact?: unknown },
   user: PublicUser | null,
-  clientKey: string
+  clientKey: string,
+  conversationId: string | null
 ) {
   const question = String(args.question ?? "").trim().slice(0, 1_000);
   const contact = String(args.contact ?? "").trim().slice(0, 200);
@@ -132,33 +164,139 @@ async function runEscalate(
     ? `${escapeTelegramHtml(user.name)} (${escapeTelegramHtml(user.email)}, signed in)`
     : "a signed-out visitor";
 
-  const sent = await sendTelegramMessage(
+  // The last few turns, so whoever answers is not guessing at what was already
+  // said. Without it staff repeat the assistant, or answer a question that has
+  // moved on two messages ago.
+  let transcript: string[] = [];
+  if (conversationId) {
+    try {
+      const recent = await getRecentMessages(conversationId, 6);
+      transcript = recent.map((m) => {
+        const label =
+          m.role === "customer" ? "Customer" : m.role === "staff" ? m.staffName || "Shop" : "Assistant";
+        return `<b>${label}:</b> ${escapeTelegramHtml(m.content.slice(0, 400))}`;
+      });
+    } catch (err) {
+      console.error("[chat] could not load transcript for escalation:", err);
+    }
+  }
+
+  const anchor = await sendTelegramMessageAnchored(
     [
-      "💬 <b>Question from the website assistant</b>",
+      "\u{1F4AC} <b>Question from the website assistant</b>",
       "",
       `<b>From:</b> ${who}`,
       contact ? `<b>Contact:</b> ${escapeTelegramHtml(contact)}` : "<b>Contact:</b> not given",
       "",
       escapeTelegramHtml(question),
+      ...(transcript.length ? ["", "<b>Recent conversation</b>", ...transcript] : []),
+      "",
+      conversationId
+        ? "<i>Reply to this message to answer. The assistant has stopped, and everything the customer types now comes here. Reply <b>/ai</b> to hand it back to the assistant.</i>"
+        : "<i>This conversation could not be saved, so a reply here will not reach the customer.</i>",
     ].join("\n")
   );
 
-  return sent
-    ? { sent: true }
-    : { sent: false, reason: "The message could not be delivered. Ask the customer to email sales@aranzo.co." };
+  if (!anchor) {
+    return {
+      sent: false,
+      reason: "The message could not be delivered. Ask the customer to email sales@aranzo.co.",
+    };
+  }
+
+  // Anchor the conversation to the message staff will reply to. If this fails
+  // the question still reached them; they just have to use the contact details
+  // rather than replying in the thread.
+  let handedOver = false;
+  if (conversationId) {
+    try {
+      if (contact) await setConversationContact(conversationId, contact);
+      await linkTelegramMessage({ conversationId, chatId: anchor.chatId, messageId: anchor.messageId });
+      // Only now, with somewhere for staff to reply, does the assistant stand
+      // down. Doing it before the anchor exists would leave the customer
+      // talking to nobody.
+      handedOver = (await setConversationMode(conversationId, "human")) === "human";
+    } catch (err) {
+      console.error("[chat] could not hand the conversation to staff:", err);
+    }
+  }
+
+  return {
+    sent: true,
+    handedOver,
+    // The model writes the words; this tells it what is now true so it does
+    // not promise a callback it cannot see happen.
+    note: handedOver
+      ? "A person will answer in this chat window. Tell the customer to keep it open and wait, and that you are stepping aside now."
+      : "The team has the question, but this chat cannot receive their reply. Tell the customer they will be contacted using the details they gave.",
+  };
+}
+
+/** The most a model may add in one go without the customer saying a number. */
+const MAX_CART_QUANTITY = 10;
+
+/**
+ * Validate a requested cart addition.
+ *
+ * The server cannot put anything in the basket -- the cart is client state in
+ * the customer's browser -- so this returns the line for the route to forward,
+ * and the browser applies it. That split is convenient rather than principled,
+ * but it does mean the checking has to happen here: the model names a product
+ * id and nothing else is taken on trust.
+ *
+ * Refusals are worded for the customer, because the model repeats them.
+ */
+async function runAddToCart(args: { product_id?: unknown; quantity?: unknown }) {
+  const id = String(args.product_id ?? "").trim().toLowerCase();
+  if (!id) return { added: false, reason: "No product was specified." };
+
+  const product = await getProductById(id);
+  if (!product) {
+    return {
+      added: false,
+      reason: `There is no product with the id "${id}". Only ids from the catalogue can be added.`,
+    };
+  }
+  if (product.stockStatus === "out-of-stock") {
+    return { added: false, reason: `${product.name} is out of stock, so it cannot be added.` };
+  }
+
+  const requested = Number(args.quantity ?? 1);
+  const quantity = Number.isFinite(requested)
+    ? Math.min(Math.max(Math.trunc(requested), 1), MAX_CART_QUANTITY)
+    : 1;
+
+  return {
+    added: true,
+    quantity,
+    // Priced from priceEffective, the same figure the product card and the
+    // order total use. Quoting `price` here would put the pre-discount amount
+    // in the basket and make the assistant appear to overcharge.
+    line: {
+      productId: product.id,
+      name: product.name,
+      price: product.priceEffective,
+      currency: product.currency,
+      image: product.images[0] ?? null,
+      quantity,
+    },
+    note: `${quantity} x ${product.name} at MVR ${product.priceEffective} each.`,
+  };
 }
 
 /** Dispatch. Unknown names return an error to the model rather than throwing. */
 export async function runTool(
   name: string,
   args: Record<string, unknown>,
-  ctx: { user: PublicUser | null; clientKey: string }
+  ctx: { user: PublicUser | null; clientKey: string; conversationId?: string | null }
 ): Promise<unknown> {
   switch (name) {
     case "get_my_orders":
       return runGetMyOrders(ctx.user);
+    case "add_to_cart":
+      return runAddToCart(args);
     case "escalate_to_team":
-      return runEscalate(args, ctx.user, ctx.clientKey);
+      return runEscalate(args, ctx.user, ctx.clientKey, ctx.conversationId ?? null);
     default:
       return { error: `Unknown tool: ${name}` };
   }

@@ -92,3 +92,155 @@ as $$
          output_tokens = chat_usage.output_tokens + greatest(p_output, 0),
          updated_at    = now();
 $$;
+
+
+-- ---------------------------------------------------------------------------
+-- Conversations, and replying to them from Telegram.
+-- ---------------------------------------------------------------------------
+--
+-- Chat was ephemeral before this: it lived in the customer's browser tab and
+-- was gone on refresh. That is fine for a bot answering from a catalogue, and
+-- useless the moment a human wants to answer, because there is nothing to
+-- answer. These two tables are what a reply attaches to.
+--
+-- The Telegram half is a message id, nothing cleverer. Staff reply to the
+-- alert in the group the way they would reply to anyone, Telegram tells the
+-- webhook which message was replied to, and that id names the conversation.
+-- Nobody has to learn a command or paste a reference.
+
+create table if not exists chat_conversations (
+  id uuid primary key default gen_random_uuid(),
+
+  -- The bearer token in the customer's cookie. This IS the credential that
+  -- lets a browser read this conversation back, so it is generated server
+  -- side and never derived from anything guessable.
+  visitor_token text not null unique,
+
+  -- Set when the customer is signed in. Not a substitute for visitor_token:
+  -- one person can hold two conversations from two browsers.
+  user_id text references users(id) on delete set null,
+
+  -- Whatever contact the customer gave when escalating.
+  contact text not null default '',
+
+  -- The escalation message in the staff group. A reply to it lands here.
+  -- Null until the conversation is escalated; most never are.
+  telegram_chat_id    text,
+  telegram_message_id bigint,
+
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  -- One conversation per Telegram message, so a reply can never be ambiguous.
+  constraint chat_conversations_one_per_telegram_message
+    unique (telegram_chat_id, telegram_message_id)
+);
+
+create index if not exists chat_conversations_updated_idx
+  on chat_conversations (updated_at desc);
+
+create table if not exists chat_messages (
+  id uuid primary key default gen_random_uuid(),
+  conversation_id uuid not null references chat_conversations(id) on delete cascade,
+
+  -- 'customer' typed it, 'assistant' generated it, 'staff' is a human at the
+  -- shop replying from Telegram. The customer sees all three; only 'staff' is
+  -- attributed to a person by name.
+  role text not null check (role in ('customer', 'assistant', 'staff')),
+  content text not null,
+
+  -- Who at the shop sent it, for staff messages. Shown to the customer,
+  -- because "Maahil" reads better than "Support".
+  staff_name text not null default '',
+
+  created_at timestamptz not null default now()
+);
+
+create index if not exists chat_messages_conversation_idx
+  on chat_messages (conversation_id, created_at);
+
+/*
+ * Attach a Telegram message to a conversation, so replies to it come back here.
+ *
+ * Returns false when that message id is already claimed. Two escalations
+ * cannot share one message, and without the guard a race could point a staff
+ * reply at the wrong customer, which is a privacy failure rather than a bug.
+ */
+create or replace function chat_link_telegram(
+  p_conversation uuid,
+  p_chat_id text,
+  p_message_id bigint
+) returns boolean
+language plpgsql
+as $$
+begin
+  update chat_conversations
+     set telegram_chat_id = p_chat_id,
+         telegram_message_id = p_message_id,
+         updated_at = now()
+   where id = p_conversation;
+  return found;
+exception
+  when unique_violation then
+    return false;
+end;
+$$;
+
+
+-- ---------------------------------------------------------------------------
+-- Who is answering: the assistant, or a person.
+-- ---------------------------------------------------------------------------
+--
+-- Once a customer has been told a human will get back to them, the assistant
+-- answering the next message is actively harmful: it talks over the person
+-- who was promised, and it invites the customer to keep asking the bot the
+-- thing the bot already could not settle.
+--
+-- So a conversation has exactly one voice at a time. Escalating hands it to
+-- staff; staff hand it back with a command when the customer turns out to want
+-- something ordinary, like a product recommendation, which the assistant does
+-- better and instantly.
+
+alter table chat_conversations
+  add column if not exists mode text not null default 'ai';
+
+do $$
+begin
+  alter table chat_conversations
+    add constraint chat_conversations_mode_known check (mode in ('ai', 'human'));
+exception
+  when duplicate_object then null;
+end;
+$$;
+
+/*
+ * Hand a conversation to staff, or back to the assistant.
+ *
+ * Returns the mode actually in force afterwards, which is not always the one
+ * asked for: handing to a human requires somewhere for the human to reply, and
+ * a conversation with no Telegram anchor has none. Silently switching it would
+ * leave the customer waiting on a person who was never told.
+ */
+create or replace function chat_set_mode(p_conversation uuid, p_mode text)
+returns text
+language plpgsql
+as $$
+declare
+  v_anchor bigint;
+  v_mode   text;
+begin
+  select telegram_message_id into v_anchor
+    from chat_conversations where id = p_conversation;
+
+  v_mode := case
+    when p_mode = 'human' and v_anchor is null then 'ai'
+    else p_mode
+  end;
+
+  update chat_conversations
+     set mode = v_mode, updated_at = now()
+   where id = p_conversation;
+
+  return v_mode;
+end;
+$$;

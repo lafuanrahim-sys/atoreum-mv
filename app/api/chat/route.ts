@@ -7,6 +7,15 @@ import { getCatalogueContext, getPaymentContext } from "@/lib/chat/catalogue.ser
 import { CHAT_TOOLS, runTool } from "@/lib/chat/tools.server";
 import { sanitiseHistory } from "@/lib/chat/history";
 import { claimChatRequest, recordChatUsage } from "@/lib/chat/usage.server";
+import { cookies } from "next/headers";
+import { replyInTelegram, escapeTelegramHtml } from "@/lib/telegram";
+import {
+  CHAT_COOKIE,
+  newVisitorToken,
+  getOrCreateConversation,
+  appendMessage,
+  getConversationState,
+} from "@/lib/chat/conversations.server";
 
 /**
  * The customer assistant's endpoint.
@@ -82,6 +91,49 @@ function customerFacingError(err: unknown): string {
   return "Something went wrong on our side. Please try again, or email sales@aranzo.co.";
 }
 
+/** One complete SSE response: a single message, then done. */
+function sseOnce(text: string): string {
+  return (
+    `event: text\ndata: ${JSON.stringify({ delta: text })}\n\n` +
+    `event: done\ndata: {}\n\n`
+  );
+}
+
+/**
+ * Headers for a streamed answer, issuing the conversation cookie when new.
+ *
+ * Shared by both paths because both mint the same conversation: a customer
+ * whose first message arrives while staff already own the thread still needs
+ * the token, or they can never read the reply.
+ */
+function sseHeaders(newToken: string | null): Headers {
+  const headers = new Headers({
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-store, no-transform",
+    Connection: "keep-alive",
+  });
+  if (newToken) {
+    headers.append(
+      "Set-Cookie",
+      // A SESSION cookie: no Max-Age, no Expires, so the browser drops it when
+      // it closes. That matches the client side, which holds the conversation
+      // in sessionStorage -- the two have to expire together or a returning
+      // customer gets an empty panel that is somehow still attached to a live
+      // conversation staff can reply into.
+      //
+      // The cost is real and accepted: close the browser before staff answer
+      // and that reply has nowhere to land. Their contact details were taken
+      // at escalation precisely so there is another way to reach them.
+      //
+      // httpOnly because this token is what reads the conversation back; lax
+      // is enough because nothing here is state-changing on someone's behalf.
+      `${CHAT_COOKIE}=${newToken}; Path=/; HttpOnly; SameSite=Lax` +
+        (process.env.NODE_ENV === "production" ? "; Secure" : "")
+    );
+  }
+  return headers;
+}
+
 export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
@@ -112,8 +164,72 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Say something first." }, { status: 400 });
   }
 
-  // Claimed only once the request is known to be well-formed: a malformed
-  // body should not spend the shop's daily allowance.
+  /**
+   * The conversation this browser owns.
+   *
+   * The token is minted here rather than in middleware so it only exists for
+   * someone who actually used the assistant, and it is httpOnly because it is
+   * a bearer credential: whoever holds it reads the replies.
+   *
+   * Persistence failing must not cost the customer their answer -- the model
+   * can still reply, they just could not have been sent a human reply anyway
+   * if the database is down. So conversationId stays null and the request
+   * carries on.
+   */
+  const jar = await cookies();
+  const existingToken = jar.get(CHAT_COOKIE)?.value;
+  const visitorToken = existingToken ?? newVisitorToken();
+
+  let conversationId: string | null = null;
+  try {
+    conversationId = await getOrCreateConversation({ visitorToken, userId: user?.id ?? null });
+    await appendMessage({
+      conversationId,
+      role: "customer",
+      content: history[history.length - 1].content,
+    });
+  } catch (err) {
+    console.error("[chat] could not persist conversation:", err);
+  }
+
+  /**
+   * A conversation staff have taken over does not go to the model at all.
+   *
+   * Not "the model is told to be quiet" -- it is never called. A model
+   * instructed to stay silent still answers sometimes, and the one place that
+   * must not happen is after a customer has been told a person is coming. The
+   * customer's message is carried to Telegram instead, threaded under the
+   * original so whoever is answering keeps the context.
+   */
+  const state = conversationId ? await getConversationState(visitorToken) : null;
+  if (state?.mode === "human" && state.telegramChatId && state.telegramMessageId !== null) {
+    const customerText = history[history.length - 1].content;
+
+    const forwarded = await replyInTelegram({
+      chatId: state.telegramChatId,
+      replyToMessageId: state.telegramMessageId,
+      html: `\u{1F464} <b>Customer:</b> ${escapeTelegramHtml(customerText.slice(0, 3_000))}`,
+    });
+
+    if (!forwarded) {
+      console.error("[chat] could not forward a customer message to staff.");
+    }
+
+    return new Response(
+      // Same SSE shape as a model answer, so the widget needs no special case.
+      sseOnce(
+        forwarded
+          ? "Thanks, I have passed that on. Someone from the team will reply here shortly."
+          : "I could not reach the team just now. Please email sales@aranzo.co and we will help you."
+      ),
+      { headers: sseHeaders(existingToken ? null : visitorToken) }
+    );
+  }
+
+  // Claimed here, and not a line earlier: the request is known to be
+  // well-formed AND known to need the model. A malformed body should not
+  // spend the shop's daily allowance, and neither should a message a person
+  // is going to answer.
   const claim = await claimChatRequest(key);
   if (!claim.ok) {
     return NextResponse.json(
@@ -163,6 +279,17 @@ export async function POST(req: Request) {
       // question costs several model turns and all of them are the shop's
       // spend, so recording only the last would undercount the expensive ones.
       const spend = { input: 0, output: 0 };
+      // What the customer is actually shown, kept so it can be stored as the
+      // assistant's turn. Staff replying in Telegram need to see what the
+      // assistant already said, or they repeat it.
+      let answer = "";
+
+      const persistAnswer = () => {
+        if (!conversationId || !answer.trim()) return;
+        void appendMessage({ conversationId, role: "assistant", content: answer.slice(0, 8_000) }).catch(
+          (err) => console.error("[chat] could not store the answer:", err)
+        );
+      };
 
       try {
         // Each round is one model turn. A round that ends in tool_use runs the
@@ -176,7 +303,10 @@ export async function POST(req: Request) {
             messages,
           });
 
-          response.on("text", (delta) => send("text", { delta }));
+          response.on("text", (delta) => {
+            answer += delta;
+            send("text", { delta });
+          });
 
           const final = await response.finalMessage();
 
@@ -194,6 +324,7 @@ export async function POST(req: Request) {
 
           if (toolUses.length === 0) {
             recordChatUsage(key, spend);
+            persistAnswer();
             send("done", {});
             controller.close();
             return;
@@ -204,25 +335,40 @@ export async function POST(req: Request) {
           send("thinking", {});
 
           messages.push({ role: "assistant", content: final.content });
+
+          const results = await Promise.all(
+            toolUses.map(async (t) => ({
+              tool: t.name,
+              id: t.id,
+              result: await runTool(t.name, (t.input ?? {}) as Record<string, unknown>, {
+                user,
+                clientKey: key,
+                conversationId,
+              }),
+            }))
+          );
+
+          // The cart lives in the browser, so a successful add_to_cart has to
+          // travel back as an event for the widget to apply. The model gets
+          // the same result either way; this is the half it cannot perform.
+          for (const r of results) {
+            const line = (r.result as { added?: boolean; line?: unknown })?.line;
+            if (r.tool === "add_to_cart" && line) send("cart", { line });
+          }
+
           messages.push({
             role: "user",
-            content: await Promise.all(
-              toolUses.map(async (t) => ({
-                type: "tool_result" as const,
-                tool_use_id: t.id,
-                content: JSON.stringify(
-                  await runTool(t.name, (t.input ?? {}) as Record<string, unknown>, {
-                    user,
-                    clientKey: key,
-                  })
-                ),
-              }))
-            ),
+            content: results.map((r) => ({
+              type: "tool_result" as const,
+              tool_use_id: r.id,
+              content: JSON.stringify(r.result),
+            })),
           });
         }
 
         // Ran out of rounds. Say so rather than closing silently.
         recordChatUsage(key, spend);
+        persistAnswer();
         send("text", {
           delta: "\n\nSorry, I got stuck on that one. Would you like me to pass it to the team?",
         });
@@ -231,6 +377,7 @@ export async function POST(req: Request) {
       } catch (err) {
         // A failed request still burned whatever it burned before failing.
         recordChatUsage(key, spend);
+        persistAnswer();
         console.error("[chat] request failed:", err);
         send("error", { message: customerFacingError(err) });
         controller.close();
@@ -238,11 +385,7 @@ export async function POST(req: Request) {
     },
   });
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-store, no-transform",
-      Connection: "keep-alive",
-    },
-  });
+  // The cookie only rides out when it is new. Re-sending an unchanged one on
+  // every message is pure overhead on a streaming response.
+  return new Response(stream, { headers: sseHeaders(existingToken ? null : visitorToken) });
 }

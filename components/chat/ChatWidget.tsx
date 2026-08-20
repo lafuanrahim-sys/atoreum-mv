@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useCart, type CartLine } from "@/lib/cart/CartContext";
 
 /**
  * The customer assistant: a launcher pinned bottom-right, and the panel it
@@ -13,13 +14,105 @@ import Link from "next/link";
  * carrying a purchase, so when they collide the cart wins.
  */
 
-type Message = { role: "user" | "assistant"; content: string };
+type Message = { role: "user" | "assistant" | "staff"; content: string };
 
-const GREETING =
-  "Hello. I can help with products, delivery, payment and Sangu, or check on an order for you. What do you need?";
+const GREETING = "Hello. I'm the Atoreum MV assistant, an AI. What can I help you with?";
+
+/**
+ * The way in.
+ *
+ * A blank box asking "how can I help?" is the worst opening a shop assistant
+ * can offer: the customer has to guess what it is capable of, and most people
+ * guess low and close it. Four buttons say what it does in the act of asking,
+ * and every one of them lands on something it handles well.
+ *
+ * Typing is held back until one is chosen, so the first message is never a
+ * shot in the dark.
+ *
+ * "Talk to a person" is worded to be unmistakable next to the other three,
+ * because the difference between an AI and a colleague is the one thing a
+ * customer should never have to work out for themselves.
+ */
+const OPENERS = [
+  { label: "Help me choose a product", send: "I'd like help finding the right products for my skin." },
+  { label: "Delivery & payment", send: "How does delivery and payment work?" },
+  { label: "Where's my order?", send: "Where is my order?" },
+  { label: "Talk to a person", send: "I'd like to speak to someone from the team, not the AI assistant." },
+] as const;
 
 /** Paths that get their own shell and should never show a shop widget. */
 const HIDDEN_PREFIXES = ["/dashboard", "/fx", "/maintenance", "/invoice"];
+
+/** Where the in-progress conversation is held between page loads. */
+const STORAGE_KEY = "atoreum-chat-session";
+
+/* -------------------------------------------------------------------------
+ * Session store
+ *
+ * The conversation has to survive a refresh and follow the customer between
+ * pages, and die when the browser closes. sessionStorage does all three.
+ *
+ * It is read through useSyncExternalStore rather than an effect for the same
+ * reason the cart is (lib/cart/CartContext.tsx): the server renders an empty
+ * panel while the browser may have a conversation to restore, and
+ * getServerSnapshot is what lets those two disagree without a hydration
+ * mismatch. Restoring in an effect would also show a flash of the greeting
+ * before the real conversation replaced it.
+ * ---------------------------------------------------------------------- */
+
+type ChatState = { messages: Message[]; isOpen: boolean };
+
+const EMPTY_STATE: ChatState = { messages: [], isOpen: false };
+
+let state: ChatState = EMPTY_STATE;
+let hydrated = false;
+const listeners = new Set<() => void>();
+
+function readPersisted(): ChatState {
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return EMPTY_STATE;
+    const saved = JSON.parse(raw) as Partial<ChatState>;
+    return {
+      messages: Array.isArray(saved.messages) ? saved.messages : [],
+      isOpen: Boolean(saved.isOpen),
+    };
+  } catch {
+    // Corrupt, or a private mode that throws on access. Start fresh.
+    return EMPTY_STATE;
+  }
+}
+
+function persist(next: ChatState) {
+  try {
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // Full or blocked. The chat still works for this page.
+  }
+}
+
+function setState(update: (prev: ChatState) => ChatState) {
+  state = update(state);
+  persist(state);
+  listeners.forEach((l) => l());
+}
+
+function subscribe(callback: () => void) {
+  // The first subscriber past hydration pulls in what was persisted and
+  // notifies, because mutating `state` alone does not re-render.
+  if (!hydrated) {
+    hydrated = true;
+    state = readPersisted();
+    callback();
+  }
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
+
+const getSnapshot = () => state;
+const getServerSnapshot = () => EMPTY_STATE;
+
+/* ---------------------------------------------------------------------- */
 
 /**
  * Renders the assistant's text.
@@ -63,15 +156,21 @@ function RichText({ text }: { text: string }) {
 
 export default function ChatWidget() {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { addItem } = useCart();
+  const { messages, isOpen } = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  // Draft text and in-flight status are per-tab and worthless after a reload,
+  // so unlike the conversation they stay outside the session store.
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const lastStaffAtRef = useRef<string | null>(null);
+  const busyRef = useRef(false);
+
+  const started = messages.length > 0;
+  const setOpen = (open: boolean) => setState((prev) => ({ ...prev, isOpen: open }));
 
   // Keep the newest message in view as it streams in.
   useEffect(() => {
@@ -80,14 +179,16 @@ export default function ChatWidget() {
   }, [messages, busy]);
 
   useEffect(() => {
-    if (isOpen) inputRef.current?.focus();
-  }, [isOpen]);
+    // Only once the conversation has started; before that the buttons are the
+    // interface, and focusing a disabled box would be misleading.
+    if (isOpen && started) inputRef.current?.focus();
+  }, [isOpen, started]);
 
   // Escape closes, matching every other overlay on the site.
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") setState((prev) => ({ ...prev, isOpen: false }));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -97,96 +198,173 @@ export default function ChatWidget() {
   // streaming into a component that no longer exists.
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  const send = useCallback(async () => {
-    const text = input.trim();
-    if (!text || busy) return;
+  /**
+   * Watch for replies from a person.
+   *
+   * Only while the panel is open, and never mid-answer: the streaming code
+   * appends to whatever message is last, so a staff reply landing in the
+   * middle of it would be written into the assistant's bubble.
+   *
+   * Eight seconds because the shop replies in minutes, not milliseconds. Two
+   * people also doing the deliveries are not sitting at a chat desk, and a
+   * tighter interval would only add load to say "still nothing".
+   */
+  useEffect(() => {
+    if (!isOpen || busy || !started) return;
+    let cancelled = false;
 
-    const next: Message[] = [...messages, { role: "user", content: text }];
-    setMessages(next);
-    setInput("");
-    setError(null);
-    setBusy(true);
+    const poll = async () => {
+      try {
+        const since = lastStaffAtRef.current;
+        const res = await fetch(`/api/chat/poll${since ? `?since=${encodeURIComponent(since)}` : ""}`);
+        if (!res.ok || cancelled) return;
+        const { messages: incoming } = (await res.json()) as {
+          messages: { id: string; content: string; createdAt: string }[];
+        };
+        if (cancelled || incoming.length === 0) return;
 
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next }),
-        signal: controller.signal,
-      });
-
-      if (!res.ok || !res.body) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.error ?? "The assistant is unavailable right now.");
+        lastStaffAtRef.current = incoming[incoming.length - 1].createdAt;
+        setState((prev) => ({
+          ...prev,
+          messages: [
+            ...prev.messages,
+            ...incoming.map((i) => ({ role: "staff" as const, content: i.content })),
+          ],
+        }));
+      } catch {
+        // A failed poll is not worth telling the customer about; the next one
+        // is eight seconds away.
       }
+    };
 
-      // Open an empty assistant turn, then fill it as deltas arrive.
-      setMessages((m) => [...m, { role: "assistant", content: "" }]);
+    void poll();
+    const timer = setInterval(poll, 8_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [isOpen, busy, started]);
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
+  const send = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || busyRef.current) return;
 
-      const appendToLast = (delta: string) =>
-        setMessages((m) => {
-          const copy = [...m];
-          copy[copy.length - 1] = {
-            role: "assistant",
-            content: copy[copy.length - 1].content + delta,
-          };
-          return copy;
+      busyRef.current = true;
+      setBusy(true);
+      setError("");
+
+      const outgoing = [...state.messages, { role: "user" as const, content: trimmed }];
+      setState((prev) => ({ ...prev, messages: [...prev.messages, { role: "user", content: trimmed }] }));
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            // Staff turns are the shop's own words. Sending them as the
+            // assistant's would have the model treat a colleague's promise as
+            // something it said itself, so they are left out.
+            messages: outgoing
+              .filter((m) => m.role !== "staff")
+              .map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
+          }),
+          signal: controller.signal,
         });
 
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        // SSE frames are separated by a blank line; a partial frame stays in
-        // the buffer until the rest of it arrives.
-        const frames = buffer.split("\n\n");
-        buffer = frames.pop() ?? "";
-
-        for (const frame of frames) {
-          const event = /^event: (.+)$/m.exec(frame)?.[1];
-          const raw = /^data: (.+)$/m.exec(frame)?.[1];
-          if (!event || !raw) continue;
-
-          let data: { delta?: string; message?: string };
-          try {
-            data = JSON.parse(raw);
-          } catch {
-            continue;
-          }
-
-          if (event === "text" && data.delta) appendToLast(data.delta);
-          else if (event === "error") setError(data.message ?? "Something went wrong.");
+        if (!res.ok || !res.body) {
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.error ?? "The assistant is unavailable right now.");
         }
+
+        // Open an empty assistant turn, then fill it as deltas arrive.
+        setState((prev) => ({ ...prev, messages: [...prev.messages, { role: "assistant", content: "" }] }));
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        const appendToLast = (delta: string) =>
+          setState((prev) => {
+            const copy = [...prev.messages];
+            copy[copy.length - 1] = {
+              role: "assistant",
+              content: copy[copy.length - 1].content + delta,
+            };
+            return { ...prev, messages: copy };
+          });
+
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          // SSE frames are separated by a blank line; a partial frame stays in
+          // the buffer until the rest of it arrives.
+          const frames = buffer.split("\n\n");
+          buffer = frames.pop() ?? "";
+
+          for (const frame of frames) {
+            const event = /^event: (.+)$/m.exec(frame)?.[1];
+            const raw = /^data: (.+)$/m.exec(frame)?.[1];
+            if (!event || !raw) continue;
+
+            let data: { delta?: string; message?: string; line?: CartLine };
+            try {
+              data = JSON.parse(raw);
+            } catch {
+              continue;
+            }
+
+            if (event === "text" && data.delta) appendToLast(data.delta);
+            else if (event === "cart" && data.line) {
+              // The server has already checked the product exists and is in
+              // stock; this is the half only the browser can do.
+              const { quantity, ...item } = data.line;
+              addItem(item, quantity);
+            } else if (event === "error") setError(data.message ?? "Something went wrong.");
+          }
+        }
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        setError((err as Error).message);
+        // Drop the empty assistant bubble so a failure does not leave a blank one.
+        setState((prev) => {
+          const last = prev.messages.at(-1);
+          return last?.role === "assistant" && !last.content
+            ? { ...prev, messages: prev.messages.slice(0, -1) }
+            : prev;
+        });
+      } finally {
+        busyRef.current = false;
+        setBusy(false);
+        abortRef.current = null;
       }
-    } catch (err) {
-      if ((err as Error).name === "AbortError") return;
-      setError((err as Error).message);
-      // Drop the empty assistant bubble so a failure does not leave a blank one.
-      setMessages((m) => (m.at(-1)?.role === "assistant" && !m.at(-1)?.content ? m.slice(0, -1) : m));
-    } finally {
-      setBusy(false);
-      abortRef.current = null;
-    }
-  }, [input, busy, messages]);
+    },
+    [addItem]
+  );
+
+  const sendFromInput = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    const text = el.value;
+    el.value = "";
+    void send(text);
+  };
 
   if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null;
 
-  const shown = messages.length > 0 ? messages : [{ role: "assistant" as const, content: GREETING }];
+  const shown: Message[] = started ? messages : [{ role: "assistant", content: GREETING }];
 
   return (
     <>
       {/* Launcher */}
       <button
         type="button"
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={() => setOpen(!isOpen)}
         aria-label={isOpen ? "Close assistant" : "Ask a question"}
         aria-expanded={isOpen}
         className="fixed bottom-5 right-5 z-[45] flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-ink text-gold shadow-lg transition-all duration-200 hover:border-gold hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:bottom-8 md:right-8"
@@ -223,11 +401,11 @@ export default function ChatWidget() {
         <header className="flex items-center justify-between border-b border-line px-5 py-4">
           <div>
             <p className="font-display text-base text-ivory">Atoreum MV</p>
-            <p className="mt-0.5 text-[11px] text-ivory-dim">Ask about products, delivery or an order</p>
+            <p className="mt-0.5 text-[11px] text-ivory-dim">AI assistant, with a person a click away</p>
           </div>
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={() => setOpen(false)}
             aria-label="Close assistant"
             className="text-ivory-dim transition-colors hover:text-ivory"
           >
@@ -239,16 +417,44 @@ export default function ChatWidget() {
 
         <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-5" aria-live="polite">
           {shown.map((m, i) => (
-            <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+            <div key={i} className={m.role === "user" ? "flex justify-end" : "flex flex-col items-start"}>
+              {/* Attributed, because a customer who asked for a person needs to
+                  see that they got one. */}
+              {m.role === "staff" && (
+                <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-gold">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-gold" aria-hidden="true" />
+                  Customer Support
+                </p>
+              )}
               <div
                 className={`max-w-[85%] whitespace-pre-wrap rounded-lg px-3.5 py-2.5 text-sm leading-relaxed ${
-                  m.role === "user" ? "bg-gold-deep text-ink" : "border border-line text-ivory-dim"
+                  m.role === "user"
+                    ? "bg-gold-deep text-ink"
+                    : m.role === "staff"
+                      ? "border border-gold/30 bg-gold/5 text-ivory"
+                      : "border border-line text-ivory-dim"
                 }`}
               >
                 {m.role === "assistant" ? <RichText text={m.content} /> : m.content}
               </div>
             </div>
           ))}
+
+          {/* The way in. Replaced by the conversation once one exists. */}
+          {!started && (
+            <div className="flex flex-col items-start gap-2 pt-1">
+              {OPENERS.map((o) => (
+                <button
+                  key={o.label}
+                  type="button"
+                  onClick={() => void send(o.send)}
+                  className="min-h-11 w-full rounded-lg border border-line px-3.5 py-2.5 text-left text-sm text-ivory transition-colors hover:border-gold hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {busy && shown.at(-1)?.role === "user" && (
             <div className="flex justify-start">
@@ -276,23 +482,24 @@ export default function ChatWidget() {
             <textarea
               ref={inputRef}
               rows={1}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
+              // Held back until an opener is picked, so the first message is
+              // always something the assistant is known to handle.
+              disabled={!started}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  void send();
+                  sendFromInput();
                 }
               }}
-              placeholder="Ask a question"
+              placeholder={started ? "Ask a question" : "Choose one above to start"}
               aria-label="Your message"
               maxLength={2000}
-              className="max-h-28 min-h-11 flex-1 resize-none rounded-md border border-line bg-transparent px-3 py-2.5 text-sm text-ivory placeholder:text-ivory-dim/60 focus:border-gold focus:outline-none"
+              className="max-h-28 min-h-11 flex-1 resize-none rounded-md border border-line bg-transparent px-3 py-2.5 text-sm text-ivory placeholder:text-ivory-dim/60 focus:border-gold focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             />
             <button
               type="button"
-              onClick={() => void send()}
-              disabled={busy || input.trim().length === 0}
+              disabled={busy || !started}
+              onClick={sendFromInput}
               aria-label="Send"
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-gold-deep text-ink transition-opacity hover:bg-gold-deep/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -302,7 +509,7 @@ export default function ChatWidget() {
             </button>
           </div>
           <p className="mt-2 text-center text-[10px] text-ivory-dim/60">
-            Answers can be wrong. For anything important, ask us directly.
+            AI assistant. Answers can be wrong; for anything important, ask us directly.
           </p>
         </div>
       </div>

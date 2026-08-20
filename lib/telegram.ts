@@ -148,3 +148,90 @@ export async function sendTelegramMessageDetailed(
 export function telegramConfigured(): boolean {
   return Boolean(process.env.TELEGRAM_BOT_TOKEN?.trim() && parseChatIds(process.env.TELEGRAM_ORDER_CHAT_ID).length > 0);
 }
+
+/**
+ * Send, and report where the message landed.
+ *
+ * The ordinary senders above return a boolean because their callers have
+ * nothing to do with the answer. The chat assistant does: staff reply to the
+ * escalation message in the group, and Telegram identifies which message was
+ * replied to by (chat id, message id). Without those two values there is no
+ * way to route a reply back to the customer who asked.
+ *
+ * Only the first configured chat is reported. Every chat gets the message, but
+ * a conversation can only be anchored to one of them, and anchoring to the
+ * first is at least predictable.
+ */
+export async function sendTelegramMessageAnchored(
+  html: string
+): Promise<{ chatId: string; messageId: number } | null> {
+  const cfg = config();
+  if (!cfg) return null;
+
+  let anchor: { chatId: string; messageId: number } | null = null;
+
+  await Promise.all(
+    cfg.chatIds.map(async (chatId, index) => {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 8000);
+        const res = await fetch(`${API}/bot${cfg.token}/sendMessage`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: html,
+            parse_mode: "HTML",
+            disable_web_page_preview: true,
+          }),
+          signal: controller.signal,
+        }).finally(() => clearTimeout(timer));
+
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          console.error(`[telegram] anchored send to ${chatId} failed: ${res.status} ${body.slice(0, 200)}`);
+          return;
+        }
+
+        const data = (await res.json()) as { result?: { message_id?: number } };
+        const messageId = data.result?.message_id;
+        if (index === 0 && typeof messageId === "number") {
+          anchor = { chatId, messageId };
+        }
+      } catch (err) {
+        console.error(`[telegram] anchored send to ${chatId} threw:`, err instanceof Error ? err.message : err);
+      }
+    })
+  );
+
+  return anchor;
+}
+
+/** Reply to a specific message in a chat -- used to confirm a staff reply was delivered. */
+export async function replyInTelegram(params: {
+  chatId: string;
+  replyToMessageId: number;
+  html: string;
+}): Promise<boolean> {
+  const cfg = config();
+  if (!cfg) return false;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(`${API}/bot${cfg.token}/sendMessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        chat_id: params.chatId,
+        text: params.html,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+        reply_to_message_id: params.replyToMessageId,
+      }),
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
+    return res.ok;
+  } catch {
+    return false;
+  }
+}

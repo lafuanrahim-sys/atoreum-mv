@@ -31,8 +31,26 @@ describe("tool surface", () => {
     expect(orders!.input_schema.required ?? []).toEqual([]);
   });
 
-  it("exposes only the two intended tools", () => {
-    expect(CHAT_TOOLS.map((t) => t.name).sort()).toEqual(["escalate_to_team", "get_my_orders"]);
+  it("exposes only the intended tools", () => {
+    // Pinned deliberately. A tool is a capability handed to something that can
+    // be talked into using it, so one appearing here should be a decision
+    // somebody made, not a diff nobody noticed.
+    expect(CHAT_TOOLS.map((t) => t.name).sort()).toEqual([
+      "add_to_cart",
+      "escalate_to_team",
+      "get_my_orders",
+    ]);
+  });
+
+  it("will not let the model add an arbitrary price to the basket", () => {
+    // The cart line is built server-side from the catalogue. If the schema
+    // ever grew a price or name field, the model would be choosing what the
+    // customer is charged.
+    const cart = CHAT_TOOLS.find((t) => t.name === "add_to_cart");
+    expect(Object.keys(cart!.input_schema.properties ?? {}).sort()).toEqual([
+      "product_id",
+      "quantity",
+    ]);
   });
 });
 

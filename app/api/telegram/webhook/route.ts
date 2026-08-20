@@ -1,0 +1,143 @@
+import { NextResponse } from "next/server";
+import {
+  findConversationByTelegramMessage,
+  appendMessage,
+  setConversationMode,
+} from "@/lib/chat/conversations.server";
+import { parseChatIds, replyInTelegram, escapeTelegramHtml } from "@/lib/telegram";
+
+/**
+ * Staff replies, arriving from Telegram.
+ *
+ * A shop person replies to the escalation message in the group the way they
+ * would reply to anyone. Telegram posts the update here, the replied-to
+ * message names the conversation, and the text becomes a staff message the
+ * customer sees in their chat panel.
+ *
+ * THIS ENDPOINT IS PUBLIC AND ANYONE CAN FIND IT. Its whole job is to decide
+ * that a given update is really from the shop's own staff group, because
+ * whatever it accepts is shown to a customer as though the shop said it.
+ * Three independent checks have to pass, and none of them trusts the payload:
+ *
+ *   1. The secret token header, which only Telegram knows because we set it.
+ *   2. The chat id, which must be one of the configured staff chats. Anyone
+ *      can start a private chat with the bot; that is not the shop.
+ *   3. The message must be a REPLY to a message we anchored. An unprompted
+ *      message in the group is conversation between staff, not an answer.
+ */
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type TelegramUpdate = {
+  message?: {
+    message_id?: number;
+    text?: string;
+    chat?: { id?: number | string };
+    from?: { first_name?: string; username?: string; is_bot?: boolean };
+    reply_to_message?: { message_id?: number };
+  };
+};
+
+export async function POST(req: Request) {
+  const secret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+
+  // Without a configured secret there is no way to tell Telegram from anyone
+  // else, so the endpoint refuses to work at all rather than accepting
+  // whatever arrives. Failing closed is the only safe default here.
+  if (!secret) {
+    console.error("[telegram] webhook called but TELEGRAM_WEBHOOK_SECRET is not set -- refusing.");
+    return NextResponse.json({ ok: true });
+  }
+
+  if (req.headers.get("x-telegram-bot-api-secret-token") !== secret) {
+    console.warn("[telegram] webhook rejected: bad or missing secret token.");
+    // 200 regardless: a prober learns nothing from the status code, and
+    // Telegram retries anything that is not a 2xx.
+    return NextResponse.json({ ok: true });
+  }
+
+  let update: TelegramUpdate;
+  try {
+    update = (await req.json()) as TelegramUpdate;
+  } catch {
+    return NextResponse.json({ ok: true });
+  }
+
+  const msg = update.message;
+  const chatId = msg?.chat?.id !== undefined ? String(msg.chat.id) : null;
+  const replyTo = msg?.reply_to_message?.message_id;
+  const text = (msg?.text ?? "").trim();
+
+  // Not a reply, not text, or the bot's own message: nothing to route.
+  if (!chatId || !replyTo || !text || msg?.from?.is_bot) {
+    return NextResponse.json({ ok: true });
+  }
+
+  // The chat must be one the shop configured. A stranger who finds the bot and
+  // messages it privately gets a different chat id, and is ignored here.
+  if (!parseChatIds(process.env.TELEGRAM_ORDER_CHAT_ID).includes(chatId)) {
+    console.warn(`[telegram] webhook ignored a reply from unconfigured chat ${chatId}.`);
+    return NextResponse.json({ ok: true });
+  }
+
+  const conversation = await findConversationByTelegramMessage({ chatId, messageId: replyTo });
+  if (!conversation) {
+    // A reply to some other message in the group. Ordinary staff chatter.
+    return NextResponse.json({ ok: true });
+  }
+
+  const staffName = msg?.from?.first_name?.trim() || msg?.from?.username?.trim() || "Atoreum MV";
+
+  /**
+   * Handing the conversation back to the assistant.
+   *
+   * Worth having because the reason a customer asked for a person is often
+   * settled in one reply, and what they ask next ("what else do you have for
+   * dry skin?") is exactly what the assistant answers well and instantly.
+   * Without this, every escalation would trap that customer in a queue behind
+   * two people who are also out delivering.
+   */
+  if (/^\/(ai|bot)\b/i.test(text)) {
+    await setConversationMode(conversation.id, "ai");
+    await appendMessage({
+      conversationId: conversation.id,
+      role: "staff",
+      content:
+        "Thanks for waiting. I am handing you back to our assistant now, which can help with products, delivery and orders straight away.",
+      staffName,
+    });
+    await replyInTelegram({
+      chatId,
+      replyToMessageId: msg!.message_id!,
+      html: "Handed back to the assistant. It will answer this customer from their next message.",
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  await appendMessage({
+    conversationId: conversation.id,
+    role: "staff",
+    // Capped because it is rendered in the customer's chat panel, and because
+    // Telegram will happily carry 4096 characters.
+    content: text.slice(0, 4_000),
+    staffName,
+  });
+
+  // A reply is also a takeover: someone answering by hand has claimed this
+  // conversation, whether or not the assistant escalated it.
+  await setConversationMode(conversation.id, "human");
+
+  // Confirm in the group. Without this, staff have no idea whether the reply
+  // reached anyone, and the honest answer is worth saying: the customer sees
+  // it when their chat panel is open, and not before.
+  await replyInTelegram({
+    chatId,
+    replyToMessageId: msg!.message_id!,
+    html:
+      `Sent as <b>Customer Support</b> (from ${escapeTelegramHtml(staffName)}). ` +
+      `They see it while their chat window is open. Reply <b>/ai</b> to hand back to the assistant.`,
+  });
+
+  return NextResponse.json({ ok: true });
+}
