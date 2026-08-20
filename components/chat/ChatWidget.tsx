@@ -156,7 +156,7 @@ function RichText({ text }: { text: string }) {
 
 export default function ChatWidget() {
   const pathname = usePathname();
-  const { addItem } = useCart();
+  const { addItem, lines, subtotal, currency } = useCart();
   const { messages, isOpen } = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   // Draft text and in-flight status are per-tab and worthless after a reload,
@@ -271,6 +271,12 @@ export default function ChatWidget() {
             messages: outgoing
               .filter((m) => m.role !== "staff")
               .map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
+            // The basket lives in this browser and nowhere else, so the server
+            // cannot look it up; it has to be told. Sent as ids and quantities
+            // only -- the prices come from the catalogue server-side, so a
+            // tampered payload changes what the assistant discusses and never
+            // what anything costs.
+            cart: lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
           }),
           signal: controller.signal,
         });
@@ -344,7 +350,7 @@ export default function ChatWidget() {
         abortRef.current = null;
       }
     },
-    [addItem]
+    [addItem, lines]
   );
 
   const sendFromInput = () => {

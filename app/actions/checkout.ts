@@ -11,6 +11,8 @@ import { parseBoliAmount, redeemForOrder } from "@/lib/boli/ledger.server";
 import { BOLI_TO_MVR } from "@/lib/boli/config";
 import { uploadPublicFile, PAYMENT_PROOFS_BUCKET } from "@/lib/storage";
 import { orderAccessToken } from "@/lib/orderAccessToken";
+import { sendOrderReceiptEmail } from "@/lib/email";
+import { SITE_URL } from "@/lib/site";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { normalizeVoucherCode } from "@/lib/vouchers/code";
 import { redeemVoucher, reverseVoucherForOrder } from "@/lib/vouchers/vouchers.server";
@@ -30,6 +32,37 @@ const ALLOWED_EXT = /\.(jpe?g|png|webp|heic|heif|pdf)$/i;
 async function clientIp(): Promise<string> {
   const forwarded = (await headers()).get("x-forwarded-for");
   return forwarded?.split(",")[0]?.trim() || "unknown";
+}
+
+/**
+ * The order details, emailed the moment the order is placed.
+ *
+ * Separate from the receipt sent on confirmation, and it exists for guests
+ * above all: a guest order is attached to no account, so this email is the
+ * only durable record the customer has of the order number they will need to
+ * ask about it later. Someone who closes the tab without writing it down
+ * otherwise has nothing.
+ *
+ * Not awaited and never allowed to throw. A mail server having a bad minute
+ * must not turn a completed, paid-for order into an error page -- the order
+ * exists either way, and the confirmation screen still shows the number.
+ */
+function sendOrderPlacedEmail(order: Order): void {
+  const to = order.customer.email;
+  if (!to) return;
+
+  void sendOrderReceiptEmail({
+    to,
+    name: order.customer.name,
+    order,
+    orderUrl: `${SITE_URL}/order-confirmation/${order.id}?t=${orderAccessToken(order.id)}`,
+  })
+    .then((result: { ok: true } | { error: string }) => {
+      if ("error" in result) {
+        console.error(`[order-email] ${order.orderNumber} -> ${to} failed:`, result.error);
+      }
+    })
+    .catch((err: unknown) => console.error(`[order-email] ${order.orderNumber} threw:`, err));
 }
 
 export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
@@ -286,6 +319,7 @@ export async function submitOrder(formData: FormData): Promise<CheckoutResult> {
   }
 
   notifyNewOrder(order);
+  sendOrderPlacedEmail(order);
 
   return { ok: true, orderId: order.id, accessToken: orderAccessToken(order.id) };
 }

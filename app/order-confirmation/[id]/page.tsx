@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getOrderById } from "@/lib/data/orders.server";
 import { verifyOrderAccessToken } from "@/lib/orderAccessToken";
 import { getCurrentUser } from "@/lib/auth/currentUser.server";
+import KeepYourOrderNumber from "@/components/checkout/KeepYourOrderNumber";
 
 /**
  * Never indexed. The URL carries an access token and the page shows a
@@ -83,6 +84,17 @@ export default async function OrderConfirmationPage({
         <p className="mt-4 text-sm uppercase tracking-[0.2em] text-ivory-dim">
           Order {order.orderNumber}
         </p>
+
+        {/* Shown to everyone, but written for guests: with no account, the
+            order number is the only handle they have on this order. */}
+        <div className="text-left">
+          <KeepYourOrderNumber
+            orderId={order.id}
+            orderNumber={order.orderNumber}
+            guestRef={order.guestRef}
+            sentTo={order.customer.email}
+          />
+        </div>
 
         <div className="mt-10 border border-line p-8 text-left">
           <p className="text-sm leading-relaxed text-ivory-dim">{statusMessage(order)}</p>

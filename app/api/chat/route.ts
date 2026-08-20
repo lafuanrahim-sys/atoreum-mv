@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/auth/currentUser.server";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { SHOP_FACTS, SYSTEM_RULES } from "@/lib/chat/knowledge";
 import { getCatalogueContext, getPaymentContext } from "@/lib/chat/catalogue.server";
+import { describeCart } from "@/lib/chat/cart.server";
+import { describeStaffContext } from "@/lib/chat/history.server";
 import { CHAT_TOOLS, runTool } from "@/lib/chat/tools.server";
 import { sanitiseHistory } from "@/lib/chat/history";
 import { claimChatRequest, recordChatUsage } from "@/lib/chat/usage.server";
@@ -168,7 +170,7 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { messages?: unknown };
+  let body: { messages?: unknown; cart?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -284,9 +286,15 @@ export async function POST(req: Request) {
     },
     {
       type: "text",
-      text: user
-        ? `The customer you are speaking to is signed in as ${user.name}. You may greet them by first name.`
-        : "The customer you are speaking to is NOT signed in. You cannot see their orders until they sign in.",
+      text: [
+        user
+          ? `The customer you are speaking to is signed in as ${user.name}. You may greet them by first name.`
+          : "The customer you are speaking to is NOT signed in. get_my_orders will return nothing for them; use look_up_order instead, which needs their order number and the phone or email they used.",
+        await describeCart(body.cart),
+        await describeStaffContext(conversationId),
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
     },
   ];
 
