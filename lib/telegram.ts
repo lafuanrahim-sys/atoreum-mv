@@ -45,19 +45,58 @@ export function parseChatIds(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
-function config(): { token: string; chatIds: string[] } | null {
+/**
+ * The two things the bot talks about, and where each belongs.
+ *
+ * "orders" is a sale happening: a handful a day, each one read once and acted
+ * on. "support" is a conversation: an escalation, then the customer's replies,
+ * then the shop's, then confirmations for each -- a dozen messages for one
+ * question. Sharing a group means a sale can scroll out of sight under a
+ * conversation about a moisturiser, which is the one message that must not be
+ * missed.
+ */
+export type TelegramAudience = "orders" | "support";
+
+/**
+ * Support falls back to the order group when no separate one is configured.
+ *
+ * Deliberate: a shop that has not set up a second group must not silently
+ * lose its customer escalations. One noisy group beats a channel that goes
+ * nowhere, so the split is an improvement you opt into rather than a
+ * requirement you can fail to meet.
+ */
+function chatIdsFor(audience: TelegramAudience): string[] {
+  if (audience === "support") {
+    const support = parseChatIds(process.env.TELEGRAM_SUPPORT_CHAT_ID);
+    if (support.length > 0) return support;
+  }
+  return parseChatIds(process.env.TELEGRAM_ORDER_CHAT_ID);
+}
+
+function config(audience: TelegramAudience = "orders"): { token: string; chatIds: string[] } | null {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  const chatIds = parseChatIds(process.env.TELEGRAM_ORDER_CHAT_ID);
+  const chatIds = chatIdsFor(audience);
   if (!token || chatIds.length === 0) {
     if (!warned) {
       warned = true;
       console.warn(
-        "[telegram] TELEGRAM_BOT_TOKEN / TELEGRAM_ORDER_CHAT_ID not set — order notifications are off."
+        "[telegram] TELEGRAM_BOT_TOKEN / TELEGRAM_ORDER_CHAT_ID not set — Telegram notifications are off."
       );
     }
     return null;
   }
   return { token, chatIds };
+}
+
+/**
+ * Every chat the bot may be told to write to, whatever the audience.
+ *
+ * The webhook uses this to decide an incoming reply is really from the shop.
+ * It has to accept both groups: a support reply arrives from the support
+ * group, and that group is not in TELEGRAM_ORDER_CHAT_ID.
+ */
+export function allConfiguredChatIds(): string[] {
+  return [...new Set([...chatIdsFor("orders"), ...chatIdsFor("support")])];
 }
 
 /**
@@ -116,8 +155,11 @@ async function sendToChat(token: string, chatId: string, html: string): Promise<
  * returned boolean means "at least one person was reached", which is the
  * question that actually matters.
  */
-export async function sendTelegramMessage(html: string): Promise<boolean> {
-  const { delivered } = await sendTelegramMessageDetailed(html);
+export async function sendTelegramMessage(
+  html: string,
+  audience: TelegramAudience = "orders"
+): Promise<boolean> {
+  const { delivered } = await sendTelegramMessageDetailed(html, audience);
   return delivered.length > 0;
 }
 
@@ -130,9 +172,10 @@ export async function sendTelegramMessage(html: string): Promise<boolean> {
  * "sent" is the entire value of pressing the button.
  */
 export async function sendTelegramMessageDetailed(
-  html: string
+  html: string,
+  audience: TelegramAudience = "orders"
 ): Promise<{ delivered: string[]; failed: string[]; configured: boolean }> {
-  const cfg = config();
+  const cfg = config(audience);
   if (!cfg) return { delivered: [], failed: [], configured: false };
 
   const results = await Promise.all(
@@ -165,7 +208,8 @@ export function telegramConfigured(): boolean {
 export async function sendTelegramMessageAnchored(
   html: string
 ): Promise<{ chatId: string; messageId: number } | null> {
-  const cfg = config();
+  // Escalations are support traffic, not sales.
+  const cfg = config("support");
   if (!cfg) return null;
 
   let anchor: { chatId: string; messageId: number } | null = null;

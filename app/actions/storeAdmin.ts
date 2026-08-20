@@ -94,16 +94,31 @@ export async function updateSettingsAction(formData: FormData): Promise<void> {
  */
 export async function sendTelegramTestAction(): Promise<{ ok: true; delivered: number; failed: string[] } | { error: string }> {
   await requireAdmin();
-  const result = await sendTelegramMessageDetailed(
-    "🔔 <b>Test notification</b>\nOrder alerts are reaching this chat."
-  );
-  if (!result.configured) {
+  // Both audiences, because the whole point of splitting them is that one can
+  // be misconfigured while the other looks fine. A test proving only the order
+  // group would pass on a shop whose customer escalations go nowhere.
+  const [orders, support] = await Promise.all([
+    sendTelegramMessageDetailed(
+      "\u{1F514} <b>Test: order alerts</b>\nNew orders will appear in this chat.",
+      "orders"
+    ),
+    sendTelegramMessageDetailed(
+      "\u{1F4AC} <b>Test: customer chat</b>\nQuestions from the website assistant appear here, and you answer by replying to them.",
+      "support"
+    ),
+  ]);
+
+  if (!orders.configured) {
     return { error: "Telegram isn't configured. TELEGRAM_BOT_TOKEN or TELEGRAM_ORDER_CHAT_ID is missing." };
   }
-  if (result.delivered.length === 0) {
-    return { error: `No chat could be reached (${result.failed.join(", ")}). Check the server logs for Telegram's reason.` };
+
+  const delivered = new Set([...orders.delivered, ...support.delivered]);
+  const failed = [...new Set([...orders.failed, ...support.failed])];
+
+  if (delivered.size === 0) {
+    return { error: `No chat could be reached (${failed.join(", ")}). Check the server logs for Telegram's reason.` };
   }
-  return { ok: true, delivered: result.delivered.length, failed: result.failed };
+  return { ok: true, delivered: delivered.size, failed };
 }
 
 /* ---------- Maintenance mode ---------- */

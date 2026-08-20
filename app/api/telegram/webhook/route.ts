@@ -7,7 +7,7 @@ import {
   touchStaffActivity,
   getPresence,
 } from "@/lib/chat/conversations.server";
-import { parseChatIds, replyInTelegram, escapeTelegramHtml } from "@/lib/telegram";
+import { allConfiguredChatIds, replyInTelegram, escapeTelegramHtml } from "@/lib/telegram";
 
 /**
  * Staff replies, arriving from Telegram.
@@ -77,9 +77,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  // The chat must be one the shop configured. A stranger who finds the bot and
-  // messages it privately gets a different chat id, and is ignored here.
-  if (!parseChatIds(process.env.TELEGRAM_ORDER_CHAT_ID).includes(chatId)) {
+  // The chat must be one the shop configured -- either group. A stranger who
+  // finds the bot and messages it privately gets a different chat id and is
+  // ignored. Checking only the ORDER group would reject every reply from the
+  // support group, which is where support replies now come from.
+  if (!allConfiguredChatIds().includes(chatId)) {
     console.warn(`[telegram] webhook ignored a reply from unconfigured chat ${chatId}.`);
     return NextResponse.json({ ok: true });
   }
