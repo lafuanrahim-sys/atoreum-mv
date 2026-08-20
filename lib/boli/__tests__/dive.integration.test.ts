@@ -24,7 +24,46 @@ const TIER_ORDER = ["common", "uncommon", "rare", "epic", "treasure"] as const;
 const FIXED_PICK = [0, 1, 2]; // any valid 3-of-9 pick — the specific balls don't matter for these tests
 
 describe.skipIf(!hasDatabase)("Boli Dive integration (live Postgres required)", () => {
+  /**
+   * Remove what these tests wrote.
+   *
+   * They played on fixed dates in 2031 chosen to be clear of real data, but
+   * the daily budget is GLOBAL: every run consumed a slice of the budget for
+   * 2031-09-01 and left it there. Eighty-eight runs later the day was 49,925
+   * of 50,000 spent, the day-one Treasure could no longer exhaust the weekly
+   * cap it was written to exhaust, and the streak-chest test began failing on
+   * a residual payout -- a suite that had quietly been poisoning its own well
+   * since the day it was written.
+   *
+   * Scoped to the test prefix, so it can never touch a real player. Runs
+   * before the pool closes, and does not fail the suite if it cannot: a
+   * cleanup that breaks the run it is tidying up after is worse than the mess.
+   */
   afterAll(async () => {
+    try {
+      /**
+       * The daily budget is the one that actually poisons the well.
+       *
+       * boli_daily_game_budget accumulates total_boli_issued per date and is
+       * never decremented, so deleting the plays leaves the spend behind.
+       * These tests play on fixed dates in 2031, and each run pushed that
+       * day's total higher until 2031-09-01 held 49,925 of a 50,000 budget.
+       * Past that point the day-one Treasure fell back to the common payout,
+       * the weekly cap it exists to exhaust was never touched, and the
+       * streak-chest assertion started failing on a residual.
+       *
+       * Scoped to 2030 and later, which no real play can reach.
+       */
+      await pool().query("delete from boli_daily_game_budget where play_date >= '2030-01-01'");
+      // Children before parents: six tables reference boli_users, and the
+      // ones these tests write are the plays, streaks and ledger.
+      await pool().query("delete from boli_dive_plays where user_id like 'test-dive-%'");
+      await pool().query("delete from boli_streaks where user_id like 'test-dive-%'");
+      await pool().query("delete from boli_ledger where user_id like 'test-dive-%'");
+      await pool().query("delete from boli_users where user_id like 'test-dive-%'");
+    } catch (err) {
+      console.warn("[dive test] cleanup failed:", err instanceof Error ? err.message : err);
+    }
     await pool().end();
   });
 
@@ -182,7 +221,13 @@ describe.skipIf(!hasDatabase)("Boli Dive integration (live Postgres required)", 
     // A Monday well clear of any real data, so all 7 days sit in one ISO week.
     const weekStart = Date.UTC(2031, 8, 1); // 2031-09-01 is a Monday
     const dayOf = (i: number) => new Date(weekStart + i * 86_400_000).toISOString().slice(0, 10);
-    const treasureBoard = JSON.stringify(["treasure", "treasure", ...Array(7).fill("common")]);
+    // THREE treasures, because the pick is three tiles and the payout follows
+    // the matched tier: two treasures and a common is not a match, so the old
+    // two-treasure board quietly paid the common rate. Day one then never came
+    // close to the weekly cap it exists to exhaust, and the assertion below was
+    // testing nothing -- it had been asserting against a premise that was false
+    // from the day it was written.
+    const treasureBoard = JSON.stringify(["treasure", "treasure", "treasure", ...Array(6).fill("common")]);
     const commonBoard = JSON.stringify(Array(9).fill("common"));
 
     // Days 1-6 build the streak; day 1 is a Treasure, which alone exhausts
