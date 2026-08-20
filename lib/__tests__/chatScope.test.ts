@@ -53,8 +53,13 @@ vi.mock("@/lib/data/orders.server", () => ({
 }));
 vi.mock("@/lib/telegram", () => ({
   sendTelegramMessage: async () => true,
+  // Escalation sends through the anchored variant, so a reply in Telegram can
+  // be routed back. Returning an anchor keeps the success path exercised.
+  sendTelegramMessageAnchored: async () => ({ chatId: "-1", messageId: 1 }),
+  replyInTelegram: async () => 2,
   escapeTelegramHtml: (s: string) => s,
   telegramConfigured: () => true,
+  allConfiguredChatIds: () => ["-1"],
 }));
 
 const userA = { id: "user-a", name: "A", email: "a@example.com" } as never;
@@ -156,5 +161,52 @@ describe("guest order lookup", () => {
     const results = [];
     for (let i = 0; i < 8; i++) results.push(await look("ATM-0004", `700000${i}`, key));
     expect(results.some((r) => /too many/i.test(r.reason ?? ""))).toBe(true);
+  });
+});
+
+
+describe("escalation requires a phone number", () => {
+  /**
+   * The schema marks it required and the prompt insists on it, and neither is
+   * a guarantee: a model that feels it has enough context will call the tool
+   * with an empty string. The escalation then reaches staff with no way to
+   * answer it, while the customer waits for a call that cannot happen. So the
+   * refusal lives in the code, and these pin it there.
+   */
+  const escalate = (args: Record<string, unknown>, key = Math.random().toString()) =>
+    runTool("escalate_to_team", args, { user: null, clientKey: key }) as Promise<{
+      sent: boolean;
+      needsPhone?: boolean;
+      reason?: string;
+    }>;
+
+  it("refuses when no phone is given at all", async () => {
+    const r = await escalate({ question: "wholesale" });
+    expect(r.sent).toBe(false);
+    expect(r.needsPhone).toBe(true);
+  });
+
+  it("refuses an empty string, a placeholder, or an email in its place", async () => {
+    for (const phone of ["", "   ", "N/A", "none", "customer@example.com"]) {
+      expect((await escalate({ question: "wholesale", phone })).sent).toBe(false);
+    }
+  });
+
+  it("refuses a number too short to be one", async () => {
+    expect((await escalate({ question: "wholesale", phone: "123" })).sent).toBe(false);
+  });
+
+  it("tells the model to ASK, rather than to apologise", async () => {
+    // The next move should be a question to the customer, so the refusal has
+    // to read as an instruction and must not imply the message went anywhere.
+    const r = await escalate({ question: "wholesale" });
+    expect(r.reason).toMatch(/ask the customer/i);
+    expect(r.reason).toMatch(/has not/i);
+  });
+
+  it("accepts a Maldivian number however it is written", async () => {
+    for (const phone of ["7712345", "+960 771-2345", "960 7712345"]) {
+      expect((await escalate({ question: "wholesale", phone })).sent).toBe(true);
+    }
   });
 });

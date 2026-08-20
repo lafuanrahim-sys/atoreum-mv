@@ -1012,3 +1012,109 @@ button:not(:disabled),
     border-color: rgba(0, 0, 0, 0.22) !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Chat assistant motion
+   ---------------------------------------------------------------------------
+   The panel grows out of the launcher rather than fading in place. That is the
+   HIG/Material rule for sheets and modals -- animate from the trigger, so the
+   thing that appeared is visibly the thing you pressed -- and it is the whole
+   difference between a panel that belongs to a button and one that merely
+   happens near it. transform-origin sits at the bottom-right corner, which is
+   where the launcher is.
+
+   Easing is Expo-out, cubic-bezier(0.16, 1, 0.3, 1): most of the distance is
+   covered immediately and the last of it settles. It reads as decisive rather
+   than floaty, and it is the curve the rest of this style already uses.
+
+   Everything below collapses to a plain fade under prefers-reduced-motion. A
+   panel that lunges out of a corner is exactly the motion someone with
+   vestibular sensitivity turned that setting on to avoid.
+   ------------------------------------------------------------------------ */
+
+.chat-panel {
+  transform-origin: bottom right;
+  /* Exit is quicker than entry: leaving should feel like a dismissal, not a
+     retreat. Roughly 65% of the opening duration. */
+  transition:
+    opacity 160ms cubic-bezier(0.4, 0, 1, 1),
+    transform 200ms cubic-bezier(0.4, 0, 1, 1),
+    filter 160ms linear;
+  opacity: 0;
+  transform: scale(0.86) translate(12px, 16px);
+  filter: blur(6px);
+}
+
+.chat-panel[data-open="true"] {
+  transition:
+    opacity 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 240ms linear;
+  opacity: 1;
+  transform: scale(1) translate(0, 0);
+  filter: blur(0);
+}
+
+/* The contents arrive just behind the panel, so the panel reads as opening
+   and the conversation as being inside it, rather than both appearing at once
+   as one flat card. */
+.chat-panel > * {
+  transition:
+    opacity 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.chat-panel[data-open="true"] > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.chat-panel[data-open="true"] > *:nth-child(1) { transition-delay: 90ms; }
+.chat-panel[data-open="true"] > *:nth-child(2) { transition-delay: 140ms; }
+.chat-panel[data-open="true"] > *:nth-child(3) { transition-delay: 180ms; }
+
+/* The opener buttons cascade. 45ms apart, inside the 30-50ms band that reads
+   as one gesture rather than a queue of separate arrivals. */
+.chat-opener {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: chat-opener-in 380ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes chat-opener-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Press feedback, the 0.95-1.05 band. Applied to the launcher and the openers
+   so every tappable surface in the widget answers the same way. */
+.chat-press {
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.chat-press:active {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-panel,
+  .chat-panel[data-open="true"],
+  .chat-panel > *,
+  .chat-panel[data-open="true"] > * {
+    transition: opacity 120ms linear;
+    transform: none;
+    filter: none;
+    transition-delay: 0ms;
+  }
+  .chat-opener {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .chat-press:active {
+    transform: none;
+  }
+}

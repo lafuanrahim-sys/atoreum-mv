@@ -428,7 +428,7 @@ export default function ChatWidget() {
         onClick={() => setOpen(!isOpen)}
         aria-label={isOpen ? "Close assistant" : "Ask a question"}
         aria-expanded={isOpen}
-        className="fixed bottom-5 right-5 z-[45] flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-ink text-gold shadow-lg transition-all duration-200 hover:border-gold hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:bottom-8 md:right-8"
+        className="chat-press fixed bottom-5 right-5 z-[45] flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-ink-2/75 text-gold shadow-lg backdrop-blur-xl backdrop-saturate-150 transition-all duration-200 hover:border-gold hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:bottom-8 md:right-8"
       >
         {isOpen ? (
           <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
@@ -455,20 +455,39 @@ export default function ChatWidget() {
         // inert keeps the contents out of the tab order while closed; aria-hidden
         // alone still leaves them keyboard-reachable. Same treatment as CartDrawer.
         inert={!isOpen}
-        className={`fixed bottom-24 right-5 z-[55] flex max-h-[70vh] w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-lg border border-line bg-ink shadow-2xl transition-all duration-200 sm:w-[380px] md:bottom-28 md:right-8 ${
-          isOpen ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
+        // Glass, and the same glass the cart drawer already uses: ink-2 at 75%,
+        // a diagonal white wash that fades by halfway, blur and a little
+        // saturation. Flat bg-ink read as a black rectangle stuck on the page,
+        // which is the one thing a panel floating above content should not do.
+        //
+        // The inset ring is the debossing: a hairline highlight along the top
+        // edge and a soft dark bloom below it, so the surface reads as pressed
+        // into the page rather than laid on top of it.
+        style={{
+          boxShadow:
+            "inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.35), 0 24px 48px -12px rgba(0,0,0,0.55)",
+        }}
+        // data-open drives the entrance; the geometry and easing live in
+        // globals.css so the stagger and the reduced-motion fallback can be
+        // expressed properly rather than squeezed into utility classes.
+        data-open={isOpen}
+        className={`chat-panel fixed bottom-24 right-5 z-[55] flex max-h-[70vh] w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-ivory/15 bg-ink-2/88 bg-[linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0)_55%)] backdrop-blur-2xl backdrop-saturate-150 sm:w-[380px] md:bottom-28 md:right-8 ${
+          isOpen ? "pointer-events-auto" : "pointer-events-none"
         }`}
       >
-        <header className="flex items-center justify-between border-b border-line px-5 py-4">
+        <header className="flex items-center justify-between border-b border-ivory/10 bg-ink/45 px-5 py-4">
           <div>
             <p className="font-display text-base text-ivory">Atoreum MV</p>
-            <p className="mt-0.5 text-[11px] text-ivory-dim">AI assistant, with a person a click away</p>
+            <p className="mt-0.5 text-[11px] text-ivory/85">AI assistant, with a person a click away</p>
           </div>
           <button
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Close assistant"
-            className="text-ivory-dim transition-colors hover:text-ivory"
+            // The glyph stays 16px; the BUTTON is 44 square. A 16px hit area
+            // is a miss waiting to happen on a phone, and negative margin
+            // keeps the larger target from pushing the header out of shape.
+            className="chat-press -m-2.5 flex h-11 w-11 items-center justify-center rounded-full text-ivory-dim transition-colors hover:bg-ivory/10 hover:text-ivory focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
           >
             <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
               <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -501,7 +520,7 @@ export default function ChatWidget() {
                     ? "bg-gold-deep text-ink"
                     : m.role === "staff"
                       ? "border border-gold/30 bg-gold/5 text-ivory"
-                      : "border border-line text-ivory-dim"
+                      : "border border-ivory/12 bg-ink/45 text-ivory/85"
                 }`}
               >
                 {m.role === "assistant" ? <RichText text={m.content} /> : m.content}
@@ -512,12 +531,15 @@ export default function ChatWidget() {
           {/* The way in. Replaced by the conversation once one exists. */}
           {!started && (
             <div className="flex flex-col items-start gap-2 pt-1">
-              {OPENERS.map((o) => (
+              {OPENERS.map((o, i) => (
                 <button
                   key={o.label}
                   type="button"
                   onClick={() => void send(o.send)}
-                  className="min-h-11 w-full rounded-lg border border-line px-3.5 py-2.5 text-left text-sm text-ivory transition-colors hover:border-gold hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+                  // 45ms apart: inside the 30-50ms band that reads as one
+                  // gesture rather than four separate arrivals.
+                  style={{ animationDelay: `${180 + i * 45}ms` }}
+                  className="chat-opener chat-press min-h-11 w-full rounded-lg border border-ivory/12 bg-ivory/[0.03] px-3.5 py-2.5 text-left text-sm text-ivory transition-colors hover:border-gold hover:bg-gold/10 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
                 >
                   {o.label}
                 </button>
@@ -527,7 +549,7 @@ export default function ChatWidget() {
 
           {busy && shown.at(-1)?.role === "user" && (
             <div className="flex justify-start">
-              <div className="flex gap-1 rounded-lg border border-line px-3.5 py-3" aria-label="Typing">
+              <div className="flex gap-1 rounded-lg border border-ivory/10 bg-ivory/[0.04] px-3.5 py-3" aria-label="Typing">
                 {[0, 1, 2].map((d) => (
                   <span
                     key={d}
@@ -546,7 +568,7 @@ export default function ChatWidget() {
           )}
         </div>
 
-        <div className="border-t border-line p-3">
+        <div className="border-t border-ivory/10 bg-ink/45 p-3">
           <div className="flex items-end gap-2">
             <textarea
               ref={inputRef}
@@ -563,7 +585,7 @@ export default function ChatWidget() {
               placeholder={started ? "Ask a question" : "Choose one above to start"}
               aria-label="Your message"
               maxLength={2000}
-              className="max-h-28 min-h-11 flex-1 resize-none rounded-md border border-line bg-transparent px-3 py-2.5 text-sm text-ivory placeholder:text-ivory-dim/60 focus:border-gold focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              className="max-h-28 min-h-11 flex-1 resize-none rounded-lg border border-ivory/12 bg-ink/40 px-3 py-2.5 text-sm text-ivory placeholder:text-ivory-dim/60 focus:border-gold focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             />
             <button
               type="button"
@@ -577,7 +599,7 @@ export default function ChatWidget() {
               </svg>
             </button>
           </div>
-          <p className="mt-2 text-center text-[10px] text-ivory-dim/60">
+          <p className="mt-2 text-center text-[10px] text-ivory/90">
             AI assistant. Answers can be wrong; for anything important, ask us directly.
           </p>
         </div>

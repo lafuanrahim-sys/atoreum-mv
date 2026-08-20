@@ -122,7 +122,18 @@ function customerFacingError(err: unknown): string {
  * since that is how the model uses it -- as a pause, not as a range.
  */
 function stripDashes(text: string): string {
-  return text.replace(/\s+[\u2014\u2013]\s+/g, ", ").replace(/[\u2014\u2013]/g, "-");
+  return (
+    text
+      // Spaced: "products -- the team decides". A comma is the usual sense.
+      .replace(/\s+[\u2014\u2013]\s+/g, ", ")
+      // Unspaced BETWEEN LETTERS: "you--the team" is the same pause typed
+      // tighter, and a bare hyphen there ("you-the") reads as a typo rather
+      // than punctuation. Letters only, so "pages 10-12" keeps its hyphen
+      // instead of becoming the nonsense "pages 10, 12".
+      .replace(/(?<=[A-Za-z])[\u2014\u2013](?=[A-Za-z])/g, ", ")
+      // Anything left is a range or a stray, and a plain hyphen fits both.
+      .replace(/[\u2014\u2013]/g, "-")
+  );
 }
 
 /**

@@ -89,6 +89,7 @@ export const CHAT_TOOLS: Anthropic.Tool[] = [
       "Send a question to Atoreum MV's staff, who will follow up with the customer directly. " +
       "Use when the customer asks for something you are not authorised to decide (refunds, discounts, " +
       "exceptions), when they ask to speak to a person, or when you do not know the answer. " +
+      "REQUIRES the customer's phone number: ask for it first if you do not have one. " +
       "Always tell the customer you have passed it on.",
     input_schema: {
       type: "object",
@@ -97,14 +98,19 @@ export const CHAT_TOOLS: Anthropic.Tool[] = [
           type: "string",
           description: "The customer's question or request, in your own words, with enough context for staff to act on it.",
         },
-        contact: {
+        phone: {
           type: "string",
           description:
-            "How to reach the customer: a phone number or email they have given in this conversation. " +
-            "Pass an empty string if they have not given one and you are signed-out.",
+            "The customer's phone number, which they must have given you in this conversation. " +
+            "REQUIRED. Do not invent one, do not pass a placeholder, and do not substitute an email. " +
+            "If they have not given a number, ask for it and call this tool only once they have.",
+        },
+        email: {
+          type: "string",
+          description: "Their email as well, if they happened to give one. Optional; pass an empty string otherwise.",
         },
       },
-      required: ["question", "contact"],
+      required: ["question", "phone"],
     },
   },
 ];
@@ -157,17 +163,44 @@ async function runGetMyOrders(user: PublicUser | null) {
  * ignore the alerts that carry real orders.
  */
 async function runEscalate(
-  args: { question?: unknown; contact?: unknown },
+  args: { question?: unknown; phone?: unknown; email?: unknown },
   user: PublicUser | null,
   clientKey: string,
   conversationId: string | null
 ) {
   const question = String(args.question ?? "").trim().slice(0, 1_000);
-  const contact = String(args.contact ?? "").trim().slice(0, 200);
+  const phone = String(args.phone ?? "").trim().slice(0, 40);
+  const email = String(args.email ?? "").trim().slice(0, 200);
 
   if (!question) {
     return { sent: false, reason: "No question was provided." };
   }
+
+  /**
+   * A phone number is required, and the requirement lives here.
+   *
+   * The schema asks for one and the prompt insists on one, but neither is a
+   * guarantee: a model that decides it has enough context will call the tool
+   * with an empty string, and the escalation lands in Telegram with no way to
+   * answer it. The customer then waits for a call that cannot happen.
+   *
+   * Refusing returns instructions rather than an error, because the model's
+   * next move should be to ask the customer, not to apologise.
+   */
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 7) {
+    return {
+      sent: false,
+      needsPhone: true,
+      reason:
+        "A phone number is required before the team can be contacted, and none was provided. " +
+        "Ask the customer for their number, then call this tool again with it. " +
+        "Do not tell them the message has been sent, because it has not.",
+    };
+  }
+
+  // Both, when both exist. The phone is what staff will actually use.
+  const contact = email ? `${phone} / ${email}` : phone;
   if (!checkRateLimit(`chat-escalate:${clientKey}`, 3, 3_600)) {
     return {
       sent: false,
