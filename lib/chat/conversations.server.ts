@@ -172,16 +172,32 @@ export async function getStaffMessagesSince(params: {
 export async function getConversationState(visitorToken: string): Promise<{
   id: string;
   mode: ChatMode;
+  contact: string;
   telegramChatId: string | null;
   telegramMessageId: number | null;
+  /**
+   * Whether a person has actually said something yet, as opposed to merely
+   * having been sent the question. It changes what the customer should be
+   * told: before, they need reassurance the message went somewhere; after,
+   * they are mid-conversation with a human and do not need a bot interrupting.
+   */
+  staffHasReplied: boolean;
 } | null> {
   const { rows } = await pool().query<{
     id: string;
     mode: ChatMode;
+    contact: string;
     telegram_chat_id: string | null;
     telegram_message_id: string | null;
+    staff_has_replied: boolean;
   }>(
-    "select id, mode, telegram_chat_id, telegram_message_id from chat_conversations where visitor_token = $1",
+    `select c.id, c.mode, c.contact, c.telegram_chat_id, c.telegram_message_id,
+            exists (
+              select 1 from chat_messages m
+               where m.conversation_id = c.id and m.role = 'staff'
+            ) as staff_has_replied
+       from chat_conversations c
+      where c.visitor_token = $1`,
     [visitorToken]
   );
   const r = rows[0];
@@ -189,6 +205,8 @@ export async function getConversationState(visitorToken: string): Promise<{
   return {
     id: r.id,
     mode: r.mode,
+    contact: r.contact ?? "",
+    staffHasReplied: Boolean(r.staff_has_replied),
     telegramChatId: r.telegram_chat_id,
     // bigint arrives as a string from pg; Telegram message ids are well within
     // Number's safe range, so this is a narrowing rather than a gamble.

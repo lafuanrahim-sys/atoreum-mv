@@ -111,12 +111,17 @@ function stripDashes(text: string): string {
   return text.replace(/\s+[\u2014\u2013]\s+/g, ", ").replace(/[\u2014\u2013]/g, "-");
 }
 
-/** One complete SSE response: a single message, then done. */
+/**
+ * One complete SSE response: a single message, then done.
+ *
+ * Empty text sends no text event at all, only done. There is a real case for
+ * saying nothing -- a message forwarded to a colleague who is already replying
+ * needs no bot commentary -- and an empty delta would still leave a blank
+ * bubble sitting in the conversation.
+ */
 function sseOnce(text: string): string {
-  return (
-    `event: text\ndata: ${JSON.stringify({ delta: text })}\n\n` +
-    `event: done\ndata: {}\n\n`
-  );
+  const textEvent = text ? `event: text\ndata: ${JSON.stringify({ delta: text })}\n\n` : "";
+  return `${textEvent}event: done\ndata: {}\n\n`;
 }
 
 /**
@@ -236,10 +241,22 @@ export async function POST(req: Request) {
   if (state?.mode === "human" && state.telegramChatId && state.telegramMessageId !== null) {
     const customerText = history[history.length - 1].content;
 
+    /**
+     * Who this is from, on every forwarded line.
+     *
+     * With two conversations running, the group holds two interleaved streams
+     * of "Customer: ..." with no way to tell them apart. Replying to the wrong
+     * one sends a customer someone else's answer, which is a privacy failure
+     * rather than an inconvenience, so each line carries a label.
+     */
+    const who = user?.name || state.contact || "guest";
+
     const forwarded = await replyInTelegram({
       chatId: state.telegramChatId,
       replyToMessageId: state.telegramMessageId,
-      html: `\u{1F464} <b>Customer:</b> ${escapeTelegramHtml(customerText.slice(0, 3_000))}`,
+      html:
+        `\u{1F464} <b>${escapeTelegramHtml(who)}:</b> ` +
+        escapeTelegramHtml(customerText.slice(0, 3_000)),
     });
 
     // Staff will reply to THIS, not to the original alert several messages up.
@@ -255,15 +272,26 @@ export async function POST(req: Request) {
       console.error("[chat] could not forward a customer message to staff.");
     }
 
-    return new Response(
-      // Same SSE shape as a model answer, so the widget needs no special case.
-      sseOnce(
-        forwarded
-          ? "Thanks, I have passed that on. Someone from the team will reply here shortly."
-          : "I could not reach the team just now. Please email sales@aranzo.co and we will help you."
-      ),
-      { headers: sseHeaders(existingToken ? null : visitorToken) }
-    );
+    /**
+     * Reassure once, then get out of the way.
+     *
+     * Before anyone has answered, "I have passed that on" is the only sign the
+     * message went anywhere. Once a person is actually replying, repeating it
+     * after every message makes it look like a bot keeps interrupting the
+     * conversation -- and the customer can already see their own message in
+     * the thread, which is the receipt they needed.
+     *
+     * A failure to forward is always worth saying, whoever is in the chat.
+     */
+    const acknowledgement = !forwarded
+      ? "I could not reach the team just now. Please email sales@aranzo.co and we will help you."
+      : state.staffHasReplied
+        ? ""
+        : "Thanks, I have passed that on. Someone from the team will reply here shortly.";
+
+    return new Response(sseOnce(acknowledgement), {
+      headers: sseHeaders(existingToken ? null : visitorToken),
+    });
   }
 
   // Claimed here, and not a line earlier: the request is known to be

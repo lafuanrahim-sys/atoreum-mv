@@ -380,6 +380,15 @@ export default function ChatWidget() {
             } else if (event === "error") setError(data.message ?? "Something went wrong.");
           }
         }
+        // A stream that said nothing leaves the placeholder bubble behind.
+        // That happens by design when a colleague is already handling the
+        // conversation and the assistant has nothing to add.
+        setState((prev) => {
+          const last = prev.messages.at(-1);
+          return last?.role === "assistant" && !last.content
+            ? { ...prev, messages: prev.messages.slice(0, -1) }
+            : prev;
+        });
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
         setError((err as Error).message);
