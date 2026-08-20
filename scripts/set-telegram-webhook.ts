@@ -23,7 +23,20 @@ async function call(token: string, method: string, body?: unknown) {
     body: JSON.stringify(body ?? {}),
   });
   const json = (await res.json()) as { ok: boolean; result?: unknown; description?: string };
-  if (!json.ok) throw new Error(`${method} failed: ${json.description ?? res.status}`);
+  if (!json.ok) {
+    // Telegram puts the token in the URL path, so a bad token is a 404 on the
+    // path and comes back as the bare word "Not Found". Said plainly it sounds
+    // like the endpoint is missing, which sends you looking in the wrong place
+    // entirely -- so name the actual cause here.
+    if (res.status === 404) {
+      throw new Error(
+        `${method} failed: Telegram returned 404, which means it does not recognise this bot token.\n` +
+          `  The token is wrong, revoked, or has stray quotes/whitespace around it.\n` +
+          `  Check TELEGRAM_BOT_TOKEN in the environment you loaded.`
+      );
+    }
+    throw new Error(`${method} failed: ${json.description ?? res.status}`);
+  }
   return json.result;
 }
 
@@ -38,12 +51,24 @@ async function main() {
     throw new Error("TELEGRAM_WEBHOOK_SECRET is not set. Set it in Vercel first, or replies cannot be trusted.");
   }
 
+  // Confirm the token before anything else. Every later call fails the same
+  // opaque way on a bad token, and this one names the bot it belongs to, which
+  // is also how you catch pointing at the wrong bot entirely.
+  const me = (await call(token, "getMe")) as { username?: string; first_name?: string };
+  console.log(`Bot: @${me.username ?? "?"} (${me.first_name ?? "?"})`);
+
   if (process.argv.includes("--status")) {
     console.log(JSON.stringify(await call(token, "getWebhookInfo"), null, 2));
     return;
   }
 
   const url = `${SITE}/api/telegram/webhook`;
+
+  // Telegram only delivers to https, and refuses localhost outright. Catching
+  // it here gives a straight answer instead of one of its terser ones.
+  if (!url.startsWith("https://")) {
+    throw new Error(`Telegram only delivers to https. SITE_URL resolved to "${SITE}".`);
+  }
   console.log(`Registering ${url} ...`);
 
   await call(token, "setWebhook", {
