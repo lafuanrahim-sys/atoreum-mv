@@ -38,6 +38,28 @@ export const CHAT_TOOLS: Anthropic.Tool[] = [
     input_schema: { type: "object", properties: {}, required: [] },
   },
   {
+    name: "look_up_order",
+    description:
+      "Look up ONE order for someone who is not signed in, such as a guest checkout. " +
+      "Requires the order number AND the phone number or email used on that order; both must " +
+      "match or nothing is returned. Ask the customer for both before calling this. " +
+      "For a signed-in customer use get_my_orders instead, which needs no details from them.",
+    input_schema: {
+      type: "object",
+      properties: {
+        order_number: {
+          type: "string",
+          description: "The order number from their confirmation, e.g. ATM-0007.",
+        },
+        contact: {
+          type: "string",
+          description: "The phone number or email address used on that order.",
+        },
+      },
+      required: ["order_number", "contact"],
+    },
+  },
+  {
     name: "add_to_cart",
     description:
       "Put a product in the customer's basket. Use it when they ask you to add something, " +
@@ -232,6 +254,89 @@ async function runEscalate(
   };
 }
 
+/**
+ * Guest order lookup.
+ *
+ * A guest order has no account on it, so there is no session to scope this by;
+ * the customer has to prove which order is theirs. The order number alone
+ * cannot do that -- they run ATM-0001, ATM-0002, and anyone can count -- so a
+ * matching phone or email is required as well, and BOTH must match the same
+ * order.
+ *
+ * That pairing is only meaningful if it cannot be brute-forced, which is what
+ * the rate limit below is for: a known order number plus a few thousand
+ * guesses at a seven-digit Maldivian mobile is otherwise a real attack, not a
+ * theoretical one. Five attempts an hour makes it useless.
+ *
+ * What comes back is deliberately thin. Status, payment state and what was
+ * bought are what someone chasing an order needs; the delivery address is not,
+ * and putting it behind a guessable pair would be handing it out.
+ */
+const GUEST_LOOKUP_ATTEMPTS_PER_HOUR = 5;
+
+/** Maldivian mobiles are seven digits; compare on digits alone so +960, spaces and dashes all match. */
+function samePhone(a: string, b: string): boolean {
+  const digits = (v: string) => v.replace(/\D/g, "");
+  const x = digits(a);
+  const y = digits(b);
+  if (x.length < 7 || y.length < 7) return false;
+  return x.slice(-7) === y.slice(-7);
+}
+
+async function runLookUpOrder(
+  args: { order_number?: unknown; contact?: unknown },
+  clientKey: string
+) {
+  const number = String(args.order_number ?? "").trim().toUpperCase();
+  const contact = String(args.contact ?? "").trim();
+
+  if (!number || !contact) {
+    return { found: false, reason: "Both the order number and the phone or email on the order are needed." };
+  }
+
+  if (!checkRateLimit(`chat-order-lookup:${clientKey}`, GUEST_LOOKUP_ATTEMPTS_PER_HOUR, 3_600)) {
+    return {
+      found: false,
+      reason:
+        "Too many lookup attempts. Ask the customer to email sales@aranzo.co, or to sign in if the order was placed on an account.",
+    };
+  }
+
+  const orders = await getAllOrders();
+  const order = orders.find((o) => o.orderNumber.toUpperCase() === number);
+
+  // One answer for "no such order" and "wrong contact details". Telling them
+  // apart would confirm which order numbers exist, which is the first half of
+  // the attack the contact check exists to stop.
+  const notFound = {
+    found: false,
+    reason:
+      "No order matches that order number and contact detail. Ask them to check both, exactly as they appear on their confirmation.",
+  };
+  if (!order) return notFound;
+
+  const email = order.customer.email?.toLowerCase() ?? "";
+  const matches =
+    (contact.includes("@") && email === contact.toLowerCase()) ||
+    (!contact.includes("@") && samePhone(order.customer.phone ?? "", contact));
+  if (!matches) return notFound;
+
+  return {
+    found: true,
+    order: {
+      number: order.orderNumber,
+      placed: order.createdAt.slice(0, 10),
+      status: order.status,
+      paymentMethod: order.paymentMethod ?? "bank transfer",
+      // The status IS the payment state for a bank transfer: nothing leaves
+      // Pending Verification until a person has checked the receipt.
+      paymentVerified: order.status !== "Pending Verification" && order.status !== "Cancelled",
+      total: `MVR ${order.subtotal}`,
+      items: order.items.map((i) => `${i.quantity} x ${i.name}`),
+    },
+  };
+}
+
 /** The most a model may add in one go without the customer saying a number. */
 const MAX_CART_QUANTITY = 10;
 
@@ -295,6 +400,8 @@ export async function runTool(
       return runGetMyOrders(ctx.user);
     case "add_to_cart":
       return runAddToCart(args);
+    case "look_up_order":
+      return runLookUpOrder(args, ctx.clientKey);
     case "escalate_to_team":
       return runEscalate(args, ctx.user, ctx.clientKey, ctx.conversationId ?? null);
     default:

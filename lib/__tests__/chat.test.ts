@@ -39,7 +39,15 @@ describe("tool surface", () => {
       "add_to_cart",
       "escalate_to_team",
       "get_my_orders",
+      "look_up_order",
     ]);
+  });
+
+  it("requires a contact detail alongside the order number for a guest lookup", () => {
+    // Order numbers run ATM-0001, ATM-0002 and anyone can count. The contact
+    // is the only thing making the pair mean something, so it stays required.
+    const lookup = CHAT_TOOLS.find((t) => t.name === "look_up_order");
+    expect(lookup!.input_schema.required).toEqual(["order_number", "contact"]);
   });
 
   it("will not let the model add an arbitrary price to the basket", () => {

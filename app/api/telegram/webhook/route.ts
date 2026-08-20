@@ -3,6 +3,7 @@ import {
   findConversationByTelegramMessage,
   appendMessage,
   setConversationMode,
+  addTelegramAnchor,
 } from "@/lib/chat/conversations.server";
 import { parseChatIds, replyInTelegram, escapeTelegramHtml } from "@/lib/telegram";
 
@@ -107,11 +108,13 @@ export async function POST(req: Request) {
         "Thanks for waiting. I am handing you back to our assistant now, which can help with products, delivery and orders straight away.",
       staffName,
     });
-    await replyInTelegram({
+    const ackId = await replyInTelegram({
       chatId,
       replyToMessageId: msg!.message_id!,
       html: "Handed back to the assistant. It will answer this customer from their next message.",
     });
+    // Register the acknowledgement too, so a reply to IT also lands here.
+    if (ackId) await addTelegramAnchor({ conversationId: conversation.id, chatId, messageId: ackId });
     return NextResponse.json({ ok: true });
   }
 
@@ -131,13 +134,18 @@ export async function POST(req: Request) {
   // Confirm in the group. Without this, staff have no idea whether the reply
   // reached anyone, and the honest answer is worth saying: the customer sees
   // it when their chat panel is open, and not before.
-  await replyInTelegram({
+  const ackId = await replyInTelegram({
     chatId,
     replyToMessageId: msg!.message_id!,
     html:
       `Sent as <b>Customer Support</b> (from ${escapeTelegramHtml(staffName)}). ` +
       `They see it while their chat window is open. Reply <b>/ai</b> to hand back to the assistant.`,
   });
+  if (ackId) await addTelegramAnchor({ conversationId: conversation.id, chatId, messageId: ackId });
+
+  // Staff replying is itself a reply target: the message they just sent is the
+  // newest thing in the thread and the obvious one to answer next.
+  await addTelegramAnchor({ conversationId: conversation.id, chatId, messageId: msg!.message_id! });
 
   return NextResponse.json({ ok: true });
 }

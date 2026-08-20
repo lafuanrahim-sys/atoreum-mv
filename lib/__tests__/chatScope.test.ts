@@ -39,6 +39,13 @@ const ORDERS: Order[] = [
   // A guest order carrying A's email but no account link: A's, by the same
   // rule /account uses.
   order({ id: "3", orderNumber: "ATM-0003", customer: { name: "A", email: "A@Example.com", phone: "3", address: "x" } as Order["customer"] }),
+  // A pure guest order, no account anywhere near it.
+  order({
+    id: "4",
+    orderNumber: "ATM-0004",
+    status: "Pending Verification",
+    customer: { name: "Guest", email: "guest@example.com", phone: "+960 771-2345", address: "Malé" } as Order["customer"],
+  }),
 ];
 
 vi.mock("@/lib/data/orders.server", () => ({
@@ -97,5 +104,57 @@ describe("get_my_orders scoping", () => {
   it("refuses an unknown tool rather than throwing", async () => {
     const res = (await runTool("delete_all_orders", {}, { user: userA, clientKey: "t" })) as { error: string };
     expect(res.error).toMatch(/unknown tool/i);
+  });
+});
+
+
+describe("guest order lookup", () => {
+  type Found = { found: boolean; reason?: string; order?: { number: string; paymentVerified: boolean } };
+  const look = (order_number: string, contact: string, key = Math.random().toString()) =>
+    runTool("look_up_order", { order_number, contact }, { user: null, clientKey: key }) as Promise<Found>;
+
+  it("finds a guest order from its number and phone", async () => {
+    const r = await look("ATM-0004", "7712345");
+    expect(r.found).toBe(true);
+    expect(r.order?.number).toBe("ATM-0004");
+  });
+
+  it("accepts the phone however it is written", async () => {
+    // +960, spaces and dashes are all how a real person types their number.
+    for (const form of ["+960 7712345", "960-771-2345", "771 2345", "7712345"]) {
+      expect((await look("ATM-0004", form)).found).toBe(true);
+    }
+  });
+
+  it("finds it by email too, ignoring case", async () => {
+    expect((await look("ATM-0004", "GUEST@Example.com")).found).toBe(true);
+  });
+
+  it("refuses the right order number with the wrong contact", async () => {
+    // The whole point: the number alone is guessable, so it must not be enough.
+    const r = await look("ATM-0004", "9999999");
+    expect(r.found).toBe(false);
+  });
+
+  it("does not reveal whether an order number exists", async () => {
+    // A real number with wrong details and a made-up number must be
+    // indistinguishable, or probing tells you which numbers are real.
+    const real = await look("ATM-0004", "9999999");
+    const fake = await look("ATM-9999", "9999999");
+    expect(real.reason).toBe(fake.reason);
+  });
+
+  it("reports payment as unverified while pending", async () => {
+    const r = await look("ATM-0004", "7712345");
+    expect(r.order?.paymentVerified).toBe(false);
+  });
+
+  it("rate limits repeated attempts from one visitor", async () => {
+    // Same key throughout: a known order number plus guesses at a 7-digit
+    // mobile is a real attack if it can be run thousands of times.
+    const key = "brute-force-probe";
+    const results = [];
+    for (let i = 0; i < 8; i++) results.push(await look("ATM-0004", `700000${i}`, key));
+    expect(results.some((r) => /too many/i.test(r.reason ?? ""))).toBe(true);
   });
 });

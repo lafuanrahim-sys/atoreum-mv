@@ -207,14 +207,20 @@ export async function sendTelegramMessageAnchored(
   return anchor;
 }
 
-/** Reply to a specific message in a chat -- used to confirm a staff reply was delivered. */
+/**
+ * Reply to a specific message in a chat, reporting the id of what was posted.
+ *
+ * The id matters: every message the bot puts into a thread has to become a
+ * reply target of its own, because staff reply to the newest message in the
+ * thread rather than scrolling back to the original alert.
+ */
 export async function replyInTelegram(params: {
   chatId: string;
   replyToMessageId: number;
   html: string;
-}): Promise<boolean> {
+}): Promise<number | null> {
   const cfg = config();
-  if (!cfg) return false;
+  if (!cfg) return null;
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
@@ -230,8 +236,10 @@ export async function replyInTelegram(params: {
       }),
       signal: controller.signal,
     }).finally(() => clearTimeout(timer));
-    return res.ok;
+    if (!res.ok) return null;
+    const data = (await res.json()) as { result?: { message_id?: number } };
+    return data.result?.message_id ?? null;
   } catch {
-    return false;
+    return null;
   }
 }

@@ -15,6 +15,7 @@ import {
   getOrCreateConversation,
   appendMessage,
   getConversationState,
+  addTelegramAnchor,
 } from "@/lib/chat/conversations.server";
 
 /**
@@ -225,6 +226,15 @@ export async function POST(req: Request) {
       replyToMessageId: state.telegramMessageId,
       html: `\u{1F464} <b>Customer:</b> ${escapeTelegramHtml(customerText.slice(0, 3_000))}`,
     });
+
+    // Staff will reply to THIS, not to the original alert several messages up.
+    if (forwarded) {
+      await addTelegramAnchor({
+        conversationId: state.id,
+        chatId: state.telegramChatId,
+        messageId: forwarded,
+      });
+    }
 
     if (!forwarded) {
       console.error("[chat] could not forward a customer message to staff.");

@@ -214,7 +214,12 @@ export async function linkTelegramMessage(params: {
     "select chat_link_telegram($1, $2, $3)",
     [params.conversationId, params.chatId, params.messageId]
   );
-  return rows[0]?.chat_link_telegram ?? false;
+  const linked = rows[0]?.chat_link_telegram ?? false;
+  // The column still records the ORIGINAL alert, which is what staff replies
+  // are threaded under and what chat_set_mode checks for. The anchors table is
+  // what lookups use.
+  if (linked) await addTelegramAnchor(params);
+  return linked;
 }
 
 /**
@@ -229,11 +234,39 @@ export async function findConversationByTelegramMessage(params: {
   messageId: number;
 }): Promise<{ id: string; contact: string } | null> {
   const { rows } = await pool().query<{ id: string; contact: string }>(
-    `select id, contact from chat_conversations
-      where telegram_chat_id = $1 and telegram_message_id = $2`,
+    `select c.id, c.contact
+       from chat_telegram_anchors a
+       join chat_conversations c on c.id = a.conversation_id
+      where a.chat_id = $1 and a.message_id = $2`,
     [params.chatId, params.messageId]
   );
   return rows[0] ?? null;
+}
+
+/**
+ * Register another of the bot's own messages as a reply target.
+ *
+ * Called for every message the bot puts into a thread -- confirmations,
+ * forwarded customer messages -- because staff reply to whichever is newest,
+ * not to the original alert several messages up.
+ *
+ * Never throws: failing to register one message costs a reply target, and is
+ * not worth failing the delivery that just succeeded.
+ */
+export async function addTelegramAnchor(params: {
+  conversationId: string;
+  chatId: string;
+  messageId: number;
+}): Promise<void> {
+  try {
+    await pool().query("select chat_anchor_add($1, $2, $3)", [
+      params.conversationId,
+      params.chatId,
+      params.messageId,
+    ]);
+  } catch (err) {
+    console.error("[chat] could not register a Telegram anchor:", err);
+  }
 }
 
 export async function setConversationContact(conversationId: string, contact: string): Promise<void> {

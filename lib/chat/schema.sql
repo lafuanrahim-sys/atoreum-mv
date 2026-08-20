@@ -244,3 +244,54 @@ begin
   return v_mode;
 end;
 $$;
+
+
+-- ---------------------------------------------------------------------------
+-- Every message the bot posts is a valid thing to reply to.
+-- ---------------------------------------------------------------------------
+--
+-- Originally a conversation had one anchor: the escalation alert. That is the
+-- only message a reply could be matched against, and it is not the message
+-- staff actually reply to. By the time anyone answers, the thread also holds
+-- the bot's "sent to the customer" confirmations and the customer's forwarded
+-- messages, and the natural move is to reply to the newest of those. Those
+-- replies matched nothing and were silently dropped, which looks exactly like
+-- the feature being broken.
+--
+-- So the mapping becomes many-to-one: every message the bot puts in a thread
+-- is registered, and a reply to any of them finds the conversation.
+
+create table if not exists chat_telegram_anchors (
+  chat_id         text   not null,
+  message_id      bigint not null,
+  conversation_id uuid   not null references chat_conversations(id) on delete cascade,
+  created_at      timestamptz not null default now(),
+  -- A message id belongs to exactly one conversation. Without this a reply
+  -- could resolve two ways, and the wrong one shows a customer someone else's
+  -- answer.
+  primary key (chat_id, message_id)
+);
+
+create index if not exists chat_telegram_anchors_conversation_idx
+  on chat_telegram_anchors (conversation_id);
+
+-- Backfill from the original single-anchor column so conversations that
+-- predate this table keep working.
+insert into chat_telegram_anchors (chat_id, message_id, conversation_id)
+select telegram_chat_id, telegram_message_id, id
+  from chat_conversations
+ where telegram_chat_id is not null and telegram_message_id is not null
+on conflict do nothing;
+
+/* Register one more message as belonging to a conversation. */
+create or replace function chat_anchor_add(
+  p_conversation uuid,
+  p_chat_id text,
+  p_message_id bigint
+) returns void
+language sql
+as $$
+  insert into chat_telegram_anchors (chat_id, message_id, conversation_id)
+  values (p_chat_id, p_message_id, p_conversation)
+  on conflict (chat_id, message_id) do nothing;
+$$;
