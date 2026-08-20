@@ -238,7 +238,12 @@ begin
   end;
 
   update chat_conversations
-     set mode = v_mode, updated_at = now()
+     set mode = v_mode,
+         updated_at = now(),
+         -- Starts the silence clock. Cleared on the way back to the assistant
+         -- so a later handover starts counting fresh rather than instantly
+         -- expiring against an old timestamp.
+         human_at = case when v_mode = 'human' then now() else null end
    where id = p_conversation;
 
   return v_mode;
@@ -294,4 +299,68 @@ as $$
   insert into chat_telegram_anchors (chat_id, message_id, conversation_id)
   values (p_chat_id, p_message_id, p_conversation)
   on conflict (chat_id, message_id) do nothing;
+$$;
+
+
+-- ---------------------------------------------------------------------------
+-- Handing back when nobody answers.
+-- ---------------------------------------------------------------------------
+--
+-- A conversation handed to staff stays handed over until someone types /ai.
+-- Two people who are also out doing the deliveries will not always be at a
+-- keyboard, and the customer is left talking to a window that has stopped
+-- answering, having been told a person was coming.
+--
+-- After a few minutes of nothing from the shop, the assistant takes it back.
+-- Worse than a slightly awkward handback is a shop that appears to have hung
+-- up: the escalation still sits in Telegram, staff can still reply, and the
+-- reply still arrives. Only the silence in between is fixed.
+
+alter table chat_conversations
+  add column if not exists human_at timestamptz;
+
+/*
+ * Hand back to the assistant if the shop has been quiet too long.
+ *
+ * Measured from the last thing the SHOP did -- the handover itself, or the
+ * most recent staff reply -- and deliberately not from the customer's own
+ * messages. Otherwise someone sending "hello?" every minute while they wait
+ * would keep resetting the timer and never be handed back, which is exactly
+ * the person this exists for.
+ *
+ * Returns true when it handed back, so the caller can say so.
+ */
+create or replace function chat_handback_if_idle(p_conversation uuid, p_minutes int)
+returns boolean
+language plpgsql
+as $$
+declare
+  v_mode text;
+  v_last timestamptz;
+begin
+  select mode, human_at into v_mode, v_last
+    from chat_conversations where id = p_conversation
+    for update;
+
+  if not found or v_mode <> 'human' then
+    return false;
+  end if;
+
+  -- No timestamp means this conversation was handed over before the column
+  -- existed. Stamp it now rather than handing back instantly on a clock that
+  -- was never started.
+  if v_last is null then
+    update chat_conversations set human_at = now() where id = p_conversation;
+    return false;
+  end if;
+
+  if now() - v_last < make_interval(mins => p_minutes) then
+    return false;
+  end if;
+
+  update chat_conversations
+     set mode = 'ai', updated_at = now()
+   where id = p_conversation;
+  return true;
+end;
 $$;

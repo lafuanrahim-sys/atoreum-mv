@@ -60,9 +60,24 @@ const STORAGE_KEY = "atoreum-chat-session";
  * before the real conversation replaced it.
  * ---------------------------------------------------------------------- */
 
-type ChatState = { messages: Message[]; isOpen: boolean };
+type ChatState = {
+  messages: Message[];
+  isOpen: boolean;
+  /**
+   * Ids of staff messages already displayed.
+   *
+   * The poll also passes a "since" cursor, but a cursor is an optimisation and
+   * this is the guarantee. Anything that resets it -- a remount, a second tab,
+   * an effect re-running as `busy` flips -- re-fetches messages already on
+   * screen, and the customer watches the same reply pile up four times.
+   * Identity cannot drift the way a timestamp can.
+   *
+   * Persisted with the conversation so a reload does not replay the thread.
+   */
+  seenStaffIds: string[];
+};
 
-const EMPTY_STATE: ChatState = { messages: [], isOpen: false };
+const EMPTY_STATE: ChatState = { messages: [], isOpen: false, seenStaffIds: [] };
 
 let state: ChatState = EMPTY_STATE;
 let hydrated = false;
@@ -76,6 +91,7 @@ function readPersisted(): ChatState {
     return {
       messages: Array.isArray(saved.messages) ? saved.messages : [],
       isOpen: Boolean(saved.isOpen),
+      seenStaffIds: Array.isArray(saved.seenStaffIds) ? saved.seenStaffIds : [],
     };
   } catch {
     // Corrupt, or a private mode that throws on access. Start fresh.
@@ -224,13 +240,23 @@ export default function ChatWidget() {
         if (cancelled || incoming.length === 0) return;
 
         lastStaffAtRef.current = incoming[incoming.length - 1].createdAt;
-        setState((prev) => ({
-          ...prev,
-          messages: [
-            ...prev.messages,
-            ...incoming.map((i) => ({ role: "staff" as const, content: i.content })),
-          ],
-        }));
+        setState((prev) => {
+          // Identity, not timing, decides what is new.
+          const seen = new Set(prev.seenStaffIds);
+          const fresh = incoming.filter((i) => !seen.has(i.id));
+          if (fresh.length === 0) return prev;
+
+          return {
+            ...prev,
+            messages: [
+              ...prev.messages,
+              ...fresh.map((i) => ({ role: "staff" as const, content: i.content })),
+            ],
+            // Bounded: a conversation nobody will scroll back through does not
+            // need an unbounded list of ids following it around sessionStorage.
+            seenStaffIds: [...prev.seenStaffIds, ...fresh.map((i) => i.id)].slice(-200),
+          };
+        });
       } catch {
         // A failed poll is not worth telling the customer about; the next one
         // is eight seconds away.

@@ -143,7 +143,13 @@ export async function getStaffMessagesSince(params: {
        join chat_conversations c on c.id = m.conversation_id
       where c.visitor_token = $1
         and m.role = 'staff'
-        and ($2::timestamptz is null or m.created_at > $2::timestamptz)
+        -- Truncated to milliseconds on BOTH sides. The cursor the browser
+        -- sends comes from toISOString(), which stops at milliseconds, while
+        -- Postgres keeps microseconds: a row stored at .460123 is forever
+        -- greater than a cursor of .460, so the same message came back on
+        -- every poll and the customer watched one reply pile up.
+        and ($2::timestamptz is null
+             or date_trunc('milliseconds', m.created_at) > date_trunc('milliseconds', $2::timestamptz))
       order by m.created_at`,
     [params.visitorToken, params.since]
   );
@@ -202,6 +208,39 @@ export async function setConversationMode(conversationId: string, mode: ChatMode
     [conversationId, mode]
   );
   return rows[0]?.chat_set_mode ?? "ai";
+}
+
+/**
+ * How long the shop may be silent before the assistant takes the conversation
+ * back. Short, because the alternative the customer experiences is a chat
+ * window that has simply stopped answering.
+ */
+export const HANDBACK_AFTER_MINUTES = 3;
+
+/**
+ * Hand back to the assistant if the shop has gone quiet. Returns true if it
+ * just did, so the caller can have the assistant acknowledge it.
+ */
+export async function handBackIfIdle(conversationId: string): Promise<boolean> {
+  try {
+    const { rows } = await pool().query<{ chat_handback_if_idle: boolean }>(
+      "select chat_handback_if_idle($1, $2)",
+      [conversationId, HANDBACK_AFTER_MINUTES]
+    );
+    return rows[0]?.chat_handback_if_idle ?? false;
+  } catch (err) {
+    console.error("[chat] idle handback check failed:", err);
+    return false;
+  }
+}
+
+/** Restart the silence clock. Called whenever a person actually replies. */
+export async function touchStaffActivity(conversationId: string): Promise<void> {
+  try {
+    await pool().query("update chat_conversations set human_at = now() where id = $1", [conversationId]);
+  } catch (err) {
+    console.error("[chat] could not record staff activity:", err);
+  }
 }
 
 /** Point a Telegram message at this conversation. False if already claimed. */

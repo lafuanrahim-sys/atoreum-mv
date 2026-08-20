@@ -4,6 +4,7 @@ import {
   appendMessage,
   setConversationMode,
   addTelegramAnchor,
+  touchStaffActivity,
 } from "@/lib/chat/conversations.server";
 import { parseChatIds, replyInTelegram, escapeTelegramHtml } from "@/lib/telegram";
 
@@ -128,8 +129,11 @@ export async function POST(req: Request) {
   });
 
   // A reply is also a takeover: someone answering by hand has claimed this
-  // conversation, whether or not the assistant escalated it.
+  // conversation, whether or not the assistant escalated it. It restarts the
+  // silence clock too, so an active back-and-forth is never handed back
+  // mid-exchange.
   await setConversationMode(conversation.id, "human");
+  await touchStaffActivity(conversation.id);
 
   // Confirm in the group. Without this, staff have no idea whether the reply
   // reached anyone, and the honest answer is worth saying: the customer sees

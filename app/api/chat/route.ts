@@ -18,6 +18,8 @@ import {
   appendMessage,
   getConversationState,
   addTelegramAnchor,
+  handBackIfIdle,
+  HANDBACK_AFTER_MINUTES,
 } from "@/lib/chat/conversations.server";
 
 /**
@@ -219,6 +221,17 @@ export async function POST(req: Request) {
    * customer's message is carried to Telegram instead, threaded under the
    * original so whoever is answering keeps the context.
    */
+  /**
+   * A conversation handed to staff who then went quiet comes back to the
+   * assistant.
+   *
+   * Checked here, on the customer's next message, rather than by a scheduled
+   * job: the only moment the mode matters is when there is something to
+   * answer, so there is nothing for a cron to usefully do in between.
+   */
+  let handedBack = false;
+  if (conversationId) handedBack = await handBackIfIdle(conversationId);
+
   const state = conversationId ? await getConversationState(visitorToken) : null;
   if (state?.mode === "human" && state.telegramChatId && state.telegramMessageId !== null) {
     const customerText = history[history.length - 1].content;
@@ -292,6 +305,12 @@ export async function POST(req: Request) {
           : "The customer you are speaking to is NOT signed in. get_my_orders will return nothing for them; use look_up_order instead, which needs their order number and the phone or email they used.",
         await describeCart(body.cart),
         await describeStaffContext(conversationId),
+        handedBack
+          ? `Nobody at the shop has replied for over ${HANDBACK_AFTER_MINUTES} minutes, so this conversation ` +
+            "has come back to you. The customer was told a person would answer. Acknowledge that briefly and " +
+            "honestly in one sentence, without blaming anyone or promising when the team will reply, then help " +
+            "with what they asked. If it still needs a person, use escalate_to_team again."
+          : "",
       ]
         .filter(Boolean)
         .join("\n\n"),
