@@ -266,6 +266,67 @@ export default function ProductGrid({
           />
         )}
 
+        {/*
+          The way back out of a filter.
+          
+          Clearing existed only in the empty state, which is the one case where
+          the customer can already tell something is filtered. Land on a
+          category from a collection card and get results, and there was
+          nothing at all: the rail that used to hold an "All" tab is parked,
+          the grid looks like the whole shop, and the only escape was editing
+          the URL or hitting back.
+        */}
+        {(active !== "All" || query.trim() !== "") && (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory-dim">
+              Showing
+            </span>
+
+            {active !== "All" && (
+              <button
+                type="button"
+                onClick={() => setActive("All")}
+                aria-label={`Stop filtering by ${active}`}
+                className="group inline-flex min-h-9 items-center gap-2 rounded-full border border-gold/40 bg-gold/5 px-4 text-xs text-ivory transition-colors hover:border-gold hover:bg-gold/10"
+              >
+                {active}
+                <svg viewBox="0 0 12 12" aria-hidden="true" className="h-2.5 w-2.5 text-gold">
+                  <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+
+            {query.trim() !== "" && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label={`Clear the search for ${query.trim()}`}
+                className="inline-flex min-h-9 items-center gap-2 rounded-full border border-line px-4 text-xs text-ivory-dim transition-colors hover:border-gold hover:text-gold"
+              >
+                &ldquo;{query.trim()}&rdquo;
+                <svg viewBox="0 0 12 12" aria-hidden="true" className="h-2.5 w-2.5">
+                  <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+
+            <span className="font-mono text-[10px] text-ivory-dim/70 tabular-nums">
+              {filtered.length} {filtered.length === 1 ? "product" : "products"}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActive("All");
+                setQuery("");
+              }}
+              className="ml-auto font-mono text-[10px] uppercase tracking-[0.15em] text-ivory-dim underline decoration-line underline-offset-4 transition-colors hover:text-gold hover:decoration-gold"
+            >
+              Show everything
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
           <input
             type="search"

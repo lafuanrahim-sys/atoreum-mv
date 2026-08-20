@@ -18,7 +18,28 @@ import { absoluteUrl } from "@/lib/site";
  * document meant to invite crawling (see app/robots.ts).
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const products = await getAllProducts();
+  /**
+   * A sitemap without the catalogue is worth having; a build without a
+   * deployment is not.
+   *
+   * This runs at build time and reads the database, so an environment without
+   * DATABASE_URL -- a preview deployment, a fork, a CI job with no secrets --
+   * failed the ENTIRE build here, on the one route that could most afford to
+   * degrade. The static pages below need no database at all.
+   *
+   * Failing loudly in the log and quietly in the output is the right shape:
+   * a production build that lost its database is a real problem someone must
+   * see, and it is still not a reason to ship nothing.
+   */
+  let products: Awaited<ReturnType<typeof getAllProducts>> = [];
+  try {
+    products = await getAllProducts();
+  } catch (err) {
+    console.error(
+      "[sitemap] could not read products; emitting the static pages only:",
+      err instanceof Error ? err.message : err
+    );
+  }
 
   // The newest product edit stands in for "when did the shop last change" on
   // the pages that list products but have no timestamp of their own.
