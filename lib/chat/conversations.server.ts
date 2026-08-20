@@ -234,6 +234,52 @@ export async function handBackIfIdle(conversationId: string): Promise<boolean> {
   }
 }
 
+/**
+ * How stale a heartbeat has to be before the customer counts as gone.
+ *
+ * The panel polls every 8 seconds, so 30 covers a slow request or a phone
+ * briefly losing signal without calling somebody absent who is sitting right
+ * there.
+ */
+const PRESENT_WITHIN_SECONDS = 30;
+
+/** Note that this browser is still watching. Called on every poll. */
+export async function markSeen(visitorToken: string): Promise<void> {
+  try {
+    await pool().query("select chat_seen($1)", [visitorToken]);
+  } catch (err) {
+    console.error("[chat] could not record presence:", err);
+  }
+}
+
+/**
+ * Whether the customer's chat window is open right now.
+ *
+ * "unknown" is its own answer and not a synonym for "no": a conversation that
+ * predates presence tracking has no heartbeat to judge, and telling staff
+ * somebody has left when nobody knows is worse than saying so.
+ */
+export async function getPresence(
+  conversationId: string
+): Promise<{ state: "watching" | "away" | "unknown"; secondsAgo: number | null }> {
+  try {
+    const { rows } = await pool().query<{ seconds_ago: string | null }>(
+      "select extract(epoch from (now() - last_seen_at))::int::text as seconds_ago from chat_conversations where id = $1",
+      [conversationId]
+    );
+    const raw = rows[0]?.seconds_ago;
+    if (raw === null || raw === undefined) return { state: "unknown", secondsAgo: null };
+    const secondsAgo = Number(raw);
+    return {
+      state: secondsAgo <= PRESENT_WITHIN_SECONDS ? "watching" : "away",
+      secondsAgo,
+    };
+  } catch (err) {
+    console.error("[chat] could not read presence:", err);
+    return { state: "unknown", secondsAgo: null };
+  }
+}
+
 /** Restart the silence clock. Called whenever a person actually replies. */
 export async function touchStaffActivity(conversationId: string): Promise<void> {
   try {

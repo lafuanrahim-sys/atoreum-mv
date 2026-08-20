@@ -5,6 +5,7 @@ import {
   setConversationMode,
   addTelegramAnchor,
   touchStaffActivity,
+  getPresence,
 } from "@/lib/chat/conversations.server";
 import { parseChatIds, replyInTelegram, escapeTelegramHtml } from "@/lib/telegram";
 
@@ -138,12 +139,32 @@ export async function POST(req: Request) {
   // Confirm in the group. Without this, staff have no idea whether the reply
   // reached anyone, and the honest answer is worth saying: the customer sees
   // it when their chat panel is open, and not before.
+  /**
+   * Whether that reply will actually be read.
+   *
+   * A closed browser takes the conversation with it, so a reply typed after
+   * the customer has gone lands nowhere. Staff cannot see that, and "sent"
+   * with nothing behind it is worse than no confirmation at all -- it is the
+   * difference between waiting for an answer and picking up the phone.
+   */
+  const presence = await getPresence(conversation.id);
+  const delivery =
+    presence.state === "watching"
+      ? "Their chat window is open, so they have it now."
+      : presence.state === "away"
+        ? `<b>They are not watching the chat</b> (last seen ${Math.round((presence.secondsAgo ?? 0) / 60)} min ago). ` +
+          "It will be waiting if they come back in the same browser session, but a closed browser loses it. " +
+          (conversation.contact
+            ? `Best to reach them on <b>${escapeTelegramHtml(conversation.contact)}</b>.`
+            : "No contact details were given, so there may be no other way to reach them.")
+        : "Not sure whether their window is open.";
+
   const ackId = await replyInTelegram({
     chatId,
     replyToMessageId: msg!.message_id!,
     html:
       `Sent as <b>Customer Support</b> (from ${escapeTelegramHtml(staffName)}). ` +
-      `They see it while their chat window is open. Reply <b>/ai</b> to hand back to the assistant.`,
+      `${delivery} Reply <b>/ai</b> to hand back to the assistant.`,
   });
   if (ackId) await addTelegramAnchor({ conversationId: conversation.id, chatId, messageId: ackId });
 

@@ -364,3 +364,39 @@ begin
   return true;
 end;
 $$;
+
+
+-- ---------------------------------------------------------------------------
+-- Is the customer still there?
+-- ---------------------------------------------------------------------------
+--
+-- A reply only reaches someone whose chat window is open. Close the browser
+-- and the conversation goes with it -- sessionStorage is cleared and the
+-- session cookie expires -- so a reply typed after that lands nowhere and
+-- staff have no way of knowing.
+--
+-- The browser polls every few seconds while the panel is open, which is
+-- exactly the heartbeat needed. Recording when it last polled turns "are they
+-- still there" into a question with an answer, and the answer goes back into
+-- Telegram next to the reply confirmation, where it changes what staff do:
+-- somebody who has left needs a phone call, not a chat message.
+
+alter table chat_conversations
+  add column if not exists last_seen_at timestamptz;
+
+/*
+ * Record that this browser is still watching.
+ *
+ * Written on every poll, which is often, so it is a bare UPDATE by an indexed
+ * unique column and touches nothing else. Deliberately does NOT bump
+ * updated_at: that drives retention, and a customer leaving a tab open
+ * overnight should not keep a dead conversation alive for another three days.
+ */
+create or replace function chat_seen(p_visitor_token text)
+returns void
+language sql
+as $$
+  update chat_conversations
+     set last_seen_at = now()
+   where visitor_token = p_visitor_token;
+$$;

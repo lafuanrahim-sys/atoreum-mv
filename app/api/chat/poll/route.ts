@@ -4,6 +4,7 @@ import {
   CHAT_COOKIE,
   getStaffMessagesSince,
   STAFF_DISPLAY_NAME,
+  markSeen,
 } from "@/lib/chat/conversations.server";
 import { checkRateLimit } from "@/lib/rateLimit";
 
@@ -41,6 +42,11 @@ export async function GET(req: Request) {
   const since = sinceRaw && !Number.isNaN(Date.parse(sinceRaw)) ? sinceRaw : null;
 
   try {
+    // The poll doubles as a heartbeat: it is the only signal that the chat
+    // window is still open, and staff need it to know whether a reply will be
+    // seen or whether they should be picking up the phone instead.
+    void markSeen(token);
+
     const messages = await getStaffMessagesSince({ visitorToken: token, since });
     // The real sender is recorded, but only "Customer Support" leaves the
     // building. Which of two people picked the message up is the shop's
