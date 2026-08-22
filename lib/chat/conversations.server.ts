@@ -49,44 +49,10 @@ export function newVisitorToken(): string {
  * can arrive together (a message and a poll), and the unique index on
  * visitor_token is what decides, not the application.
  */
-/**
- * How long an abandoned conversation is kept.
- *
- * The customer's own copy dies with their browser, so this is not history in
- * any sense they can see; it is the window in which a staff reply still has
- * somewhere to land. Three days is generous for a shop that answers the same
- * evening, and short enough that the tables do not become a transcript
- * archive nobody asked for.
- */
-const RETENTION_DAYS = 3;
-
-// Pruning is opportunistic rather than scheduled: no cron to forget to
-// deploy, and no delete on the hot path more than once an hour per process.
-let lastPrune = 0;
-
-async function pruneOldConversations(): Promise<void> {
-  const now = Date.now();
-  if (now - lastPrune < 3_600_000) return;
-  lastPrune = now;
-  try {
-    // chat_messages is ON DELETE CASCADE, so this takes the messages with it.
-    const { rowCount } = await pool().query(
-      `delete from chat_conversations
-        where updated_at < now() - ($1 || ' days')::interval`,
-      [RETENTION_DAYS]
-    );
-    if (rowCount) console.log(`[chat] pruned ${rowCount} conversation(s) past retention.`);
-  } catch (err) {
-    console.error("[chat] could not prune old conversations:", err);
-  }
-}
-
 export async function getOrCreateConversation(params: {
   visitorToken: string;
   userId: string | null;
 }): Promise<string> {
-  void pruneOldConversations();
-
   const { rows } = await pool().query<{ id: string }>(
     `insert into chat_conversations (visitor_token, user_id)
      values ($1, $2)
@@ -407,4 +373,166 @@ export async function getRecentMessages(
       staffName: r.staff_name,
       createdAt: r.created_at.toISOString(),
     }));
+}
+
+/* -------------------------------------------------------------------------
+ * The admin view
+ *
+ * One row per conversation, which is the unit staff think in: a person came,
+ * asked some things, maybe got a human, maybe left. Messages are the detail
+ * behind that, not the list itself.
+ *
+ * Nothing here is pruned. Conversations are kept until someone deletes one
+ * deliberately -- see deleteConversation below.
+ * ---------------------------------------------------------------------- */
+
+export type ConversationSummary = {
+  id: string;
+  startedAt: string;
+  lastActivityAt: string;
+  /** "Guest" or the signed-in customer's name. */
+  who: string;
+  email: string | null;
+  /** Whatever contact they gave when escalating, if they did. */
+  contact: string;
+  mode: ChatMode;
+  messageCount: number;
+  staffReplyCount: number;
+  escalated: boolean;
+  /** The customer's first message, which is what the conversation was about. */
+  opener: string;
+  /** Whether their chat window is open right now. */
+  lastSeenAt: string | null;
+  /**
+   * Presence and "3h ago" are resolved HERE rather than in the page.
+   *
+   * A React component may not read the clock during render -- it makes the
+   * render non-idempotent, and lint rightly refuses it. This function is
+   * already a server call with a single moment of its own, so the whole list
+   * is dated against one instant and the page stays a pure function of it.
+   */
+  isPresent: boolean;
+  lastActivityLabel: string;
+};
+
+/** "just now", "12 min ago", "3h ago", "yesterday", "5 days ago". */
+function relativeTime(then: Date, now: number): string {
+  const seconds = Math.max(0, (now - then.getTime()) / 1000);
+  if (seconds < 90) return "just now";
+  const minutes = seconds / 60;
+  if (minutes < 60) return `${Math.round(minutes)} min ago`;
+  const hours = minutes / 60;
+  if (hours < 24) return `${Math.round(hours)}h ago`;
+  const days = Math.round(hours / 24);
+  return days === 1 ? "yesterday" : `${days} days ago`;
+}
+
+/**
+ * Every conversation, newest activity first.
+ *
+ * Counts are computed in the query rather than by loading messages, because
+ * the list needs numbers and not transcripts; a shop with a thousand
+ * conversations should not pull a thousand transcripts to draw a table.
+ */
+export async function listConversations(limit = 200): Promise<ConversationSummary[]> {
+  // One instant for the whole list, so two rows can never be dated against
+  // slightly different moments.
+  const now = Date.now();
+
+  const { rows } = await pool().query<{
+    id: string;
+    created_at: Date;
+    updated_at: Date;
+    contact: string;
+    mode: ChatMode;
+    last_seen_at: Date | null;
+    telegram_message_id: string | null;
+    user_name: string | null;
+    user_email: string | null;
+    message_count: string;
+    staff_count: string;
+    opener: string | null;
+  }>(
+    `select c.id, c.created_at, c.updated_at, c.contact, c.mode, c.last_seen_at,
+            c.telegram_message_id,
+            u.name  as user_name,
+            u.email as user_email,
+            (select count(*) from chat_messages m where m.conversation_id = c.id)::text as message_count,
+            (select count(*) from chat_messages m
+              where m.conversation_id = c.id and m.role = 'staff')::text as staff_count,
+            (select m.content from chat_messages m
+              where m.conversation_id = c.id and m.role = 'customer'
+              order by m.created_at limit 1) as opener
+       from chat_conversations c
+       left join users u on u.id = c.user_id
+      order by c.updated_at desc
+      limit $1`,
+    [limit]
+  );
+
+  return rows.map((r) => ({
+    id: r.id,
+    startedAt: r.created_at.toISOString(),
+    lastActivityAt: r.updated_at.toISOString(),
+    // A signed-in customer is named; everyone else is a guest, and saying so
+    // plainly is more useful than an empty cell.
+    who: r.user_name?.trim() || "Guest",
+    email: r.user_email,
+    contact: r.contact ?? "",
+    mode: r.mode,
+    messageCount: Number(r.message_count),
+    staffReplyCount: Number(r.staff_count),
+    escalated: r.telegram_message_id !== null,
+    opener: r.opener?.trim() ?? "",
+    lastSeenAt: r.last_seen_at?.toISOString() ?? null,
+    // The same 30s window the Telegram confirmation uses, so "here now" means
+    // the same thing wherever the shop reads it.
+    isPresent: r.last_seen_at !== null && now - r.last_seen_at.getTime() <= PRESENT_WITHIN_SECONDS * 1000,
+    lastActivityLabel: relativeTime(r.updated_at, now),
+  }));
+}
+
+/** One conversation in full, for the transcript view. */
+export async function getConversation(
+  id: string
+): Promise<{ summary: ConversationSummary; messages: StoredMessage[] } | null> {
+  const { rows } = await pool().query<{ id: string }>(
+    "select id from chat_conversations where id = $1",
+    [id]
+  );
+  if (!rows[0]) return null;
+
+  // Reuses the list query rather than duplicating its shape, so the header of
+  // the detail page can never disagree with the row that led to it.
+  const summary = (await listConversations(10_000)).find((c) => c.id === id);
+  if (!summary) return null;
+
+  const { rows: msgs } = await pool().query<{
+    id: string;
+    role: ChatRole;
+    content: string;
+    staff_name: string;
+    created_at: Date;
+  }>(
+    "select id, role, content, staff_name, created_at from chat_messages where conversation_id = $1 order by created_at",
+    [id]
+  );
+
+  return {
+    summary,
+    messages: msgs.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      staffName: m.staff_name,
+      createdAt: m.created_at.toISOString(),
+    })),
+  };
+}
+
+/** Delete one conversation and its messages. The only way anything is removed. */
+export async function deleteConversation(id: string): Promise<boolean> {
+  // chat_messages and chat_telegram_anchors both cascade from here.
+  const { rowCount } = await pool().query("delete from chat_conversations where id = $1", [id]);
+  return (rowCount ?? 0) > 0;
 }

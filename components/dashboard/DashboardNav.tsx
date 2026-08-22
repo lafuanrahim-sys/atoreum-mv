@@ -15,6 +15,9 @@ const NAV_ITEMS = [
   { href: "/dashboard/reviews", label: "Reviews" },
   { href: "/dashboard/boli", label: "Sangu" },
   { href: "/dashboard/messages", label: "Messages" },
+  // Next to Messages because they are the same job from two directions: what
+  // customers sent from the contact form, and what they asked the assistant.
+  { href: "/dashboard/chats", label: "Chat History" },
   { href: "/dashboard/profile", label: "My Profile" },
   { href: "/dashboard/settings", label: "Settings" },
 ];
