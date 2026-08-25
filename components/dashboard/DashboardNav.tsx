@@ -10,6 +10,9 @@ const NAV_ITEMS = [
   { href: "/dashboard/stock", label: "Stock Count" },
   { href: "/dashboard/shipments", label: "Shipments" },
   { href: "/dashboard/orders", label: "Orders" },
+  // Directly under Orders, because that is what it makes: an order taken by
+  // hand rather than through the website.
+  { href: "/dashboard/sales/new", label: "New Sale" },
   { href: "/dashboard/preorders", label: "Pre-Orders" },
   { href: "/dashboard/customers", label: "Customers" },
   { href: "/dashboard/reviews", label: "Reviews" },

@@ -15,6 +15,7 @@ type OrderRow = {
   order_number: string;
   invoice_seq: string | number | null;
   guest_ref: string | null;
+  source: string | null;
   items: OrderItem[];
   user_id: string | null;
   subtotal: string;
@@ -43,6 +44,7 @@ function rowToOrder(row: OrderRow): Order {
     // unconfirmed order.
     invoiceSeq: row.invoice_seq === null || row.invoice_seq === undefined ? null : Number(row.invoice_seq),
     guestRef: row.guest_ref ?? null,
+    source: (row.source as "web" | "manual") ?? "web",
     items: row.items,
     ...(row.user_id ? { userId: row.user_id } : {}),
     subtotal: Number(row.subtotal),
@@ -178,6 +180,8 @@ export async function createOrder(params: {
    * than inferred, so the one order type that means it has to say so.
    */
   movesStock?: boolean;
+  /** 'manual' for an order an admin entered by hand. Defaults to 'web'. */
+  source?: "web" | "manual";
   /** 'GVINV' for a gift voucher sale, which is numbered in its own run. */
   invoiceSeries?: "INV" | "GVINV";
   /** Gift voucher applied at checkout, if any. */
@@ -202,8 +206,8 @@ export async function createOrder(params: {
   const { rows } = await pool().query<OrderRow>(
     `insert into orders
       (id, order_number, items, user_id, subtotal, currency, customer, payment_method, payment_proof_path, status, boli_redeemed, boli_discount_amount, idempotency_key,
-       voucher_code, voucher_boli, voucher_discount_amount, moves_stock, invoice_series)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+       voucher_code, voucher_boli, voucher_discount_amount, moves_stock, invoice_series, source)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
      returning *`,
     [
       id,
@@ -224,6 +228,7 @@ export async function createOrder(params: {
       params.voucherDiscountAmount ?? null,
       params.movesStock !== false,
       params.invoiceSeries ?? "INV",
+      params.source ?? "web",
     ]
   );
   // Cash orders land straight on "Confirmed" (see the status assignment

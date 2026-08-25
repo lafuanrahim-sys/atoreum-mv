@@ -175,3 +175,25 @@ drop trigger if exists orders_assign_guest_ref_trg on orders;
 create trigger orders_assign_guest_ref_trg
   before insert on orders
   for each row execute function orders_assign_guest_ref();
+
+-- Where an order came from.
+--
+-- Orders taken by hand -- an Instagram DM, a phone call, someone asking in
+-- person -- are real sales and belong in the same table as the rest: same
+-- stock deduction, same order number, same invoice run, same figures at the
+-- end of the month. What they are not is the same CHANNEL, and without a
+-- column saying so there is no way to answer "how much does Instagram
+-- actually bring in", which is the question that decides whether the effort
+-- there is worth it.
+--
+-- Defaults to 'web' so every existing order keeps the meaning it already had.
+alter table orders add column if not exists source text not null default 'web';
+
+do $$
+begin
+  alter table orders
+    add constraint orders_source_known check (source in ('web', 'manual'));
+exception
+  when duplicate_object then null;
+end;
+$$;

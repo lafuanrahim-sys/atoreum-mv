@@ -178,6 +178,13 @@ export type Order = {
    * shipping form it cannot be spoofed by typing.
    */
   guestRef?: string | null;
+  /**
+   * Which channel the order came through. 'manual' is one an admin entered by
+   * hand -- an Instagram message, a phone call -- and it is otherwise an
+   * ordinary order in every respect: same numbering, same stock movement,
+   * same invoice run.
+   */
+  source?: "web" | "manual";
   /** Cart subtotal BEFORE any Sangu discount — this is the base the 30%-of-subtotal redemption cap and the purchase-Sangu earn rate are both computed against. Orders predating Sangu have no discount and this is the full charged amount. */
   subtotal: number;
   currency: Currency;

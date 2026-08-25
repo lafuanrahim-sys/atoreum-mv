@@ -104,7 +104,16 @@ export default async function DashboardOrdersPage({
         <tbody>
           {paged.map((o) => (
             <tr key={o.id} className="border-b border-line">
-              <td className="py-3 pr-4 font-mono text-ivory">{o.orderNumber}</td>
+              <td className="py-3 pr-4 font-mono text-ivory">
+                {o.orderNumber}
+                {/* Only manual sales are marked. Website orders are the norm
+                    and labelling every one of them would be noise. */}
+                {o.source === "manual" && (
+                  <span className="ml-2 rounded-full border border-gold/40 px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] text-gold">
+                    Manual
+                  </span>
+                )}
+              </td>
               <td className="py-3 pr-4 text-ivory-dim">
                 {o.customer.name}
                 {/* No account behind this order: nothing was earned on it and
