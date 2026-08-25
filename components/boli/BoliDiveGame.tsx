@@ -311,6 +311,18 @@ export default function BoliDiveGame({
   const stageRef = useRef<HTMLDivElement | null>(null);
   const boardRowRef = useRef<HTMLDivElement | null>(null);
   const bubblesRef = useRef<HTMLDivElement | null>(null);
+  /** Resolved on mount, so the third pick never waits for fingerprinting. */
+  const deviceHashRef = useRef<Promise<string | null> | null>(null);
+  /**
+   * The play request, started the instant the third ball is chosen.
+   *
+   * The reveal has a deliberate beat before it -- long enough for the third
+   * pick to visibly land -- and the request used to start only AFTER that beat
+   * finished. Two waits in a row, when one could hide the other: the network
+   * now runs during the beat, so anything that comes back inside it costs the
+   * player nothing at all.
+   */
+  const playRequestRef = useRef<Promise<{ ok: boolean; result?: DivePlayResult; error?: string }> | null>(null);
   const preRollStreakRef = useRef(0);
   const enteredRef = useRef(false);
   const idleTweenRef = useRef<gsap.core.Timeline | null>(null);
@@ -383,6 +395,18 @@ export default function BoliDiveGame({
       return next;
     });
   };
+
+  /**
+   * Warm the device hash while the player is still looking at the board.
+   *
+   * getDeviceHash caches into localStorage, but the FIRST call does canvas
+   * fingerprinting and a SHA-256, and it used to run between the third pick
+   * and the network request -- the one moment where every millisecond is felt.
+   * Started here, it has been resolved for a long time by then.
+   */
+  useEffect(() => {
+    deviceHashRef.current = getDeviceHash();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -636,20 +660,39 @@ export default function BoliDiveGame({
     [muted]
   );
 
+  /**
+   * Fire the play. Separated from the reveal so it can be started the moment
+   * the third ball lands, in parallel with the animation that follows it.
+   */
+  const startPlayRequest = useCallback(
+    async (picks: number[]): Promise<{ ok: boolean; result?: DivePlayResult; error?: string }> => {
+      try {
+        const deviceHash = await (deviceHashRef.current ?? getDeviceHash());
+        const res = await fetch("/api/boli/dive/play", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ deviceHash, pickedIndices: picks }),
+        });
+        return await res.json();
+      } catch {
+        return { ok: false, error: "Something went wrong. Try again." };
+      }
+    },
+    []
+  );
+
   const handleConfirmPick = useCallback(
     async (picks: number[]) => {
       setPhase("rolling");
       setError(null);
       setAnnouncement("Opening the balls…");
 
-      const deviceHash = await getDeviceHash();
       try {
-        const res = await fetch("/api/boli/dive/play", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ deviceHash, pickedIndices: picks }),
-        });
-        const data = await res.json();
+        // Started when the third ball was picked, and usually finished by now.
+        // Falling back to starting it here keeps the path correct if anything
+        // ever calls this without having primed it.
+        const data = await (playRequestRef.current ?? startPlayRequest(picks));
+        playRequestRef.current = null;
         if (!data.ok) {
           setError(data.error ?? "Something went wrong. Try again.");
           setPhase("picking");
@@ -657,20 +700,33 @@ export default function BoliDiveGame({
           return;
         }
 
+        // ok:true without a result would be the server contradicting itself,
+        // but the type says it is possible, so it is handled rather than
+        // asserted away.
+        if (!data.result) {
+          setError("Something went wrong. Try again.");
+          setPhase("picking");
+          setSelected([]);
+          return;
+        }
         const play: DivePlayResult = data.result;
         setBoard(play.gridTiers);
         setResult(play);
         setPreviousStreakDay(preRollStreakRef.current || undefined);
         setMsToMidnight(msUntilNextMaleMidnight(new Date()));
         setPhase("revealing");
-        window.setTimeout(() => revealResult(play), 250);
+        // A breath between the board settling and the numbers running up.
+        // This was 250ms back when the network ran AFTER the beat below and a
+        // little extra padding hid the seam; with the request now finishing
+        // during that beat, there is no seam left to hide.
+        window.setTimeout(() => revealResult(play), 120);
       } catch {
         setError("Something went wrong. Try again.");
         setPhase("picking");
         setSelected([]);
       }
     },
-    [revealResult]
+    [revealResult, startPlayRequest]
   );
 
   const toggleBall = (index: number) => {
@@ -686,7 +742,16 @@ export default function BoliDiveGame({
         // starts revealing. At the old 300ms this fired exactly as the
         // selection transition finished, so the ball you just chose was
         // swallowed by the reveal and the choice never registered.
-        window.setTimeout(() => handleConfirmPick(next), 520);
+        // Network starts NOW, and the beat below runs on top of it rather
+        // than after it.
+        playRequestRef.current = startPlayRequest(next);
+        // Just past the ball's own 340ms selection transition, so the third
+        // pick visibly lands before the board turns over. 520 left 180ms of
+        // dead air on top of that, and dead air right after a click is the
+        // part that reads as lag; 420 keeps the beat and drops the padding.
+        // Going under the transition is what the original 300ms got wrong --
+        // the reveal swallowed the choice and it never registered as a click.
+        window.setTimeout(() => handleConfirmPick(next), 420);
       }
       return next;
     });
