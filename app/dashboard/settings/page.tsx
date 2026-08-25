@@ -57,7 +57,7 @@ export default async function DashboardSettingsPage({
           </p>
           {maintenanceFlag === "on" && (
             <p className="fade-in-up mt-2 font-mono text-xs uppercase tracking-[0.1em] text-red-400" role="status">
-              Site is now offline.
+              Site is going offline — visitors see the back-soon page within a few seconds.
             </p>
           )}
           {maintenanceFlag === "off" && (

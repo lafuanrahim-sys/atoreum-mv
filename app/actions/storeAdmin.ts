@@ -124,11 +124,14 @@ export async function sendTelegramTestAction(): Promise<{ ok: true; delivered: n
 /* ---------- Maintenance mode ---------- */
 
 /**
- * Site-wide on/off switch (see app/layout.tsx) -- while enabled, every
- * visitor except a signed-in admin sees a "closed for maintenance" page
- * instead of the storefront. Toggled from Dashboard -> Settings, takes
- * effect within a few seconds (the flag is read with a short cache, not
- * live on every request -- see the unstable_cache wrapper in layout.tsx).
+ * Site-wide on/off switch (enforced in middleware.ts) -- while enabled,
+ * every visitor except a signed-in admin sees a "closed for maintenance"
+ * page instead of the storefront. Toggled from Dashboard -> Settings.
+ *
+ * Takes effect within about twenty seconds rather than instantly: the flag
+ * is cached at the CDN and again in each Edge instance, because reading it
+ * live meant a Postgres round trip standing in front of whichever visitor
+ * arrived as the cache expired. See middleware.ts for the measurements.
  */
 export async function toggleMaintenanceModeAction(formData: FormData): Promise<void> {
   await requireAdmin();
