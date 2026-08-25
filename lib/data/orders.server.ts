@@ -1,6 +1,7 @@
 import { pool } from "@/lib/db";
 import type { Order, OrderCustomer, OrderItem, OrderStatus, PaymentMethod } from "@/lib/types";
 import { recordMovement } from "@/lib/data/stock.server";
+import type { OrderSource } from "@/lib/data/orderChannels";
 
 /**
  * Postgres-backed order store (see lib/data/schema.sql) — replaces the
@@ -44,7 +45,7 @@ function rowToOrder(row: OrderRow): Order {
     // unconfirmed order.
     invoiceSeq: row.invoice_seq === null || row.invoice_seq === undefined ? null : Number(row.invoice_seq),
     guestRef: row.guest_ref ?? null,
-    source: (row.source as "web" | "manual") ?? "web",
+    source: (row.source as OrderSource) ?? "web",
     items: row.items,
     ...(row.user_id ? { userId: row.user_id } : {}),
     subtotal: Number(row.subtotal),
@@ -180,8 +181,9 @@ export async function createOrder(params: {
    * than inferred, so the one order type that means it has to say so.
    */
   movesStock?: boolean;
-  /** 'manual' for an order an admin entered by hand. Defaults to 'web'. */
-  source?: "web" | "manual";
+  /** The channel this came through -- 'instagram', 'phone', 'walk-in'.
+   *  Defaults to 'web' for an order the customer placed themselves. */
+  source?: OrderSource;
   /** 'GVINV' for a gift voucher sale, which is numbered in its own run. */
   invoiceSeries?: "INV" | "GVINV";
   /** Gift voucher applied at checkout, if any. */

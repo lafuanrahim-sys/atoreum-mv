@@ -1,3 +1,4 @@
+import type { OrderSource } from "@/lib/data/orderChannels";
 /**
  * Shared types for the catalog/cart/checkout/admin system. Pure types only
  * (no runtime imports) so this file is safe to import from both client and
@@ -179,12 +180,13 @@ export type Order = {
    */
   guestRef?: string | null;
   /**
-   * Which channel the order came through. 'manual' is one an admin entered by
+   * Which channel the order came through -- "instagram", "phone",
+   * "walk-in" and so on; see lib/data/orderChannels.ts. 'manual' is one an admin entered by
    * hand -- an Instagram message, a phone call -- and it is otherwise an
    * ordinary order in every respect: same numbering, same stock movement,
    * same invoice run.
    */
-  source?: "web" | "manual";
+  source?: OrderSource;
   /** Cart subtotal BEFORE any Sangu discount — this is the base the 30%-of-subtotal redemption cap and the purchase-Sangu earn rate are both computed against. Orders predating Sangu have no discount and this is the full charged amount. */
   subtotal: number;
   currency: Currency;

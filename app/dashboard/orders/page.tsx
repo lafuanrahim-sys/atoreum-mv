@@ -7,6 +7,7 @@ import AdminActionButton from "@/components/dashboard/AdminActionButton";
 import Pagination from "@/components/dashboard/Pagination";
 import SortHeader from "@/components/dashboard/SortHeader";
 import PageHeader from "@/components/dashboard/PageHeader";
+import { channelLabel, isManualSource } from "@/lib/data/orderChannels";
 
 const PAGE_SIZE = 20;
 
@@ -106,11 +107,14 @@ export default async function DashboardOrdersPage({
             <tr key={o.id} className="border-b border-line">
               <td className="py-3 pr-4 font-mono text-ivory">
                 {o.orderNumber}
-                {/* Only manual sales are marked. Website orders are the norm
-                    and labelling every one of them would be noise. */}
-                {o.source === "manual" && (
+                {/* Named, not just flagged. "Manual" said only that it was not
+                    the website; the channel is the part worth knowing, and it
+                    is the reason the column exists. Website orders stay
+                    unlabelled -- they are the norm, and badging every one of
+                    them would be noise. */}
+                {isManualSource(o.source) && (
                   <span className="ml-2 rounded-full border border-gold/40 px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] text-gold">
-                    Manual
+                    {channelLabel(o.source)}
                   </span>
                 )}
               </td>

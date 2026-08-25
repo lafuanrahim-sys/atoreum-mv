@@ -8,6 +8,7 @@ import { isAdminRole } from "@/lib/auth/userSession";
 import { createOrder, updateOrderStatus } from "@/lib/data/orders.server";
 import { getProductById } from "@/lib/data/products.server";
 import type { OrderItem, PaymentMethod } from "@/lib/types";
+import { ORDER_CHANNELS, type OrderChannel } from "@/lib/data/orderChannels";
 
 /**
  * An order taken by hand: an Instagram message, a phone call, someone asking
@@ -57,6 +58,7 @@ export async function createManualSaleAction(formData: FormData): Promise<Manual
   const address = String(formData.get("address") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim();
+  const channelRaw = String(formData.get("channel") ?? "");
   const methodRaw = String(formData.get("paymentMethod") ?? "");
   const markPaid = formData.get("markPaid") === "on";
 
@@ -67,6 +69,14 @@ export async function createManualSaleAction(formData: FormData): Promise<Manual
     return { ok: false, error: "Choose how they are paying." };
   }
   const paymentMethod: PaymentMethod = methodRaw;
+
+  // Validated against the shared list rather than trusted, because it goes
+  // into a checked column and a value the constraint refuses would fail the
+  // insert after the stock had already been reasoned about.
+  const channel = ORDER_CHANNELS.find((c) => c.value === channelRaw)?.value as OrderChannel | undefined;
+  if (!channel) {
+    return { ok: false, error: "Choose where this order came from." };
+  }
 
   const lines = parseLines(formData.get("lines"));
   if (lines.length === 0) {
@@ -112,7 +122,7 @@ export async function createManualSaleAction(formData: FormData): Promise<Manual
     customer: { name, email, phone, address, ...(notes ? { notes } : {}) },
     paymentMethod,
     paymentProofPath: null,
-    source: "manual",
+    source: channel,
   });
 
   /**

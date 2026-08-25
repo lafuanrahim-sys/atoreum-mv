@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createManualSaleAction } from "@/app/actions/manualSale";
+import { ORDER_CHANNELS } from "@/lib/data/orderChannels";
 
 /**
  * Entering a sale that came in some other way.
@@ -166,6 +167,34 @@ export default function ManualSaleForm({ products }: { products: Product[] }) {
         )}
       </section>
 
+      {/* ---- where it came from ---- */}
+      <section>
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-gold">Where it came from</h2>
+        <p className="mt-1.5 text-[12px] text-ivory-dim">
+          Recorded on the order, so you can see later what each channel actually brings in.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {ORDER_CHANNELS.map((c, i) => (
+            <label
+              key={c.value}
+              className="channel-chip relative cursor-pointer"
+            >
+              <input
+                type="radio"
+                name="channel"
+                value={c.value}
+                defaultChecked={i === 0}
+                required
+                className="peer sr-only"
+              />
+              <span className="flex min-h-11 items-center rounded-full border border-line px-5 text-sm text-ivory-dim transition-colors hover:border-gold/50 hover:text-ivory peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gold">
+                {c.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </section>
+
       {/* ---- who it is for ---- */}
       <section>
         <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-gold">Customer</h2>
@@ -209,7 +238,7 @@ export default function ManualSaleForm({ products }: { products: Product[] }) {
             <input
               name="notes"
               type="text"
-              placeholder="e.g. ordered via Instagram DM"
+              placeholder="e.g. asked for it gift wrapped"
               className="min-h-11 rounded-md border border-line bg-transparent px-3 py-2.5 text-sm text-ivory placeholder:text-ivory-dim/60 focus:border-gold focus:outline-none"
             />
           </label>
