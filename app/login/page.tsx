@@ -34,10 +34,36 @@ const ERROR_MESSAGES: Record<string, string> = {
   "rate-limited": "Too many attempts. Please wait a few minutes and try again.",
 };
 
-const NOTICE_MESSAGES: Record<string, string> = {
-  "verify-sent": "Check your inbox. We've sent a verification link.",
-  "verify-send-failed": "Your account was created, but the verification email couldn't be sent. Try resending it below.",
-  "reset-sent": "If an account exists for that email, we've sent a link to reset your password.",
+/**
+ * Notices are a headline and a detail, not one grey sentence.
+ *
+ * These were a single line of small green text under the form, and people
+ * missed them: they registered, saw nothing they recognised as a response,
+ * and either tried again or gave up waiting for an email they did not know
+ * had been sent. The most important message on the page was also the quietest
+ * thing on it.
+ *
+ * The headline says what happened; the detail says what to do next, including
+ * the part everyone forgets to check.
+ */
+const NOTICE_MESSAGES: Record<string, { title: string; detail: string; tone: "good" | "warn" }> = {
+  "verify-sent": {
+    title: "Check your email",
+    detail:
+      "We have sent you a verification link. Open it to finish creating your account. If it is not in your inbox within a minute or two, look in your spam or junk folder.",
+    tone: "good",
+  },
+  "verify-send-failed": {
+    title: "Account created, but the email did not send",
+    detail: "Your account exists. Use the resend button below to try the verification email again.",
+    tone: "warn",
+  },
+  "reset-sent": {
+    title: "Check your email",
+    detail:
+      "If an account exists for that address, we have sent a link to reset your password. It may take a minute to arrive, and it is worth checking your spam or junk folder.",
+    tone: "good",
+  },
 };
 
 /**
@@ -154,15 +180,52 @@ export default async function LoginPage({
         <PageTransition transitionKey={mode}>
           <div>
             {errorMessage && (
-              <p role="alert" className="fade-in-up mt-6 text-sm text-red-400">
-                {errorMessage}
-              </p>
+              <div
+                role="alert"
+                className="fade-in-up mt-6 flex items-start gap-3 rounded-md border border-red-400/40 bg-red-400/[0.08] p-4"
+              >
+                <svg viewBox="0 0 20 20" aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-red-400">
+                  <circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
+                  <path d="M10 6v5M10 13.5v.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+                <p className="text-sm leading-relaxed text-red-300">{errorMessage}</p>
+              </div>
             )}
 
+            {/* A bordered, tinted panel with an icon, because this is the one
+                thing on the page the customer most needs to notice, and it was
+                previously the least noticeable thing on it. */}
             {noticeMessage && (
-              <p role="status" className="fade-in-up mt-6 text-sm text-emerald-400">
-                {noticeMessage}
-              </p>
+              <div
+                role="status"
+                aria-live="polite"
+                className={`fade-in-up mt-6 flex items-start gap-3 rounded-md border p-4 ${
+                  noticeMessage.tone === "good"
+                    ? "border-emerald-500/40 bg-emerald-500/[0.08]"
+                    : "border-gold/40 bg-gold/[0.08]"
+                }`}
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                  className={`mt-0.5 h-5 w-5 shrink-0 ${
+                    noticeMessage.tone === "good" ? "text-emerald-400" : "text-gold"
+                  }`}
+                >
+                  <rect x="2.5" y="4.5" width="15" height="11" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
+                  <path d="M3 5.5l7 5 7-5" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <div>
+                  <p
+                    className={`text-sm font-medium ${
+                      noticeMessage.tone === "good" ? "text-emerald-300" : "text-gold"
+                    }`}
+                  >
+                    {noticeMessage.title}
+                  </p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ivory-dim">{noticeMessage.detail}</p>
+                </div>
+              </div>
             )}
 
             {needsResend && (
