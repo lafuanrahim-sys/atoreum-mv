@@ -15,6 +15,9 @@ type SessionState = {
   loggedIn: boolean | null;
   name: string;
   role: "customer" | "admin" | "superadmin" | null;
+  /** Something happened they have not seen: an order moved, Sangu landed,
+   *  today's dive is unplayed. Drives the dot on the profile icon. */
+  hasUnseen: boolean;
   favorites: string[];
   /** Toggle a favorite; redirects to /login when signed out. */
   toggleFavorite: (productId: string) => void;
@@ -22,6 +25,7 @@ type SessionState = {
 
 const SessionContext = createContext<SessionState>({
   loggedIn: null,
+  hasUnseen: false,
   name: "",
   role: null,
   favorites: [],
@@ -38,6 +42,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [name, setName] = useState("");
   const [role, setRole] = useState<"customer" | "admin" | "superadmin" | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [hasUnseen, setHasUnseen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -51,6 +56,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setName(data.name ?? "");
         setRole(data.role ?? null);
         setFavorites(Array.isArray(data.favorites) ? data.favorites : []);
+        setHasUnseen(Boolean(data.hasUnseen));
       })
       .catch(() => {
         if (!cancelled) setLoggedIn(false);
@@ -78,7 +84,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <SessionContext.Provider value={{ loggedIn, name, role, favorites, toggleFavorite }}>
+    <SessionContext.Provider value={{ loggedIn, name, role, hasUnseen, favorites, toggleFavorite }}>
       {children}
     </SessionContext.Provider>
   );

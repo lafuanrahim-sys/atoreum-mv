@@ -1118,3 +1118,48 @@ button:not(:disabled),
     transform: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Sangu Dive prompt
+   ---------------------------------------------------------------------------
+   Bubbles rising through the card. Slow and few: this sits on the profile page
+   above someone's orders and balance, and motion that competes with the page
+   it decorates is worse than none.
+
+   Transform and opacity only, so it stays on the compositor and never touches
+   layout. Off entirely under prefers-reduced-motion -- drifting background
+   motion is exactly what that setting is for.
+   ------------------------------------------------------------------------ */
+
+.dive-bubble {
+  bottom: -12px;
+  opacity: 0;
+  animation-name: dive-bubble-rise;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  animation-iteration-count: infinite;
+}
+
+@keyframes dive-bubble-rise {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.7;
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    /* Past the top of the tallest the card gets, so none pops out mid-flight. */
+    transform: translateY(-260px) translateX(10px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dive-bubble {
+    animation: none;
+    opacity: 0;
+  }
+}

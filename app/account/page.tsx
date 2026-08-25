@@ -7,6 +7,9 @@ import { getAllProducts } from "@/lib/data/products.server";
 import { logoutAction } from "@/app/actions/auth";
 import ProfileForms from "@/components/account/ProfileForms";
 import ProfileOverview, { type ProfileOverviewData } from "@/components/account/ProfileOverview";
+import DivePrompt from "@/components/account/DivePrompt";
+import { getTodaysPlay } from "@/lib/boli/dive.server";
+import { markNotificationsSeen } from "@/lib/data/notifications.server";
 import ProductCard from "@/components/products/ProductCard";
 import BoliSection, { type PendingBoliOrder } from "@/components/account/BoliSection";
 import BoliDiveGame from "@/components/boli/BoliDiveGame";
@@ -39,11 +42,20 @@ const STATUS_STYLES: Record<string, string> = {
   Cancelled: "text-red-400",
 };
 
+/**
+ * Profile first, and the default.
+ *
+ * Orders led, which suited someone arriving to chase a delivery and suited
+ * nobody else: most sign-ins are not about an order, and landing on an empty
+ * or stale order list is a dead end. The profile is the page that says who you
+ * are, what you have earned, and what is available today, so it is the one to
+ * open on.
+ */
 const TABS = [
+  { key: "profile", label: "Profile" },
   { key: "orders", label: "My Orders" },
   { key: "favorites", label: "Favorites" },
   { key: "boli", label: "Sangu" },
-  { key: "profile", label: "Profile" },
 ] as const;
 
 const BOLI_PAGE_SIZE = 20;
@@ -53,9 +65,14 @@ export default async function AccountPage({
 }: {
   searchParams: Promise<{ tab?: string; profile?: string; password?: string; boliPage?: string; boliView?: string }>;
 }) {
-  const { tab = "orders", profile = "", password = "", boliPage: boliPageRaw = "1", boliView = "my" } = await searchParams;
+  const { tab = "profile", profile = "", password = "", boliPage: boliPageRaw = "1", boliView = "my" } = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/login?from=%2Faccount");
+
+  // Opening the profile is what clears the dot: it is the only place the dot
+  // leads, so arriving here IS having seen what was waiting. Not awaited --
+  // the page must not wait on a bookkeeping write.
+  void markNotificationsSeen(user.id);
 
   // userId (set at checkout from the session) is the authoritative link —
   // it survives the shipping-form email differing from the account's login
@@ -88,6 +105,7 @@ export default async function AccountPage({
   // unavailable must never stop the profile rendering, hence the try/catch and
   // the null-tolerant shape downstream.
   let profileOverview: ProfileOverviewData | null = null;
+  let todaysDive: { playedToday: boolean; wonToday?: number; streakDay?: number } | null = null;
   // Only ever the signed-in account's own vouchers -- the code is a bearer
   // secret, so the query is keyed on the session's user id and nothing else.
   //
@@ -116,6 +134,24 @@ export default async function AccountPage({
       };
     } catch (err) {
       console.error("[boli] profile snapshot failed:", err);
+    }
+
+    /**
+     * Today's dive, for the prompt above the profile.
+     *
+     * Never allowed to break the page: the profile is where someone goes to
+     * find an order or change a password, and a game they may not even know
+     * about must not be what stops them.
+     */
+    try {
+      const play = await getTodaysPlay(user.id);
+      todaysDive = play
+        ? // totalPayout already includes the streak chest, so the banner
+            // reports what actually landed in their balance.
+            { playedToday: true, wonToday: play.totalPayout, streakDay: play.streakDay }
+        : { playedToday: false };
+    } catch (err) {
+      console.error("[boli] could not read today's dive:", err);
     }
 
     profileOverview = {
@@ -355,6 +391,15 @@ export default async function AccountPage({
           {tab === "profile" && (
             <div className="flex flex-col gap-14">
               {profileOverview && <ProfileOverview data={profileOverview} />}
+              {/* Under the overview: they see who they are and what they have,
+                  then what is free today. */}
+              {todaysDive && (
+                <DivePrompt
+                  playedToday={todaysDive.playedToday}
+                  wonToday={todaysDive.wonToday}
+                  streakDay={todaysDive.streakDay}
+                />
+              )}
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-ivory">Account details</p>
                 <div className="mt-6">

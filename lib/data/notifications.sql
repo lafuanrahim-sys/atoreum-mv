@@ -1,0 +1,13 @@
+-- When a customer last looked at their profile.
+--
+-- The header shows a dot when something has happened that they have not seen:
+-- an order confirmed, Sangu credited, today's dive still unplayed. All of that
+-- is answerable from data the shop already keeps -- orders have an updated_at,
+-- the ledger has timestamps, the dive has a play date -- so nothing needs to
+-- be written when an event occurs. One column recording when they last looked
+-- is enough to turn that existing data into "new since you were here".
+--
+-- The alternative, a notifications table written to on every event, would mean
+-- every order status change and every Sangu credit taking on a second write
+-- that can fail independently, to store something derivable from the first.
+alter table users add column if not exists notifications_seen_at timestamptz;
