@@ -21,6 +21,16 @@ export const metadata: Metadata = {
  * lib/boli/schema.sql (this is a UX convenience, not the actual gate).
  */
 export default async function CheckoutPage() {
+  /**
+   * Started before the session lookup rather than after it.
+   *
+   * The bank details do not depend on who is asking, but awaiting them last
+   * put them behind the session and, for a signed-in customer, the Sangu
+   * balance as well -- three round trips in single file when only two of
+   * them are actually ordered. Checkout runs in the function region rather
+   * than at the edge, so each one is a trip worth saving.
+   */
+  const settingsPromise = getSettings();
   const user = await getCurrentUser();
   let boli: { available: number; eligible: boolean; ineligibleReason: string | null } | null = null;
 
@@ -45,7 +55,7 @@ export default async function CheckoutPage() {
 
   return (
     <CheckoutClient
-      bankDetails={await getSettings()}
+      bankDetails={await settingsPromise}
       boli={boli}
       defaultContact={user ? { name: user.name, email: user.email } : null}
     />
