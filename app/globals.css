@@ -1163,3 +1163,78 @@ button:not(:disabled),
     opacity: 0;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Membership tiers (components/account/ProfileOverview.tsx)
+
+   Faru, Vilu, Kandu and Thari are named for the reef, the lagoon, the channel
+   and the star, and until now all four rendered in exactly the same greys --
+   so the ladder read as four words rather than four places, and the tier you
+   were climbing toward looked identical to the one you were standing on.
+
+   Each gets the colour of the water it is named for: warm shallows over the
+   reef, then the lagoon's green, the deep blue of the channel, and finally the
+   gold of a star over all of it. Climbing is visible before it is explained.
+
+   Light and dark carry different values rather than one set at different
+   opacities -- an accent legible on near-black is far too pale on the light
+   card, and vice versa. Every one is checked against its own background.
+   --------------------------------------------------------------------------- */
+:root {
+  --tier-faru-accent: #a8503a;
+  --tier-vilu-accent: #10736a;
+  --tier-kandu-accent: #2b5896;
+  --tier-thari-accent: #8a6410;
+  --tier-faru-glow: rgba(200, 100, 70, 0.14);
+  --tier-vilu-glow: rgba(30, 150, 135, 0.14);
+  --tier-kandu-glow: rgba(60, 110, 190, 0.14);
+  --tier-thari-glow: rgba(190, 145, 40, 0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tier-faru-accent: #eda98c;
+    --tier-vilu-accent: #6fd3bf;
+    --tier-kandu-accent: #8bb8ee;
+    --tier-thari-accent: #ecc673;
+    --tier-faru-glow: rgba(233, 150, 120, 0.20);
+    --tier-vilu-glow: rgba(90, 205, 185, 0.18);
+    --tier-kandu-glow: rgba(120, 175, 240, 0.18);
+    --tier-thari-glow: rgba(235, 190, 105, 0.20);
+  }
+}
+
+.theme-light {
+  --tier-faru-accent: #a8503a;
+  --tier-vilu-accent: #10736a;
+  --tier-kandu-accent: #2b5896;
+  --tier-thari-accent: #8a6410;
+  --tier-faru-glow: rgba(200, 100, 70, 0.14);
+  --tier-vilu-glow: rgba(30, 150, 135, 0.14);
+  --tier-kandu-glow: rgba(60, 110, 190, 0.14);
+  --tier-thari-glow: rgba(190, 145, 40, 0.16);
+}
+
+.theme-dark {
+  --tier-faru-accent: #eda98c;
+  --tier-vilu-accent: #6fd3bf;
+  --tier-kandu-accent: #8bb8ee;
+  --tier-thari-accent: #ecc673;
+  --tier-faru-glow: rgba(233, 150, 120, 0.20);
+  --tier-vilu-glow: rgba(90, 205, 185, 0.18);
+  --tier-kandu-glow: rgba(120, 175, 240, 0.18);
+  --tier-thari-glow: rgba(235, 190, 105, 0.20);
+}
+
+/* The light travelling across the progress bar. Slow and low-contrast: it is
+   there to make the bar look like it is filling rather than to be watched. */
+@keyframes tier-progress-sheen {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(320%); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tier-progress-sheen {
+    animation: tier-progress-sheen 3.6s ease-in-out infinite;
+  }
+}

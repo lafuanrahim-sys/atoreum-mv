@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import {
   BOLI_TO_MVR,
   TIER_MULTIPLIER,
@@ -74,72 +75,169 @@ export default function ProfileOverview({ data }: { data: ProfileOverviewData })
           was deliberately re-cut as a recess with its controls standing out of
           it. Left as-is here on purpose: this card holds no inputs, so it has
           nothing to stand proud of it, and a recess with nothing raised inside
-          reads as a dent rather than as depth. */}
-      <div className="relative overflow-hidden rounded-2xl border border-ivory/15 bg-ink-2/50 bg-[linear-gradient(150deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_55%)] p-8 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_24px_56px_-32px_rgba(0,0,0,0.65)] md:p-10">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Member since</p>
-            <p className="mt-2 text-sm text-ivory-dim">{data.memberSince}</p>
-          </div>
-          <div className="text-right">
-            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Tier</p>
-            <p className="mt-2 font-mono text-sm tabular-nums text-ivory-dim">
-              {tierIndex + 1} of {TIER_ORDER.length}
-            </p>
-          </div>
-        </div>
+          reads as a dent rather than as depth.
 
-        <div className="mt-8 flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
-          <div>
-            <h2 className="font-display text-5xl leading-none text-ivory md:text-6xl">{TIER_LABEL[tier]}</h2>
-            <p className="mt-3 text-sm text-ivory-dim">
-              Named for {TIER_MEANING[tier]} · earning{" "}
-              <span className="text-ivory">{TIER_MULTIPLIER[tier]}×</span> on every purchase
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Sangu balance</p>
-            <p className="mt-2 font-display text-4xl leading-none text-ivory tabular-nums md:text-5xl">
-              {(data.sangu?.balance ?? 0).toLocaleString()}
-            </p>
-            <p className="mt-2 text-xs text-ivory-dim">
-              MVR {((data.sangu?.balance ?? 0) * BOLI_TO_MVR).toFixed(2)} in value
-            </p>
-          </div>
-        </div>
+          The tier's own colour now runs through it (see the tier block in
+          globals.css). All four tiers used to render in the same greys, so the
+          card said "Faru" without ever showing what Faru was, and the tier
+          above looked identical to the one you were standing on. */}
+      <div
+        className="relative overflow-hidden rounded-2xl border border-ivory/15 bg-ink-2/50 p-8 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_24px_56px_-32px_rgba(0,0,0,0.65)] md:p-10"
+        style={
+          {
+            "--tier-accent": `var(--tier-${tier}-accent)`,
+            "--tier-glow": `var(--tier-${tier}-glow)`,
+          } as CSSProperties
+        }
+      >
+        {/* The water this tier is named for. Decorative, and behind everything. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-[linear-gradient(150deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_55%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -right-24 -top-28 h-80 w-80 rounded-full bg-[radial-gradient(circle,var(--tier-glow),transparent_70%)] blur-2xl"
+        />
 
-        {/* Tier ladder: every rung, current one marked, so the reward for
-            climbing is visible from here without opening the Sangu tab. */}
-        <div className="mt-10">
-          <div className="flex items-end gap-1.5">
-            {TIER_ORDER.map((t, i) => (
-              <div key={t} className="flex-1">
-                <div className={`h-[3px] w-full ${i <= tierIndex ? "bg-gold" : "bg-line"}`} />
-                <p
-                  className={`mt-2 font-mono text-[10px] uppercase tracking-[0.15em] ${
-                    i === tierIndex ? "text-gold" : "text-ivory-dim/60"
-                  }`}
-                >
-                  {TIER_LABEL[t]}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {nextTier ? (
-            <>
-              <div className="mt-5 h-[2px] w-full bg-line">
-                <div className="h-full bg-gold" style={{ width: `${progressPct}%` }} />
-              </div>
-              <p className="mt-3 text-xs text-ivory-dim">
-                {toNext.toLocaleString()} more lifetime Sangu to reach{" "}
-                <span className="text-ivory">{TIER_LABEL[nextTier]}</span> and earn{" "}
-                {TIER_MULTIPLIER[nextTier]}×.
+        <div className="relative">
+          <div className="flex flex-wrap items-start justify-between gap-6">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Member since</p>
+              <p className="mt-2 text-sm text-ivory-dim">{data.memberSince}</p>
+            </div>
+            <div className="text-right">
+              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Tier</p>
+              <p className="mt-2 font-mono text-sm tabular-nums text-ivory-dim">
+                {tierIndex + 1} of {TIER_ORDER.length}
               </p>
-            </>
-          ) : (
-            <p className="mt-5 text-xs text-ivory-dim">You&apos;ve reached the highest tier.</p>
-          )}
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-wrap items-end justify-between gap-x-10 gap-y-8">
+            <div className="min-w-0">
+              <h2 className="font-display text-5xl leading-none text-[var(--tier-accent)] md:text-6xl">
+                {TIER_LABEL[tier]}
+              </h2>
+
+              {/* The earning rate was a clause in the middle of a sentence. It
+                  is the whole point of holding a tier, so it gets to be an
+                  object on the page instead of something to read past. */}
+              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span
+                  className="rounded-full px-3 py-1 font-mono text-[11px] tabular-nums tracking-[0.08em]"
+                  style={{
+                    color: "var(--tier-accent)",
+                    backgroundColor: "color-mix(in srgb, var(--tier-accent) 14%, transparent)",
+                    boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--tier-accent) 38%, transparent)",
+                  }}
+                >
+                  {TIER_MULTIPLIER[tier]}× Sangu
+                </span>
+                <span className="text-sm text-ivory-dim">on everything you buy</span>
+              </div>
+
+              <p className="mt-3 text-sm text-ivory-dim">Named for {TIER_MEANING[tier]}.</p>
+            </div>
+
+            {/* Right-aligned only once it is actually beside the tier name.
+                Stacked under it on a phone, text-right left the label at the
+                edge and the number floating in from it. */}
+            <div className="text-left sm:text-right">
+              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ivory-dim">Sangu balance</p>
+              <p className="mt-2 font-display text-4xl leading-none text-[var(--tier-accent)] tabular-nums md:text-5xl">
+                {(data.sangu?.balance ?? 0).toLocaleString()}
+              </p>
+              <p className="mt-2 text-xs text-ivory-dim">
+                MVR {((data.sangu?.balance ?? 0) * BOLI_TO_MVR).toFixed(2)} in value
+              </p>
+            </div>
+          </div>
+
+          {/* Tier ladder: every rung, in the colour of the water it is named
+              for, so the tiers ahead read as places rather than as greyed-out
+              words. Each carries its multiplier, which is the actual reason to
+              climb and previously appeared nowhere on this card. */}
+          <div className="mt-10">
+            <div className="flex items-end gap-2">
+              {TIER_ORDER.map((t, i) => {
+                const reached = i <= tierIndex;
+                const isCurrent = i === tierIndex;
+                return (
+                  <div key={t} className="min-w-0 flex-1">
+                    {/* Locked rungs keep their own hue, muted: enough to read
+                        as a destination with a colour of its own, too faint to
+                        be mistaken for somewhere you have already been. */}
+                    <div
+                      className="h-[3px] w-full rounded-full"
+                      style={{
+                        background: reached
+                          ? `var(--tier-${t}-accent)`
+                          : `color-mix(in srgb, var(--tier-${t}-accent) 40%, transparent)`,
+                      }}
+                    />
+                    <p
+                      className={`mt-2.5 truncate font-mono text-[10px] uppercase tracking-[0.15em] ${
+                        isCurrent ? "" : "text-ivory-dim"
+                      }`}
+                      style={isCurrent ? { color: `var(--tier-${t}-accent)` } : undefined}
+                    >
+                      {TIER_LABEL[t]}
+                    </p>
+                    {/* Earned rungs carry their tier's colour, locked ones sit
+                        in the muted text tone. The difference is hue rather
+                        than opacity on purpose: fading this to 70% put it at
+                        2.9:1 on the light card, which is unreadable, and the
+                        rung above it already says which is which. */}
+                    <p
+                      className={`mt-1 font-mono text-[11px] tabular-nums ${reached ? "" : "text-ivory-dim"}`}
+                      style={reached ? { color: `var(--tier-${t}-accent)` } : undefined}
+                    >
+                      {TIER_MULTIPLIER[t]}×
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {nextTier ? (
+              <>
+                {/* The track is tinted toward the tier being climbed to, so a
+                    nearly empty bar still shows where it is heading instead of
+                    reading as an empty trough. */}
+                <div
+                  className="mt-7 h-2 w-full overflow-hidden rounded-full"
+                  style={{
+                    background: `linear-gradient(90deg, color-mix(in srgb, var(--tier-${nextTier}-accent) 8%, transparent), color-mix(in srgb, var(--tier-${nextTier}-accent) 22%, transparent))`,
+                  }}
+                >
+                  <div
+                    className="relative h-full overflow-hidden rounded-full"
+                    style={{
+                      // A floor, so someone at the very start of a tier sees a
+                      // bead of progress rather than a bar that looks broken.
+                      width: `${Math.max(progressPct, 2)}%`,
+                      background: "var(--tier-accent)",
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="tier-progress-sheen absolute inset-y-0 -left-8 w-8 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.55),transparent)]"
+                    />
+                  </div>
+                </div>
+                <p className="mt-3.5 text-xs text-ivory-dim">
+                  {toNext.toLocaleString()} more lifetime Sangu to reach{" "}
+                  <span style={{ color: `var(--tier-${nextTier}-accent)` }}>{TIER_LABEL[nextTier]}</span> and
+                  earn {TIER_MULTIPLIER[nextTier]}× on every order.
+                </p>
+              </>
+            ) : (
+              <p className="mt-7 text-xs text-ivory-dim">
+                You are at the top of the ladder, earning {TIER_MULTIPLIER[tier]}× on everything.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
