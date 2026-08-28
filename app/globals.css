@@ -9,11 +9,15 @@
 :root {
   color-scheme: light dark;
 
-  --ink: #f8f7f5;
-  --ink-2: #ecebe8;
-  --charcoal: #d6d4cf;
-  --ivory: #121915;
-  --ivory-dim: #5f665f;
+  /* Warm, to match the silk this sits on. These were cool greys with a
+     green-black for text, which was right against the old flat page and
+     wrong the moment the page became warm cream -- cool type on a warm
+     ground is the light-mode version of exactly what made dark look cheap. */
+  --ink: #faf8f4;
+  --ink-2: #f0ebe4;
+  --charcoal: #dad3c9;
+  --ivory: #17120f;
+  --ivory-dim: #6b6058;
   --gold: #8eaba5;
   --gold-deep: #6f8d86;
   --gold-soft: #6c7770;
@@ -92,11 +96,15 @@
 }
 
 .theme-light {
-  --ink: #f8f7f5;
-  --ink-2: #ecebe8;
-  --charcoal: #d6d4cf;
-  --ivory: #121915;
-  --ivory-dim: #5f665f;
+  /* Warm, to match the silk this sits on. These were cool greys with a
+     green-black for text, which was right against the old flat page and
+     wrong the moment the page became warm cream -- cool type on a warm
+     ground is the light-mode version of exactly what made dark look cheap. */
+  --ink: #faf8f4;
+  --ink-2: #f0ebe4;
+  --charcoal: #dad3c9;
+  --ivory: #17120f;
+  --ivory-dim: #6b6058;
   --gold: #e9baa6;
   --gold-deep: #d18f6f;
   --gold-soft: #ddc48c;
