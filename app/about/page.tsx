@@ -5,6 +5,7 @@ import IntroSection from "@/components/home/IntroSection";
 import JourneyChapter from "@/components/about/JourneyChapter";
 import ExploreProducts from "@/components/home/ExploreProducts";
 import CursorImageTrail from "@/components/home/CursorImageTrail";
+import { listProductPhotos } from "@/lib/data/productPhotos.server";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -21,7 +22,7 @@ export default function AboutPage() {
       <IntroSection />
       <JourneyChapter />
       <ExploreProducts />
-      <CursorImageTrail />
+      <CursorImageTrail images={listProductPhotos()} />
     </>
   );
 }

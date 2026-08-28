@@ -1,12 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import gsap from "gsap";
 import { playCardFlick } from "@/lib/keySound";
 
-// Same product photos already wired into the coverflow section — reused
-// here rather than picking new assets.
-const TRAIL_IMAGES = [
+/**
+ * Fallback pool only.
+ *
+ * The real list is read from public/images and passed in as `images` (see
+ * lib/data/productPhotos.server.ts). These five stay as a floor so the
+ * section still works if that read ever comes back empty.
+ */
+const FALLBACK_IMAGES = [
   "/images/24K Gold Perfect Ampoule 50g/f56de9ef853768d1a0460e44d5e98fa6.png",
   "/images/Black Snail Eye Cream EX 40ml/Black Snail Cream.png",
   "/images/Aloe Solution Mask Pack 25g x 10pcs/Aloe Solution Mask Pack.png",
@@ -60,7 +66,20 @@ function TrailImage({ item, size, onDone }: { item: TrailItem; size: number; onD
         transform: `rotate(${item.rotate}deg)`,
       }}
     >
-      <img src={item.src} alt="" className="h-full w-full rounded-lg object-contain" />
+      {/* next/image, not a raw <img>. These are full-resolution product
+          photographs -- the heaviest is 3.9MB -- and the trail spawns a new
+          one every 40px of pointer travel. Served raw that is megabytes per
+          flick; asked for at the size it is actually drawn, it is a few tens
+          of kilobytes. */}
+      <Image
+        src={item.src}
+        alt=""
+        width={IMAGE_SIZE}
+        height={IMAGE_SIZE}
+        sizes={`${IMAGE_SIZE}px`}
+        quality={70}
+        className="h-full w-full rounded-lg object-contain"
+      />
     </div>
   );
 }
@@ -74,7 +93,15 @@ function TrailImage({ item, size, onDone }: { item: TrailItem; size: number; onD
  * (which would otherwise suppress/interrupt the pointermove stream on
  * touch). Only prefers-reduced-motion opts out.
  */
-export default function CursorImageTrail() {
+export default function CursorImageTrail({ images }: { images?: string[] }) {
+  // Every product photograph on the site, interleaved one per product. Was
+  // five names written inline here, so the other twenty-six were never seen.
+  const pool = images && images.length > 0 ? images : FALLBACK_IMAGES;
+  // Held in a ref, not read from the closure: the pointer effect runs once on
+  // mount (it registers listeners and caches a rect), so a pool captured
+  // there would be the one that existed at mount forever.
+  const poolRef = useRef(pool);
+  poolRef.current = pool;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastPointRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const poolIndexRef = useRef(0);
@@ -139,7 +166,8 @@ export default function CursorImageTrail() {
       const speed = last ? Math.min(1, dist / Math.max(1, now - last.t) / 2.5) : 0.5;
       lastPointRef.current = { x, y, t: now };
 
-      const src = TRAIL_IMAGES[poolIndexRef.current % TRAIL_IMAGES.length];
+      const currentPool = poolRef.current;
+      const src = currentPool[poolIndexRef.current % currentPool.length];
       poolIndexRef.current += 1;
       const id = idRef.current++;
       const rotate = (Math.random() - 0.5) * 24;
