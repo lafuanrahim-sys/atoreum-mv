@@ -21,8 +21,17 @@ const FALLBACK_IMAGES = [
 ].map((src) => encodeURI(src));
 
 const MIN_DISTANCE = 40; // px the pointer must travel before the next image spawns
-const IMAGE_SIZE = 200; // px, square hit-box, desktop — matches the reference's fixed 200x200
+const IMAGE_SIZE = 200; // px wide, desktop
 const IMAGE_SIZE_TOUCH = 140; // px — 200 reads oversized on a phone-width section
+/**
+ * The photographs are 1080x1350, and the frame used to be square with
+ * object-contain -- so each one sat letterboxed inside it with bare strips
+ * either side, and the rounded corners were rounding those strips rather than
+ * the picture. Matching the frame to the source means the corners curve on the
+ * photograph itself, and nothing is cropped to achieve it.
+ */
+const IMAGE_ASPECT = 5 / 4;
+const CORNER_RADIUS = 14; // px
 const HOLD_SECONDS = 0.35; // how long an image stays at full scale before shrinking away
 const MAX_ALIVE = 10; // cap so a fast flick across the section can't pile up forever
 
@@ -60,10 +69,14 @@ function TrailImage({ item, size, onDone }: { item: TrailItem; size: number; onD
       className="pointer-events-none absolute will-change-transform"
       style={{
         left: item.x - size / 2,
-        top: item.y - size / 2,
+        top: item.y - (size * IMAGE_ASPECT) / 2,
         width: size,
-        height: size,
+        height: size * IMAGE_ASPECT,
         transform: `rotate(${item.rotate}deg)`,
+        // Clipped on the wrapper, so the curve holds whatever the photo's
+        // own proportions turn out to be.
+        borderRadius: CORNER_RADIUS,
+        overflow: "hidden",
       }}
     >
       {/* next/image, not a raw <img>. These are full-resolution product
@@ -75,10 +88,10 @@ function TrailImage({ item, size, onDone }: { item: TrailItem; size: number; onD
         src={item.src}
         alt=""
         width={IMAGE_SIZE}
-        height={IMAGE_SIZE}
+        height={Math.round(IMAGE_SIZE * IMAGE_ASPECT)}
         sizes={`${IMAGE_SIZE}px`}
         quality={70}
-        className="h-full w-full rounded-lg object-contain"
+        className="h-full w-full object-cover"
       />
     </div>
   );
@@ -97,11 +110,12 @@ export default function CursorImageTrail({ images }: { images?: string[] }) {
   // Every product photograph on the site, interleaved one per product. Was
   // five names written inline here, so the other twenty-six were never seen.
   const pool = images && images.length > 0 ? images : FALLBACK_IMAGES;
-  // Held in a ref, not read from the closure: the pointer effect runs once on
-  // mount (it registers listeners and caches a rect), so a pool captured
-  // there would be the one that existed at mount forever.
+  /**
+   * Held in a ref, not read from the closure: the pointer effect runs once on
+   * mount (it registers listeners and caches a rect), so a pool captured there
+   * would be the one that existed at mount forever.
+   */
   const poolRef = useRef(pool);
-  poolRef.current = pool;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastPointRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const poolIndexRef = useRef(0);
@@ -120,6 +134,28 @@ export default function CursorImageTrail({ images }: { images?: string[] }) {
   useEffect(() => {
     setIsTouch(window.matchMedia("(hover: none), (pointer: coarse)").matches);
   }, []);
+
+  /**
+   * Shuffled per visit, on the client.
+   *
+   * The order arrives from the server the same every time, so the trail dealt
+   * the same photographs in the same sequence on every visit and every reload.
+   * Fisher-Yates gives a fresh order each time while still walking the whole
+   * set before repeating -- picking at random per spawn would have shown the
+   * same photograph twice in a row often enough to notice.
+   *
+   * After mount rather than during render: this must not run on the server, or
+   * the two would disagree about what to draw.
+   */
+  useEffect(() => {
+    const shuffled = [...pool];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    poolRef.current = shuffled;
+    poolIndexRef.current = 0;
+  }, [pool]);
 
   useEffect(() => {
     const container = containerRef.current;
