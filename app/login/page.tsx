@@ -116,7 +116,7 @@ export default async function LoginPage({
   const BUTTON_RAISED = "relief-raised-strong";
 
   return (
-    <div className="bg-ink">
+    <div>
       {/* Exactly the viewport minus the fixed header's own reserved space
           (main's pt-24/md:pt-28, 6rem/7rem) -- not min-h-[75vh] + its own
           pt/pb, which left the page taller than one screen and scrollable.

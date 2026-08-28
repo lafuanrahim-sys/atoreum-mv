@@ -18,7 +18,7 @@ export default async function ProductsPage() {
   const [products, ratings] = await Promise.all([getAllProducts(), getRatingSummaries()]);
 
   return (
-    <div className="bg-ink">
+    <div>
       <CollectionHero />
       <CoverflowArc />
       {/* SpiralShowcase (components/products/SpiralShowcase.tsx) parked here,

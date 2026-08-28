@@ -89,7 +89,7 @@ export default async function ProductDetailPage({
   const canReview = !!user && (await hasCompletedPurchase(user.email, product.id));
 
   return (
-    <div className="bg-ink pt-10 pb-28 md:pt-14">
+    <div className="pt-10 pb-28 md:pt-14">
       {/* Price, stock and stars in the search result itself — the difference
           between a bare blue link and a listing someone can shop from. */}
       <JsonLd data={productSchema(product, ratings[product.id])} />

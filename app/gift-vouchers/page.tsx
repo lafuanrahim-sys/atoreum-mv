@@ -31,7 +31,7 @@ export default async function GiftVouchersPage() {
   const settings = await getSettings();
 
   return (
-    <div className="bg-ink pt-16 pb-28">
+    <div className="pt-16 pb-28">
       <div className="page-gutter max-w-3xl">
         <p className="text-xs uppercase tracking-[0.25em] text-sand">Gift</p>
         <h1 className="mt-4 font-display text-4xl leading-tight text-ivory md:text-5xl">
