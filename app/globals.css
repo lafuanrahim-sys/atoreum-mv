@@ -172,6 +172,27 @@
 
 html {
   scroll-behavior: auto;
+
+  /* The page colour belongs on the canvas, not only on body.
+     body's background does propagate to the canvas, but the scrollbar gutter
+     is painted by the browser rather than by the page -- and with
+     color-scheme: dark the browser paints it black. A transparent track then
+     showed that black straight through, as a strip down the right edge of
+     every page. Naming the colour here, and on the track below, leaves
+     nothing for it to show. */
+  background: var(--ink);
+}
+
+/* Firefox has no ::-webkit-scrollbar, so it needs the standard properties to
+   get the same treatment. Scoped to browsers without the webkit selector on
+   purpose: Chrome supports both, and the standard ones win where they are
+   set -- which quietly replaced the deliberate 6px below with Chrome's own
+   "thin" (10px). This way each engine is styled once. */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sand) var(--ink);
+  }
 }
 
 body {
@@ -267,7 +288,9 @@ button:not(:disabled),
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  /* Not transparent: see the html rule above. Transparent here means "show
+     whatever the browser painted", which in dark mode is black. */
+  background: var(--ink);
 }
 ::-webkit-scrollbar-thumb {
   background: var(--sand);
