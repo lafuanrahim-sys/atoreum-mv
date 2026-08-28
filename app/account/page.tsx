@@ -225,11 +225,26 @@ export default async function AccountPage({
               Hello, {user.name.split(" ")[0]}.
             </h1>
           </div>
-          <div className="flex items-center gap-6">
+          {/* Sign out was bare text in the dimmest tone on the page, with no
+              border, no icon and nothing to say it was a control at all --
+              people could not find it. It is a button now: outlined, in the
+              full text colour, with the door icon that says "leave" before
+              the word is read.
+
+              The outline sits at 50% rather than the 30% it started at: the
+              lighter one measured 2.03:1 against the page, under the 3:1 a
+              control boundary needs, and an outline nobody can see does not
+              help anyone find the button.
+
+              It also had no padding, so its hit area was the height of 12px
+              type -- about 16px against the 44px a finger needs. The height
+              here is that minimum, and the dashboard link beside it matches
+              so the two still sit on one line. */}
+          <div className="flex items-center gap-3">
             {(user.role === "admin" || user.role === "superadmin") && (
               <Link
                 href="/dashboard"
-                className="text-xs uppercase tracking-[0.2em] text-gold hover:underline"
+                className="flex min-h-11 items-center px-1 text-xs uppercase tracking-[0.2em] text-gold transition-colors hover:underline"
               >
                 Go to Dashboard →
               </Link>
@@ -237,8 +252,26 @@ export default async function AccountPage({
             <form action={logoutAction}>
               <button
                 type="submit"
-                className="text-xs uppercase tracking-[0.2em] text-ivory-dim transition-colors hover:text-gold"
+                className="group flex min-h-11 items-center gap-2.5 rounded-full border border-ivory/50 px-5 text-xs uppercase tracking-[0.2em] text-ivory transition-colors hover:border-gold hover:bg-gold/10 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
               >
+                <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" aria-hidden="true">
+                  <path
+                    d="M12.5 6V4.5A1.5 1.5 0 0 0 11 3H5.5A1.5 1.5 0 0 0 4 4.5v11A1.5 1.5 0 0 0 5.5 17H11a1.5 1.5 0 0 0 1.5-1.5V14"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M8.5 10h8m0 0-2.75-2.75M16.5 10l-2.75 2.75"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
                 Sign Out
               </button>
             </form>
