@@ -21,6 +21,15 @@
   --sand: #c5c9c4;
   --line: rgba(18, 25, 21, 0.08);
 
+  /* The same silk in light: the sheen becomes shadow rather than highlight,
+     because on a pale ground a fold is where less light reaches. */
+  --page-silk:
+    linear-gradient(102deg, transparent 4%, rgba(176, 146, 126, 0.030) 17%, transparent 31%),
+    linear-gradient(96deg, transparent 28%, rgba(166, 136, 116, 0.042) 45%, transparent 61%),
+    linear-gradient(109deg, transparent 52%, rgba(186, 158, 138, 0.030) 70%, transparent 86%),
+    linear-gradient(93deg, transparent 74%, rgba(176, 146, 126, 0.024) 88%, transparent 99%),
+    linear-gradient(180deg, #faf7f2 0%, #f3eee7 48%, #fdfbf7 100%);
+
   /* Fixed light "photo well" behind product imagery — supplier photos are
      shot on white/cream studio backdrops, so this stays constant across
      themes instead of flipping dark, which was turning ordinary white-cutout
@@ -49,9 +58,13 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #121915;
-    --ink-2: #1f2a24;
-    --charcoal: #262f2a;
+    /* Warm near-black, not green-grey. The silk background below is built on
+       this, and 91 surfaces across the site paint themselves --ink -- so the
+       colour has to change here rather than only on body, or every chip,
+       drawer and section sits on the page as a cold grey patch. */
+    --ink: #14110f;
+    --ink-2: #221c18;
+    --charcoal: #2a2320;
     --ivory: #e9baa6;
     --ivory-dim: #bfa48d;
     --gold: #8eaba5;
@@ -60,6 +73,16 @@
     --moss: #545c57;
     --sand: #6c7770;
     --line: rgba(233, 186, 166, 0.12);
+    /* Silk: folds of sheen crossing a warm near-black, at 0.6 strength.
+       Four bands at slightly different angles rather than one, because a single
+       gradient reads as a gradient and several read as fabric. Fixed, so the
+       page moves under the light rather than dragging it along. */
+    --page-silk:
+      linear-gradient(102deg, transparent 4%, rgba(233, 196, 176, 0.033) 17%, transparent 31%),
+      linear-gradient(96deg, transparent 28%, rgba(245, 214, 196, 0.045) 45%, transparent 61%),
+      linear-gradient(109deg, transparent 52%, rgba(206, 178, 160, 0.033) 70%, transparent 86%),
+      linear-gradient(93deg, transparent 74%, rgba(233, 196, 176, 0.027) 88%, transparent 99%),
+      linear-gradient(180deg, #13100e 0%, #1a1613 48%, #0f0c0b 100%);
     --logo-flower: #6c7770;
     --relief-shade: rgba(0, 0, 0, 0.55);
     --relief-light: rgba(255, 255, 255, 0.1);
@@ -80,6 +103,14 @@
   --moss: #b8c0bb;
   --sand: #c5c9c4;
   --line: rgba(233, 186, 166, 0.12);
+  /* The same silk in light: the sheen becomes shadow rather than highlight,
+     because on a pale ground a fold is where less light reaches. */
+  --page-silk:
+    linear-gradient(102deg, transparent 4%, rgba(176, 146, 126, 0.030) 17%, transparent 31%),
+    linear-gradient(96deg, transparent 28%, rgba(166, 136, 116, 0.042) 45%, transparent 61%),
+    linear-gradient(109deg, transparent 52%, rgba(186, 158, 138, 0.030) 70%, transparent 86%),
+    linear-gradient(93deg, transparent 74%, rgba(176, 146, 126, 0.024) 88%, transparent 99%),
+    linear-gradient(180deg, #faf7f2 0%, #f3eee7 48%, #fdfbf7 100%);
   --logo-flower: #e9baa6;
   --relief-shade: rgba(0, 0, 0, 0.14);
   --relief-light: rgba(255, 255, 255, 0.95);
@@ -88,9 +119,9 @@
 }
 
 .theme-dark {
-  --ink: #121915;
-  --ink-2: #1f2a24;
-  --charcoal: #262f2a;
+  --ink: #14110f;
+  --ink-2: #221c18;
+  --charcoal: #2a2320;
   --ivory: #e9baa6;
   --ivory-dim: #bfa48d;
   --gold: #8eaba5;
@@ -99,6 +130,12 @@
   --moss: #545c57;
   --sand: #6c7770;
   --line: rgba(233, 186, 166, 0.12);
+  --page-silk:
+    linear-gradient(102deg, transparent 4%, rgba(233, 196, 176, 0.033) 17%, transparent 31%),
+    linear-gradient(96deg, transparent 28%, rgba(245, 214, 196, 0.045) 45%, transparent 61%),
+    linear-gradient(109deg, transparent 52%, rgba(206, 178, 160, 0.033) 70%, transparent 86%),
+    linear-gradient(93deg, transparent 74%, rgba(233, 196, 176, 0.027) 88%, transparent 99%),
+    linear-gradient(180deg, #13100e 0%, #1a1613 48%, #0f0c0b 100%);
   --relief-shade: rgba(0, 0, 0, 0.55);
   --relief-light: rgba(255, 255, 255, 0.1);
   --relief-recess-fill: rgba(0, 0, 0, 0.26);
@@ -196,7 +233,11 @@ html {
 }
 
 body {
-  background: var(--ink);
+  /* The page itself is silk (see --page-silk). html keeps the flat --ink so
+     the canvas and the scrollbar gutter still have a colour to be, since
+     neither of those is painted by body. */
+  background: var(--page-silk, var(--ink));
+  background-attachment: fixed;
   color: var(--ivory);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -1260,4 +1301,23 @@ button:not(:disabled),
   .tier-progress-sheen {
     animation: tier-progress-sheen 3.6s ease-in-out infinite;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Page-level sections and the silk
+
+   Full-bleed sections paint themselves bg-ink so they read as "the page".
+   That was free when the page was one flat colour. Now that it is silk, an
+   opaque section is a flat panel laid over the fabric -- the About page had
+   six of them stacked, which is why the treatment appeared to stop below the
+   header.
+
+   Element-qualified so it beats the utility class without !important, and
+   narrow on purpose: only sections, footers and mains, never the chips,
+   drawers and cards that legitimately need a solid --ink of their own.
+   --------------------------------------------------------------------------- */
+section.bg-ink,
+footer.bg-ink,
+main.bg-ink {
+  background-color: transparent;
 }
