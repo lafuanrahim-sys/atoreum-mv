@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/about" },
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
   return (
     <>
       <CrosswordHero />
@@ -22,7 +22,7 @@ export default function AboutPage() {
       <IntroSection />
       <JourneyChapter />
       <ExploreProducts />
-      <CursorImageTrail images={listCursorTrailPhotos()} />
+      <CursorImageTrail photos={await listCursorTrailPhotos()} />
     </>
   );
 }

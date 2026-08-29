@@ -8,37 +8,52 @@ import { playCardFlick } from "@/lib/keySound";
 /**
  * Fallback pool only.
  *
- * The real list is read from public/images and passed in as `images` (see
- * lib/data/productPhotos.server.ts). These five stay as a floor so the
- * section still works if that read ever comes back empty.
+ * The real list is read from the curated folder and passed in as `photos`
+ * (see lib/data/cursorTrailPhotos.server.ts). These five stay as a floor so
+ * the section still works if that read ever comes back empty. Shape is
+ * assumed 4:5 here, which is what they are.
  */
-const FALLBACK_IMAGES = [
+const FALLBACK_SOURCES = [
   "/images/24K Gold Perfect Ampoule 50g/f56de9ef853768d1a0460e44d5e98fa6.png",
   "/images/Black Snail Eye Cream EX 40ml/Black Snail Cream.png",
   "/images/Aloe Solution Mask Pack 25g x 10pcs/Aloe Solution Mask Pack.png",
   "/images/Heeyul Premium 24K Gold Essence 130ml/Heeyul Premium 24K Gold Essence 130ml.png",
   "/images/Vitamin C Pure Emulsion 120ml/Vitamin C Pure Emulsion.png",
-].map((src) => encodeURI(src));
+].map((src) => ({ src: encodeURI(src), width: 1080, height: 1350 }));
 
 const MIN_DISTANCE = 40; // px the pointer must travel before the next image spawns
 const IMAGE_SIZE = 150; // px wide, desktop — 200 read oversized on the page
 const IMAGE_SIZE_TOUCH = 110; // px — proportionally smaller again on a phone
 /**
- * The photographs are 1080x1350, and the frame used to be square with
- * object-contain -- so each one sat letterboxed inside it with bare strips
- * either side, and the rounded corners were rounding those strips rather than
- * the picture. Matching the frame to the source means the corners curve on the
- * photograph itself, and nothing is cropped to achieve it.
+ * The frame takes each photograph's own proportions.
+ *
+ * It was square with object-contain to begin with, so every photograph sat
+ * letterboxed inside it and the rounded corners were rounding bare strips
+ * rather than the picture. Fixing that to 4:5 fixed the 80 photographs that
+ * are 4:5 and cropped the other 94 -- the tallest is 0.27 wide-to-high and
+ * lost about two thirds of itself. So the frame is sized per photograph now,
+ * fitted inside the bounds below: the whole product is visible, the corners
+ * still curve on the picture, and no photograph can grow past the size the
+ * others occupy.
  */
-const IMAGE_ASPECT = 5 / 4;
+const HEIGHT_ALLOWANCE = 1.25; // frames may be this much taller than they are wide
 const CORNER_RADIUS = 14; // px
+
+/** Fit w×h inside the bounds, keeping its own ratio. */
+function fitFrame(width: number, height: number, maxWidth: number) {
+  const maxHeight = maxWidth * HEIGHT_ALLOWANCE;
+  const scale = Math.min(maxWidth / width, maxHeight / height);
+  return { width: Math.round(width * scale), height: Math.round(height * scale) };
+}
 const HOLD_SECONDS = 0.35; // how long an image stays at full scale before shrinking away
 const MAX_ALIVE = 10; // cap so a fast flick across the section can't pile up forever
 
-type TrailItem = { id: number; x: number; y: number; src: string; rotate: number };
+type TrailPhoto = { src: string; width: number; height: number };
+type TrailItem = { id: number; x: number; y: number; photo: TrailPhoto; rotate: number };
 
 function TrailImage({ item, size, onDone }: { item: TrailItem; size: number; onDone: (id: number) => void }) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const frame = fitFrame(item.photo.width, item.photo.height, size);
 
   useEffect(() => {
     const el = ref.current;
@@ -68,10 +83,10 @@ function TrailImage({ item, size, onDone }: { item: TrailItem; size: number; onD
       ref={ref}
       className="pointer-events-none absolute will-change-transform"
       style={{
-        left: item.x - size / 2,
-        top: item.y - (size * IMAGE_ASPECT) / 2,
-        width: size,
-        height: size * IMAGE_ASPECT,
+        left: item.x - frame.width / 2,
+        top: item.y - frame.height / 2,
+        width: frame.width,
+        height: frame.height,
         transform: `rotate(${item.rotate}deg)`,
         // Clipped on the wrapper, so the curve holds whatever the photo's
         // own proportions turn out to be.
@@ -85,12 +100,14 @@ function TrailImage({ item, size, onDone }: { item: TrailItem; size: number; onD
           flick; asked for at the size it is actually drawn, it is a few tens
           of kilobytes. */}
       <Image
-        src={item.src}
+        src={item.photo.src}
         alt=""
-        width={IMAGE_SIZE}
-        height={Math.round(IMAGE_SIZE * IMAGE_ASPECT)}
-        sizes={`${IMAGE_SIZE}px`}
+        width={frame.width}
+        height={frame.height}
+        sizes={`${frame.width}px`}
         quality={70}
+        // cover, but the frame already matches the photograph's ratio, so
+        // there is nothing left for it to crop.
         className="h-full w-full object-cover"
       />
     </div>
@@ -106,10 +123,10 @@ function TrailImage({ item, size, onDone }: { item: TrailItem; size: number; onD
  * (which would otherwise suppress/interrupt the pointermove stream on
  * touch). Only prefers-reduced-motion opts out.
  */
-export default function CursorImageTrail({ images }: { images?: string[] }) {
-  // Every product photograph on the site, interleaved one per product. Was
-  // five names written inline here, so the other twenty-six were never seen.
-  const pool = images && images.length > 0 ? images : FALLBACK_IMAGES;
+export default function CursorImageTrail({ photos }: { photos?: TrailPhoto[] }) {
+  // The curated folder, with each photograph's real dimensions, so the frame
+  // can take its shape instead of cropping it into a fixed one.
+  const pool = photos && photos.length > 0 ? photos : FALLBACK_SOURCES;
   /**
    * Held in a ref, not read from the closure: the pointer effect runs once on
    * mount (it registers listeners and caches a rect), so a pool captured there
@@ -203,7 +220,7 @@ export default function CursorImageTrail({ images }: { images?: string[] }) {
       lastPointRef.current = { x, y, t: now };
 
       const currentPool = poolRef.current;
-      const src = currentPool[poolIndexRef.current % currentPool.length];
+      const photo = currentPool[poolIndexRef.current % currentPool.length];
       poolIndexRef.current += 1;
       const id = idRef.current++;
       const rotate = (Math.random() - 0.5) * 24;
@@ -213,7 +230,7 @@ export default function CursorImageTrail({ images }: { images?: string[] }) {
       playCardFlick((x / rect.width) * 2 - 1, speed);
 
       setItems((prev) => {
-        const next = [...prev, { id, x, y, src, rotate }];
+        const next = [...prev, { id, x, y, photo, rotate }];
         return next.length > MAX_ALIVE ? next.slice(next.length - MAX_ALIVE) : next;
       });
     }
