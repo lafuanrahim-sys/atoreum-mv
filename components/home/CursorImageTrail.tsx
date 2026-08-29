@@ -21,8 +21,8 @@ const FALLBACK_IMAGES = [
 ].map((src) => encodeURI(src));
 
 const MIN_DISTANCE = 40; // px the pointer must travel before the next image spawns
-const IMAGE_SIZE = 200; // px wide, desktop
-const IMAGE_SIZE_TOUCH = 140; // px — 200 reads oversized on a phone-width section
+const IMAGE_SIZE = 150; // px wide, desktop — 200 read oversized on the page
+const IMAGE_SIZE_TOUCH = 110; // px — proportionally smaller again on a phone
 /**
  * The photographs are 1080x1350, and the frame used to be square with
  * object-contain -- so each one sat letterboxed inside it with bare strips

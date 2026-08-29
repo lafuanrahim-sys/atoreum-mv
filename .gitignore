@@ -78,3 +78,7 @@ next-env.d.ts
 
 # Video masters kept for re-encoding. Large, and git would keep them forever.
 data/video-sources/
+
+# Full-resolution originals of the cursor-trail photographs, kept locally
+# after re-encoding them for the web. Not needed to build or deploy.
+.image-originals/
