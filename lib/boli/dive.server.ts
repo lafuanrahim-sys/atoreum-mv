@@ -194,7 +194,7 @@ export async function playToday(params: {
     fallbackCommonPayout: DIVE_PAYOUT_TABLE.common.boli,
     gameExpiryDays: GAME_BOLI_EXPIRY_DAYS,
     streakChestDay: STREAK_CHEST_DAY,
-    streakChestSangu: STREAK_CHEST_BOLI,
+    streakChestBoli: STREAK_CHEST_BOLI,
     streakMultiplierStartDay: STREAK_MULTIPLIER_START_DAY,
     streakMultiplier: STREAK_MULTIPLIER,
     goldenMultiplier: GOLDEN_SHELL_MULTIPLIER,
