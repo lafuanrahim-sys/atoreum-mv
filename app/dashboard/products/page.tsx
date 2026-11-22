@@ -7,6 +7,7 @@ import Pagination from "@/components/dashboard/Pagination";
 import PageHeader from "@/components/dashboard/PageHeader";
 import InlineDiscountField from "@/components/dashboard/InlineDiscountField";
 import { CATEGORIES } from "@/lib/types";
+import { filterProducts, type ProductFilters } from "@/lib/dashboard/productFilters";
 
 const PAGE_SIZE = 20;
 
@@ -47,26 +48,14 @@ export default async function DashboardProductsPage({
   // is one query. Kept in the URL rather than component state so a filtered
   // view can be bookmarked, shared, and survives the round-trip through a
   // discount save.
-  const priceFloor = Number(min);
-  const priceCeil = Number(max);
-  const filtered = all.filter((p) => {
-    const needle = q.trim().toLowerCase();
-    // Search covers SKU as well as name -- the SKU is what's on the carton,
-    // and searching for it and getting nothing is a confusing dead end.
-    const matchesQuery = needle
-      ? p.name.toLowerCase().includes(needle) || p.sku.toLowerCase().includes(needle)
-      : true;
-    const matchesCategory = category ? p.category === category : true;
-    const matchesStock = stock ? p.stockStatus === stock : true;
-    const onOffer = p.discountPercent > 0 || p.discountAmount > 0;
-    const matchesOffer = offer === "on" ? onOffer : offer === "off" ? !onOffer : true;
-    const matchesFeatured = featured === "yes" ? p.featured : featured === "no" ? !p.featured : true;
-    const matchesFloor = Number.isFinite(priceFloor) && min !== "" ? p.priceEffective >= priceFloor : true;
-    const matchesCeil = Number.isFinite(priceCeil) && max !== "" ? p.priceEffective <= priceCeil : true;
-    return (
-      matchesQuery && matchesCategory && matchesStock && matchesOffer && matchesFeatured && matchesFloor && matchesCeil
-    );
-  });
+  //
+  // The rules themselves live in lib/dashboard/productFilters so that the
+  // Export button below runs the identical set -- an export that quietly
+  // applied different rules from the table it sits above would hand the
+  // admin a spreadsheet that doesn't reconcile with what they were just
+  // looking at, with nothing on screen to explain the gap.
+  const filters: ProductFilters = { q, category, stock, offer, featured, min, max };
+  const filtered = filterProducts(all, filters);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const page = Math.min(pageCount, Math.max(1, Number(pageParam) || 1));
@@ -81,6 +70,14 @@ export default async function DashboardProductsPage({
     return qs ? `/dashboard/products?${qs}` : "/dashboard/products";
   };
   const pageHref = (p: number) => buildHref({ page: p > 1 ? p : undefined });
+  // Carries the filters but not `page`: the export is the whole filtered
+  // set, not the twenty rows currently visible.
+  const exportQuery = new URLSearchParams(
+    Object.entries(filters).filter(([, value]) => value !== ""),
+  ).toString();
+  const exportHref = exportQuery
+    ? `/dashboard/products/export?${exportQuery}`
+    : "/dashboard/products/export";
   // Where a discount save should return to, so the admin keeps their filters
   // and their place in the list.
   const backHref = pageHref(page);
@@ -92,12 +89,25 @@ export default async function DashboardProductsPage({
         title="Products"
         count={all.length}
         actions={
-          <Link
-            href="/dashboard/products/new"
-            className="bg-gold-deep px-5 py-2.5 text-xs uppercase tracking-[0.15em] text-ink transition-colors hover:bg-gold-deep/90"
-          >
-            + Add Product
-          </Link>
+          <>
+            {/* A plain <a>, not <Link>: this URL answers with a file
+                download rather than a page, and the client router would
+                try to treat the .xlsx bytes as a navigation. `download`
+                keeps the current page put while the browser saves it. */}
+            <a
+              href={exportHref}
+              download
+              className="border border-line px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-ivory-dim transition-colors hover:border-gold-deep hover:text-gold-deep"
+            >
+              ↓ Export Excel
+            </a>
+            <Link
+              href="/dashboard/products/new"
+              className="bg-gold-deep px-5 py-2.5 text-xs uppercase tracking-[0.15em] text-ink transition-colors hover:bg-gold-deep/90"
+            >
+              + Add Product
+            </Link>
+          </>
         }
       />
 
